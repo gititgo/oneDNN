@@ -665,6 +665,7 @@ public:
 	    case 32:
             default:
 		uni_xvst(xvreg, reg, offset);
+		break;
         }
     }
 
