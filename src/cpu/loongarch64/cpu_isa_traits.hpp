@@ -89,7 +89,7 @@ struct cpu_isa_traits<lsx> {
 
 template <>
 struct cpu_isa_traits<lasx> {
-    typedef Xbyak_loongarch::VReg Vmm;
+    typedef Xbyak_loongarch::XVReg Vmm;
     static constexpr int vlen_shift = 5;
     static constexpr int vlen = 32;
     static constexpr int n_vregs = 32;

@@ -226,10 +226,10 @@ public:
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             mov_imm(X_TMP_2, simm);
-	    ldx_b(rd, rj, X_TMP_2);
-	    return;
-	}
-	ld_b(rd, rj, simm);
+	        ldx_b(rd, rj, X_TMP_2);
+	        return;
+	    }
+        ld_b(rd, rj, simm);
     }
 
     void uni_ld_bu(const Xbyak_loongarch::XReg &rd, const Xbyak_loongarch::XReg &rj,
@@ -477,7 +477,7 @@ public:
 
         float saturation_ubound = types::max_value<float>(odt);
         mov_imm(reg_tmp, float2int(saturation_ubound));
-	xvreplgr2vr_w(vmm_ubound, reg_tmp);
+	    xvreplgr2vr_w(vmm_ubound, reg_tmp);
     }
 
     template <typename Vmm>
@@ -496,17 +496,17 @@ public:
         if (odt == u8) {
             if (is_valid_isa(lasx))
                 //vmaxps(vmm, vmm, vmm_lbound);
-		xvfmax_s(vmm, vmm, vmm_lbound);
+		        xvfmax_s(vmm, vmm, vmm_lbound);
             else
                 //maxps(vmm, vmm_lbound);
-		xvfmax_s(vmm, vmm, vmm_lbound);
+		        xvfmax_s(vmm, vmm, vmm_lbound);
         }
         if (is_valid_isa(lasx))
             //vminps(vmm, vmm, vmm_ubound);
-	    xvfmin_s(vmm, vmm, vmm_ubound);
+	        xvfmin_s(vmm, vmm, vmm_ubound);
         else
             //minps(vmm, vmm_ubound);
-	    xvfmin_s(vmm, vmm, vmm_ubound);
+	        xvfmin_s(vmm, vmm, vmm_ubound);
     }
 
     /**
@@ -543,16 +543,16 @@ public:
         switch (load_size) {
             case 0: break;
             case 1:
-	    case 2:
-	    case 3:
-	    case 4:
+	        case 2:
+	        case 3:
+	        case 4:
             case 5:
             case 6:
             case 7:
             case 8: 
                 uni_ld_d(X_TMP_3, reg, offset);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 0); 
-		break;
+		        break;
             case 9:
             case 10:
             case 11:
@@ -563,10 +563,10 @@ public:
             case 16:
                 uni_ld_d(X_TMP_3, reg, offset);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 0);
-		uni_ld_d(X_TMP_3, reg, offset + 8);
+		        uni_ld_d(X_TMP_3, reg, offset + 8);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 1);
-	        break;
-	    case 17:
+	            break;
+	        case 17:
             case 18:
             case 19:
             case 20:
@@ -574,16 +574,17 @@ public:
             case 22:
             case 23:
             case 24:
-		uni_ld_d(X_TMP_3, reg, offset);
+		        uni_ld_d(X_TMP_3, reg, offset);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 0);
                 uni_ld_d(X_TMP_3, reg, offset + 8);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 1);
-		uni_ld_d(X_TMP_3, reg, offset + 16);
+		        uni_ld_d(X_TMP_3, reg, offset + 16);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 2);
+                break;
             case 32:
             default:
                 uni_xvld(xvreg, reg, offset);
-		break;
+		        break;
         }
     }
 
@@ -624,7 +625,7 @@ public:
         switch (store_size) {
             case 0: break;
             case 1:
-	    case 2:
+	        case 2:
             case 3:
             case 4:
             case 5:
@@ -632,8 +633,8 @@ public:
             case 7:
             case 8:
                 xvpickve2gr_d(X_TMP_3, xvreg, 0);
-		uni_st_d(X_TMP_3, reg, offset);
-		break;
+		        uni_st_d(X_TMP_3, reg, offset);
+		        break;
             case 9:
             case 10:
             case 11:
@@ -642,30 +643,30 @@ public:
             case 14:
             case 15:
             case 16:
-		xvpickve2gr_d(X_TMP_3, xvreg, 0);
+		        xvpickve2gr_d(X_TMP_3, xvreg, 0);
                 uni_st_d(X_TMP_3, reg, offset);
-		xvpickve2gr_d(X_TMP_3, xvreg, 1);
+		        xvpickve2gr_d(X_TMP_3, xvreg, 1);
                 uni_st_d(X_TMP_3, reg, offset + 8);
-	      	break;
+	      	    break;
             case 17:
             case 18:
-	    case 19:
-	    case 20:
-	    case 21:
+	        case 19:
+	        case 20:
+	        case 21:
             case 22:
-	    case 23:
-	    case 24:
-		xvpickve2gr_d(X_TMP_3, xvreg, 0);
+	        case 23:
+	        case 24:
+		        xvpickve2gr_d(X_TMP_3, xvreg, 0);
                 uni_st_d(X_TMP_3, reg, offset);
                 xvpickve2gr_d(X_TMP_3, xvreg, 1);
                 uni_st_d(X_TMP_3, reg, offset + 8);
-		xvpickve2gr_d(X_TMP_3, xvreg, 2);
+		        xvpickve2gr_d(X_TMP_3, xvreg, 2);
                 uni_st_d(X_TMP_3, reg, offset + 16);
                 break;
-	    case 32:
+	        case 32:
             default:
-		uni_xvst(xvreg, reg, offset);
-		break;
+		        uni_xvst(xvreg, reg, offset);
+		        break;
         }
     }
 
@@ -699,7 +700,7 @@ public:
 
         assert(is_valid_isa(lasx)
                 && "routine is not supported for the current isa");
-	for (int32_t i = 0; i < load_size; ++i) {
+	    for (int32_t i = 0; i < load_size; ++i) {
             if (is_signed)
                 uni_ld_b(X_TMP_1, reg, i);
             else
@@ -762,7 +763,7 @@ private:
         //return Xbyak_loongarch::GetError() == Xbyak_loongarch::ERR_NONE;
 	/* At the moment, Xbyak_loongarch does not have GetError()\
          so that return dummy result. */
-	return true;
+	    return true;
     }
 
 protected:
