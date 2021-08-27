@@ -31,6 +31,8 @@
 #include "cpu/x64/cpu_isa_traits.hpp"
 #elif DNNL_AARCH64
 #include "cpu/aarch64/cpu_isa_traits.hpp"
+#elif DNNL_LOONGARCH64
+#include "cpu/loongarch64/cpu_isa_traits.hpp"
 #endif
 
 // For DNNL_X64 build we compute the timestamp using rdtsc. Use std::chrono for
