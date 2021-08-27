@@ -84,6 +84,10 @@
 #define DNNL_AARCH64_ACL_ONLY(...)
 #endif
 
+#if DNNL_LOONGARCH64
+#define DNNL_LOONGARCH64_ONLY(...) Z_CONDITIONAL_DO(DNNL_LOONGARCH64, __VA_ARGS__)
+#endif
+
 namespace dnnl {
 namespace impl {
 namespace cpu {

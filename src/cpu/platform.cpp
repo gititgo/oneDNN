@@ -49,6 +49,8 @@ const char *get_isa_info() {
     return x64::get_isa_info();
 #elif DNNL_AARCH64
     return aarch64::get_isa_info();
+#elif DNNL_LOONGARCH64
+    return loongarch64::get_isa_info();
 #else
     return "Generic";
 #endif
@@ -59,6 +61,8 @@ dnnl_cpu_isa_t get_effective_cpu_isa() {
     return x64::get_effective_cpu_isa();
 #elif DNNL_AARCH64
     return aarch64::get_effective_cpu_isa();
+#elif DNNL_LOONGARCH64
+    return loongarch64::get_effective_cpu_isa();
 #else
     return dnnl_cpu_isa_all;
 #endif
