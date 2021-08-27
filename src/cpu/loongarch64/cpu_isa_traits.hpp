@@ -103,7 +103,7 @@ static Xbyak_loongarch::util::Cpu cpu;
 static inline bool mayiuse(const cpu_isa_t cpu_isa, bool soft = false) {
     using namespace Xbyak_loongarch::util;
 
-    unsigned cpu_isa_mask = loongarch::get_max_cpu_isa_mask(soft);
+    unsigned cpu_isa_mask = loongarch64::get_max_cpu_isa_mask(soft);
     if ((cpu_isa_mask & cpu_isa) != cpu_isa) return false;
 
     switch (cpu_isa) {
