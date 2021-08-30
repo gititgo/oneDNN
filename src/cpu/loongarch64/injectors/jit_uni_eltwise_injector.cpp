@@ -68,14 +68,17 @@ void jit_uni_eltwise_injector_f32<isa>::injector_preamble(
     }
     assert(preserved_gprs_count == aux_gprs_count());
 
-    h->ptrue(p_all.b);
+    //h->ptrue(p_all.b);
 
     if (save_state_) {
-        h->str(x_table, pre_ptr(h->X_SP, -8));
+        //h->str(x_table, pre_ptr(h->X_SP, -8));
+	int sp_step = 0;
+	h->st_d(x_table, h->X_SP, -8*(++sp_step));
 
         for (size_t i = 0; i < preserved_gprs_count; ++i) {
             /* This route has not been tested */
-            h->str(XReg(preserved_gpr_idxs[i]), pre_ptr(h->X_SP, -8));
+            //h->str(XReg(preserved_gpr_idxs[i]), pre_ptr(h->X_SP, -8));
+            h->st_d(XReg(preserved_gpr_idxs[i]), h->X_SP, -8+(++sp_step));
         }
 
         if (preserved_vecs_count)
@@ -94,8 +97,9 @@ void jit_uni_eltwise_injector_f32<isa>::injector_preamble(
             } while (i < preserved_vecs_count && count < h->x_tmp_vec_size);
 
             for (int j = 0; j < count; j++)
-                h->st1w(ZRegS(preserved_vec_idxs[ii++]), p_all,
-                        ptr(h->x_tmp_vec[j]));
+                //h->st1w(ZRegS(preserved_vec_idxs[ii++]), p_all,
+                  //      ptr(h->x_tmp_vec[j]));
+                h->xvst(XVReg(preserved_vec_idxs[ii++]), h->x_tmp_vec[j], 0);
         }
         load_table_addr();
     }
@@ -128,8 +132,9 @@ void jit_uni_eltwise_injector_f32<isa>::injector_preamble_tail(
             } while (i < tail_vecs_to_preserve && count < h->x_tmp_vec_size);
 
             for (int j = 0; j < count; j++)
-                h->ld1w(ZRegS(preserved_vec_idxs[idx_off + ii++]), p_all / T_z,
-                        ptr(h->x_tmp_vec[j]));
+                //h->ld1w(ZRegS(preserved_vec_idxs[idx_off + ii++]), p_all / T_z,
+                  //      ptr(h->x_tmp_vec[j]));
+                h->xvld(XVReg(preserved_vec_idxs[idx_off + ii++]), h->x_tmp_vec[j], 0);
         }
     }
 
@@ -149,8 +154,9 @@ void jit_uni_eltwise_injector_f32<isa>::injector_preamble_tail(
             } while (i < tail_vecs_to_preserve && count < h->x_tmp_vec_size);
 
             for (int j = 0; j < count; j++)
-                h->st1w(ZRegS(preserved_vec_idxs[idx_off + ii++]), p_all / T_z,
-                        ptr(h->x_tmp_vec[j]));
+                //h->st1w(ZRegS(preserved_vec_idxs[idx_off + ii++]), p_all / T_z,
+                  //      ptr(h->x_tmp_vec[j]));
+                h->xvst(XVReg(preserved_vec_idxs[idx_off + ii++]), h->x_tmp_vec[j], 0);
         }
 
         if (idx_off) {
@@ -179,16 +185,23 @@ void jit_uni_eltwise_injector_f32<isa>::injector_postamble() {
         } while (i < preserved_vecs_count && count < h->x_tmp_vec_size);
 
         for (int j = 0; j < count; j++)
-            h->ld1w(ZRegS(preserved_vec_idxs[ii++]), p_all / T_z,
-                    ptr(h->x_tmp_vec[j]));
+            //h->ld1w(ZRegS(preserved_vec_idxs[ii++]), p_all / T_z,
+              //      ptr(h->x_tmp_vec[j]));
+            h->xvld(XVReg(preserved_vec_idxs[ii++]), h->x_tmp_vec[j], 0);
     }
 
     if (preserved_vecs_count)
         h->add_imm(h->X_SP, h->X_SP, preserved_vecs_count * vlen, h->X_TMP_0);
 
+    int sp_step = 0;
     for (int i = aux_gprs_count() - 1; i >= 0; --i)
-        h->ldr(XReg(preserved_gpr_idxs[i]), post_ptr(h->X_SP, 8));
-    h->ldr(x_table, post_ptr(h->X_SP, 8));
+        //h->ldr(XReg(preserved_gpr_idxs[i]), post_ptr(h->X_SP, 8));
+        h->ld_d(XReg(preserved_gpr_idxs[i]), h->X_SP, 8*(sp_step++));
+    //h->ldr(x_table, post_ptr(h->X_SP, 8));
+    h->ld_d(x_table, h->X_SP, 8*(sp_step++));
+
+    if(sp_step)
+	h->add_imm(h->X_SP, h->X_SP, 8*sp_step, h->X_TMP_0);
 }
 
 template <cpu_isa_t isa>
