@@ -21,22 +21,22 @@
 #include "common/nstl.hpp"
 #include "common/utils.hpp"
 
-#include "cpu/aarch64/injectors/jit_uni_eltwise_injector.hpp"
+#include "cpu/loongarch64/injectors/jit_uni_eltwise_injector.hpp"
 
 #define IDX(a) static_cast<uint32_t>(a.getIdx())
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace aarch64 {
+namespace loongarch64 {
 
-using namespace Xbyak_aarch64;
+using namespace Xbyak_loongarch;
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::injector_preamble(
         const injector_utils::vmm_index_set_t &vmm_idxs) {
     using namespace alg_kind;
-    using namespace Xbyak_aarch64::util;
+    using namespace Xbyak_loongarch::util;
     preserved_vecs_count = 0;
     vecs_to_preserve = aux_vecs_count();
     const auto start_idx = *(vmm_idxs.begin());
@@ -164,7 +164,7 @@ void jit_uni_eltwise_injector_f32<isa>::injector_preamble_tail(
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::injector_postamble() {
-    using namespace Xbyak_aarch64::util;
+    using namespace Xbyak_loongarch::util;
     if (!save_state_) return;
 
     size_t i = 0;
@@ -1654,7 +1654,7 @@ void jit_uni_eltwise_injector_f32<isa>::register_table_entries() {
 
 template struct jit_uni_eltwise_injector_f32<sve_512>;
 
-} // namespace aarch64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

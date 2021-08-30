@@ -15,8 +15,8 @@
 * limitations under the License.
 *******************************************************************************/
 
-#ifndef CPU_AARCH64_JIT_UNI_ELTWISE_INJECTOR_HPP
-#define CPU_AARCH64_JIT_UNI_ELTWISE_INJECTOR_HPP
+#ifndef CPU_LOONGARCH64_JIT_UNI_ELTWISE_INJECTOR_HPP
+#define CPU_LOONGARCH64_JIT_UNI_ELTWISE_INJECTOR_HPP
 
 #include <assert.h>
 
@@ -25,22 +25,22 @@
 #include "common/type_helpers.hpp"
 #include "common/utils.hpp"
 
-#include "cpu/aarch64/injectors/injector_utils.hpp"
-#include "cpu/aarch64/jit_generator.hpp"
+#include "cpu/loongarch64/injectors/injector_utils.hpp"
+#include "cpu/loongarch64/jit_generator.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace aarch64 {
+namespace loongarch64 {
 
 namespace eltwise_injector {
 struct static_params_t {
 
     static_params_t(bool save_state = true,
-            Xbyak_aarch64::XReg x_table = Xbyak_aarch64::XReg(0),
-            Xbyak_aarch64::PReg p_mask = Xbyak_aarch64::PReg(1),
-            Xbyak_aarch64::PReg p_tmp0 = Xbyak_aarch64::PReg(4),
-            Xbyak_aarch64::PReg p_all = Xbyak_aarch64::PReg(7),
+            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(0),
+            Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
+            Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
+            Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
             bool is_fwd = true, bool use_dst = false)
         : save_state(save_state)
         , x_table(x_table)
@@ -51,10 +51,10 @@ struct static_params_t {
         , use_dst(use_dst) {}
 
     bool save_state;
-    Xbyak_aarch64::XReg x_table;
-    Xbyak_aarch64::PReg p_mask;
-    Xbyak_aarch64::PReg p_tmp0;
-    Xbyak_aarch64::PReg p_all;
+    Xbyak_loongarch::XReg x_table;
+    Xbyak_loongarch::PReg p_mask;
+    Xbyak_loongarch::PReg p_tmp0;
+    Xbyak_loongarch::PReg p_all;
     bool is_fwd;
     bool use_dst;
 };
@@ -79,10 +79,10 @@ struct jit_uni_eltwise_injector_f32 {
     //   code. Depends on algorithm. See `_use_dst_for_bwd` algs definition.
     jit_uni_eltwise_injector_f32(jit_generator *host, alg_kind_t alg,
             float alpha, float beta, float scale, bool save_state = true,
-            Xbyak_aarch64::XReg x_table = Xbyak_aarch64::XReg(0),
-            Xbyak_aarch64::PReg p_mask = Xbyak_aarch64::PReg(1),
-            Xbyak_aarch64::PReg p_tmp0 = Xbyak_aarch64::PReg(4),
-            Xbyak_aarch64::PReg p_all = Xbyak_aarch64::PReg(7),
+            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(0),
+            Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
+            Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
+            Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
             bool is_fwd = true, bool use_dst = false)
         : alg_(alg)
         , alpha_(alpha)
@@ -115,10 +115,10 @@ struct jit_uni_eltwise_injector_f32 {
     jit_uni_eltwise_injector_f32(jit_generator *host,
             const post_ops_t::entry_t::eltwise_t &eltwise,
             bool save_state = true,
-            Xbyak_aarch64::XReg x_table = Xbyak_aarch64::XReg(0),
-            Xbyak_aarch64::PReg p_mask = Xbyak_aarch64::PReg(1),
-            Xbyak_aarch64::PReg p_tmp0 = Xbyak_aarch64::PReg(4),
-            Xbyak_aarch64::PReg p_all = Xbyak_aarch64::PReg(7),
+            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(0),
+            Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
+            Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
+            Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
             bool is_fwd = true, bool use_dst = false)
         : jit_uni_eltwise_injector_f32(host, eltwise.alg, eltwise.alpha,
                 eltwise.beta, eltwise.scale, save_state, x_table, p_mask,
@@ -139,14 +139,14 @@ private:
     jit_generator *const h;
 
     const bool save_state_;
-    const Xbyak_aarch64::XReg x_table;
-    const Xbyak_aarch64::PReg p_mask;
-    const Xbyak_aarch64::PReg p_tmp0;
-    const Xbyak_aarch64::PReg p_all;
+    const Xbyak_loongarch::XReg x_table;
+    const Xbyak_loongarch::PReg p_mask;
+    const Xbyak_loongarch::PReg p_tmp0;
+    const Xbyak_loongarch::PReg p_all;
     const bool is_fwd_;
     const bool use_dst_;
 
-    Xbyak_aarch64::Label l_table;
+    Xbyak_loongarch::Label l_table;
 
     // if only the injector was inherited from jit_generator...
     enum {
@@ -296,7 +296,7 @@ private:
     }
 
     TRegS table_val(key_t key, TRegS zreg, size_t key_off_val_shift = 0) {
-        Xbyak_aarch64::XReg x_addr(h->X_DEFAULT_ADDR);
+        Xbyak_loongarch::XReg x_addr(h->X_DEFAULT_ADDR);
         auto off = table_off(key, key_off_val_shift);
 
         if (off) {
@@ -331,7 +331,7 @@ private:
     mapped_table_t entry_map_;
 };
 
-} // namespace aarch64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
