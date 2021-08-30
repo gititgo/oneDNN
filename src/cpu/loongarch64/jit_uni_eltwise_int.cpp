@@ -86,28 +86,28 @@ struct jit_uni_subkernel_int_t : public jit_uni_eltwise_int_kernel {
 
 #define GET_OFF(field) offsetof(jit_args_t, field)
         //mov(reg_from, ptr[param + GET_OFF(from)]);
-	ld_d(reg_from, param, GET_OFF(from));
+	    ld_d(reg_from, param, GET_OFF(from));
         //mov(reg_to, ptr[param + GET_OFF(to)]);
-	ld_d(reg_to, param, GET_OFF(to));
+	    ld_d(reg_to, param, GET_OFF(to));
         //mov(reg_work_amount, ptr[param + GET_OFF(work_amount)]);
-	ld_d(reg_work_amount, param, GET_OFF(work_amount));
+	    ld_d(reg_work_amount, param, GET_OFF(work_amount));
 #undef GET_OFF
 
         //mov(imm_addr64, float2int(desc().alpha));
-	mov_imm(imm_addr64, float2int(desc().alpha));
+        mov_imm(imm_addr64, float2int(desc().alpha));
         //uni_vmovq(xmm_alpha, imm_addr64);
         //uni_vbroadcastss(vmm_alpha, xmm_alpha);
-	xvreplgr2vr_w(vmm_alpha, imm_addr64);
+        xvreplgr2vr_w(vmm_alpha, imm_addr64);
 
         //mov(imm_addr64, float2int(desc().beta));
-	mov_imm(imm_addr64, float2int(desc().beta));
+	    mov_imm(imm_addr64, float2int(desc().beta));
         //uni_vmovq(xmm_beta, imm_addr64);
         //uni_vbroadcastss(vmm_beta, xmm_beta);
-	xvreplgr2vr_w(vmm_beta, imm_addr64);
+	    xvreplgr2vr_w(vmm_beta, imm_addr64);
 
         uni_vpxor(vmm_zero, vmm_zero, vmm_zero);
         //xor_(reg_int8, reg_int8);
-	xor_(reg_int8, reg_int8, reg_int8);
+	    xor_(reg_int8, reg_int8, reg_int8);
         //if (isa == avx512_common) {
         //    mov(reg_int8.cvt8(), 0x01);
         //    kmovw(k_mask_int8, reg_int8.cvt32());
@@ -118,22 +118,22 @@ struct jit_uni_subkernel_int_t : public jit_uni_eltwise_int_kernel {
         for (int id = 0; id < 2; id++) {
             L(loop_label[id]);
             //cmp(reg_work_amount, uf[id] * loop_dec[id] - 1);
-	    addi_d(X_TMP_0, zero, uf[id] * loop_dec[id] - 1);
+	        addi_d(X_TMP_0, zero, uf[id] * loop_dec[id] - 1);
             //jle(loop_label[id + 1], T_NEAR);
-	    bge(X_TMP_0, reg_work_amount, loop_label[id + 1]);
+	        bge(X_TMP_0, reg_work_amount, loop_label[id + 1]);
 
             compute_step(
                     loop_vectorize[id], uf[id], shift[id], desc().alg_kind);
 
             //add(reg_from, uf[id] * shift[id]);
-	    addi_d(reg_from, reg_from, uf[id] * shift[id]);
+	        addi_d(reg_from, reg_from, uf[id] * shift[id]);
             //add(reg_to, uf[id] * shift[id]);
-	    addi_d(reg_to, reg_to, uf[id] * shift[id]);
+	        addi_d(reg_to, reg_to, uf[id] * shift[id]);
 
             //sub(reg_work_amount, uf[id] * loop_dec[id]);
-	    addi_d(reg_work_amount, reg_work_amount, -1 * uf[id] * loop_dec[id]);
+	        addi_d(reg_work_amount, reg_work_amount, -1 * uf[id] * loop_dec[id]);
             //jmp(loop_label[id]);
-	    b(loop_label[id]);
+	        b(loop_label[id]);
         }
 
         L(loop_label[2]);
@@ -185,12 +185,12 @@ private:
         if (vectorize) {
             // load full Vmm size
             //uni_vmovups(vr_from, mem_from);
-	    uni_xvld(vr_from, mem_from, offset);
+	        uni_xvld(vr_from, mem_from, offset);
         } else {
             // load exactly one data item
             //movss(Xmm(vr_from.getIdx()), mem_from);
-	    uni_ld_w(X_TMP_0, mem_from, offset);
-	    xvreplgr2vr_w(vr_from, X_TMP_0);
+	        uni_ld_w(X_TMP_0, mem_from, offset);
+	        xvreplgr2vr_w(vr_from, X_TMP_0);
         }
     }
 
@@ -205,18 +205,18 @@ private:
             //    uni_vpmovsxbd(vr_from, mem_from);
             //else
             //    uni_vpmovzxbd(vr_from, mem_from);
-	    load_bytes_to_dword_extension(vr_from, mem_from, offset, is_signed, 8);
+	        load_bytes_to_dword_extension(vr_from, mem_from, offset, is_signed, 8);
         } else {
             // load exactly one data item
             //mov(reg_int8.cvt8(), mem_from);
             if (is_signed)
                 //movsx(reg_int8.cvt32(), reg_int8.cvt8());
-		uni_ld_b(reg_int8, mem_from, offset);
+		        uni_ld_b(reg_int8, mem_from, offset);
             else
                 //movzx(reg_int8.cvt32(), reg_int8.cvt8());
-		uni_ld_bu(reg_int8, mem_from, offset);
+		        uni_ld_bu(reg_int8, mem_from, offset);
             //uni_vmovq(Xmm(vr_from.getIdx()), reg_int8);
-	    xvreplgr2vr_d(vr_from, reg_int8);
+	        xvreplgr2vr_d(vr_from, reg_int8);
         }
     }
 
@@ -242,12 +242,12 @@ private:
         if (vectorize) {
             // store full Vmm size
             //uni_vmovups(mem_to, vr_to);
-	    uni_xvst(vr_to, mem_to, offset);
+	        uni_xvst(vr_to, mem_to, offset);
         } else {
             // store exactly one data item
             //movss(mem_to, Xmm(vr_to.getIdx()));
-	    xvpickve2gr_w(X_TMP_1, vr_to, 0);
-	    uni_st_w(X_TMP_1, mem_to, offset);
+	        xvpickve2gr_w(X_TMP_1, vr_to, 0);
+	        uni_st_w(X_TMP_1, mem_to, offset);
         }
     }
 
@@ -292,7 +292,7 @@ private:
         // 3. Store (mem <- vregs)
         for (size_t i = 0; i < uf; i++)
             //store(vectorize, ptr[reg_to + i * shift], vreg_to(i));
-	    store(vectorize, reg_to, vreg_to(i), i * shift);
+	        store(vectorize, reg_to, vreg_to(i), i * shift);
     }
 };
 
@@ -399,32 +399,44 @@ void jit_uni_subkernel_int_t<isa>::store_8bit(const bool vectorize,
 template <>
 void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         const XReg &mem_to, const Vmm &vr_to, bool is_signed, int32_t offset) {
-	/*
     if (vectorize) {
         // store full Vmm size
         // s32 -> s16 = {qw0, 0, qw1, 0}
-        vpackssdw(vr_to, vr_to, vmm_zero);
+        //vpackssdw(vr_to, vr_to, vmm_zero);
         // permute to restore order{qw0, 0, qw1, 0} -> {qw0, qw1, 0, 0}
-        vpermq(Ymm(vr_to.getIdx()), Ymm(vr_to.getIdx()), 0x58);
+        //vpermq(Ymm(vr_to.getIdx()), Ymm(vr_to.getIdx()), 0x58);
 
         // s16 -> s8/u8 : {16 x s16}{16 x 0} -> {32 x s8/u8}
+        //if (is_signed)
+        //    vpacksswb(vr_to, vr_to, vmm_zero);
+        //else
+        //    vpackuswb(vr_to, vr_to, vmm_zero);
+        //uni_vmovq(mem_to, Xmm(vr_to.getIdx()));
+        xvpickev_h(vr_to, vr_to, vr_to);
+        xvpickev_b(vr_to, vr_to, vr_to);
         if (is_signed)
-            vpacksswb(vr_to, vr_to, vmm_zero);
+            xvpickve2gr_d(X_TMP_1, vr_to, 0);
         else
-            vpackuswb(vr_to, vr_to, vmm_zero);
-        uni_vmovq(mem_to, Xmm(vr_to.getIdx()));
+            xvpickve2gr_du(X_TMP_1, vr_to, 0);
+        uni_st_d(X_TMP_1, mem_to, offset);
     } else {
         // store exactly one data item
         // s32 save as s8/u8
-        vpackssdw(vr_to, vr_to, vmm_zero);
+        //vpackssdw(vr_to, vr_to, vmm_zero);
+        //if (is_signed)
+        //    vpacksswb(vr_to, vr_to, vmm_zero);
+        //else
+        //    vpackuswb(vr_to, vr_to, vmm_zero);
+        //vmovd(reg_int8.cvt32(), Xmm(vr_to.getIdx()));
+        //mov(mem_to, reg_int8.cvt8());
+        xvpickev_h(vr_to, vr_to, vr_to);
+        xvpickev_b(vr_to, vr_to, vr_to);
         if (is_signed)
-            vpacksswb(vr_to, vr_to, vmm_zero);
+            xvpickve2gr_w(X_TMP_1, vr_to, 0);
         else
-            vpackuswb(vr_to, vr_to, vmm_zero);
-        vmovd(reg_int8.cvt32(), Xmm(vr_to.getIdx()));
-        mov(mem_to, reg_int8.cvt8());
+            xvpickve2gr_wu(X_TMP_1, vr_to, 0);
+        uni_st_b(X_TMP_1, mem_to, offset);
     }
-    */
 }
 
 //template <>
