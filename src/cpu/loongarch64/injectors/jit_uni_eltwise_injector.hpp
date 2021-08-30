@@ -37,24 +37,27 @@ namespace eltwise_injector {
 struct static_params_t {
 
     static_params_t(bool save_state = true,
-            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(0),
-            Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
-            Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
-            Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
+            //Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(0),
+            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(4),
+            //Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
+            Xbyak_loongarch::XVReg p_mask = Xbyak_loongarch::XVReg(29),
+            //Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
+            //Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
             bool is_fwd = true, bool use_dst = false)
         : save_state(save_state)
         , x_table(x_table)
         , p_mask(p_mask)
-        , p_tmp0(p_tmp0)
-        , p_all(p_all)
+        //, p_tmp0(p_tmp0)
+        //, p_all(p_all)
         , is_fwd(is_fwd)
         , use_dst(use_dst) {}
 
     bool save_state;
     Xbyak_loongarch::XReg x_table;
-    Xbyak_loongarch::PReg p_mask;
-    Xbyak_loongarch::PReg p_tmp0;
-    Xbyak_loongarch::PReg p_all;
+    //Xbyak_loongarch::PReg p_mask;
+    Xbyak_loongarch::XVReg p_mask;
+    //Xbyak_loongarch::PReg p_tmp0;
+    //Xbyak_loongarch::PReg p_all;
     bool is_fwd;
     bool use_dst;
 };
@@ -62,8 +65,9 @@ struct static_params_t {
 
 template <cpu_isa_t isa>
 struct jit_uni_eltwise_injector_f32 {
-    using TReg = typename cpu_isa_traits<isa>::TReg;
-    using TRegS = typename cpu_isa_traits<isa>::TRegS;
+    //using TReg = typename cpu_isa_traits<isa>::TReg;
+    //using Vmm = typename cpu_isa_traits<isa>::Vmm;
+    using Vmm = typename cpu_isa_traits<isa>::Vmm;
 
     // Arguments description:
     // host - jit generator which is filled with instructions
@@ -79,10 +83,11 @@ struct jit_uni_eltwise_injector_f32 {
     //   code. Depends on algorithm. See `_use_dst_for_bwd` algs definition.
     jit_uni_eltwise_injector_f32(jit_generator *host, alg_kind_t alg,
             float alpha, float beta, float scale, bool save_state = true,
-            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(0),
-            Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
-            Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
-            Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
+            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(4),
+            //Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
+            Xbyak_loongarch::XVReg p_mask = Xbyak_loongarch::XVReg(29),
+            //Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
+            //Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
             bool is_fwd = true, bool use_dst = false)
         : alg_(alg)
         , alpha_(alpha)
@@ -92,8 +97,8 @@ struct jit_uni_eltwise_injector_f32 {
         , save_state_(save_state)
         , x_table(x_table)
         , p_mask(p_mask)
-        , p_tmp0(p_tmp0)
-        , p_all(p_all)
+        //, p_tmp0(p_tmp0)
+        //, p_all(p_all)
         , is_fwd_(is_fwd)
         , use_dst_(use_dst)
 
@@ -115,20 +120,22 @@ struct jit_uni_eltwise_injector_f32 {
     jit_uni_eltwise_injector_f32(jit_generator *host,
             const post_ops_t::entry_t::eltwise_t &eltwise,
             bool save_state = true,
-            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(0),
-            Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
-            Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
-            Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
+            Xbyak_loongarch::XReg x_table = Xbyak_loongarch::XReg(4),
+            //Xbyak_loongarch::PReg p_mask = Xbyak_loongarch::PReg(1),
+            Xbyak_loongarch::XVReg p_mask = Xbyak_loongarch::XVReg(29),
+            //Xbyak_loongarch::PReg p_tmp0 = Xbyak_loongarch::PReg(4),
+            //Xbyak_loongarch::PReg p_all = Xbyak_loongarch::PReg(7),
             bool is_fwd = true, bool use_dst = false)
         : jit_uni_eltwise_injector_f32(host, eltwise.alg, eltwise.alpha,
                 eltwise.beta, eltwise.scale, save_state, x_table, p_mask,
-                p_tmp0, p_all, is_fwd, use_dst) {}
+                is_fwd, use_dst) {}
 
     void compute_vector_range(size_t start_idx, size_t end_idx);
     void compute_vector_range(const injector_utils::vmm_index_set_t &vmm_idxs);
     void compute_vector(size_t idx) { compute_vector_range(idx, idx + 1); }
     void prepare_table(bool gen_table = true);
-    void load_table_addr() { h->adr(x_table, l_table); }
+    //void load_table_addr() { h->adr(x_table, l_table); }
+    void load_table_addr() { h->pcaddi(x_table, l_table); }
 
 private:
     const alg_kind_t alg_;
@@ -140,9 +147,10 @@ private:
 
     const bool save_state_;
     const Xbyak_loongarch::XReg x_table;
-    const Xbyak_loongarch::PReg p_mask;
-    const Xbyak_loongarch::PReg p_tmp0;
-    const Xbyak_loongarch::PReg p_all;
+    //const Xbyak_loongarch::PReg p_mask;
+    const Xbyak_loongarch::XVReg p_mask;
+    //const Xbyak_loongarch::PReg p_tmp0;
+    //const Xbyak_loongarch::PReg p_all;
     const bool is_fwd_;
     const bool use_dst_;
 
@@ -173,13 +181,14 @@ private:
     injector_utils::vmm_index_set_iterator_t start_idx_tail;
 
     /* These vector register must be assigned proper index. */
-    TRegS vmm_mask {0}, vmm_aux0 {0}, vmm_aux1 {0}, vmm_aux2 {0}, vmm_aux3 {0},
+    Vmm vmm_mask {0}, vmm_aux0 {0}, vmm_aux1 {0}, vmm_aux2 {0}, vmm_aux3 {0},
             vmm_aux4 {0}, vmm_aux5 {0}, vmm_aux6 {0}, vmm_aux7 {0}, vmm_tmp {0};
     /* Default tempooral index. Chose a SVE register
      not to be same as jit_uni_eltwise.(cpp|hpp).
      This index is changed by assign_regs() in case of eltwise injection.
   */
-    TRegS z_tmp {31};
+    Vmm z_tmp {31};
+    Vmm v_tmp {30};
 
     size_t aux_vecs_count();
     size_t aux_gprs_count();
@@ -194,45 +203,45 @@ private:
     void assign_regs();
     void set_coef_to_regs();
     void compute_cmp_mask(
-            const TRegS &vmm_src, const TRegS &vmm_cmpare, int cmp_predicate);
-    void blend_with_mask(const TRegS &vmm_dst, const TRegS &src);
+            const Vmm &vmm_src, const Vmm &vmm_cmpare, int cmp_predicate);
+    void blend_with_mask(const Vmm &vmm_dst, const Vmm &src);
     void test_mask();
 
-    void exp_compute_vector_fwd(const TRegS &vmm_src);
-    void relu_compute_vector_fwd(const TRegS &vmm_src);
-    void relu_zero_ns_compute_vector_fwd(const TRegS &vmm_src);
-    void elu_compute_vector_fwd(const TRegS &vmm_src);
-    void tanh_compute_vector_fwd(const TRegS &vmm_src);
-    void square_compute_vector_fwd(const TRegS &vmm_src);
-    void abs_compute_vector_fwd(const TRegS &vmm_src);
-    void sqrt_compute_vector_fwd(const TRegS &vmm_src);
-    void linear_compute_vector_fwd(const TRegS &vmm_src);
-    void bounded_relu_compute_vector_fwd(const TRegS &vmm_src);
-    void soft_relu_compute_vector_fwd(const TRegS &vmm_src);
-    void logistic_compute_vector_fwd(const TRegS &vmm_src);
-    void gelu_tanh_compute_vector_fwd(const TRegS &vmm_src);
-    void swish_compute_vector_fwd(const TRegS &vmm_src);
-    void log_compute_vector_fwd(const TRegS &vmm_src);
-    void clip_compute_vector_fwd(const TRegS &vmm_src);
-    void gelu_erf_compute_vector_fwd(const TRegS &vmm_src);
-    void round_compute_vector_fwd(const TRegS &vmm_src);
+    void exp_compute_vector_fwd(const Vmm &vmm_src);
+    void relu_compute_vector_fwd(const Vmm &vmm_src);
+    void relu_zero_ns_compute_vector_fwd(const Vmm &vmm_src);
+    void elu_compute_vector_fwd(const Vmm &vmm_src);
+    void tanh_compute_vector_fwd(const Vmm &vmm_src);
+    void square_compute_vector_fwd(const Vmm &vmm_src);
+    void abs_compute_vector_fwd(const Vmm &vmm_src);
+    void sqrt_compute_vector_fwd(const Vmm &vmm_src);
+    void linear_compute_vector_fwd(const Vmm &vmm_src);
+    void bounded_relu_compute_vector_fwd(const Vmm &vmm_src);
+    void soft_relu_compute_vector_fwd(const Vmm &vmm_src);
+    void logistic_compute_vector_fwd(const Vmm &vmm_src);
+    void gelu_tanh_compute_vector_fwd(const Vmm &vmm_src);
+    void swish_compute_vector_fwd(const Vmm &vmm_src);
+    void log_compute_vector_fwd(const Vmm &vmm_src);
+    void clip_compute_vector_fwd(const Vmm &vmm_src);
+    void gelu_erf_compute_vector_fwd(const Vmm &vmm_src);
+    void round_compute_vector_fwd(const Vmm &vmm_src);
 
-    void exp_compute_vector_bwd(const TRegS &vmm_src);
-    void relu_compute_vector_bwd(const TRegS &vmm_src);
-    void elu_compute_vector_bwd(const TRegS &vmm_src);
-    void tanh_compute_vector_bwd(const TRegS &vmm_src);
-    void square_compute_vector_bwd(const TRegS &vmm_src);
-    void abs_compute_vector_bwd(const TRegS &vmm_src);
-    void sqrt_compute_vector_bwd(const TRegS &vmm_src);
-    void linear_compute_vector_bwd(const TRegS &vmm_src);
-    void bounded_relu_compute_vector_bwd(const TRegS &vmm_src);
-    void soft_relu_compute_vector_bwd(const TRegS &vmm_src);
-    void logistic_compute_vector_bwd(const TRegS &vmm_src);
-    void gelu_tanh_compute_vector_bwd(const TRegS &vmm_src);
-    void swish_compute_vector_bwd(const TRegS &vmm_src);
-    void log_compute_vector_bwd(const TRegS &vmm_src);
-    void clip_compute_vector_bwd(const TRegS &vmm_src);
-    void gelu_erf_compute_vector_bwd(const TRegS &vmm_src);
+    void exp_compute_vector_bwd(const Vmm &vmm_src);
+    void relu_compute_vector_bwd(const Vmm &vmm_src);
+    void elu_compute_vector_bwd(const Vmm &vmm_src);
+    void tanh_compute_vector_bwd(const Vmm &vmm_src);
+    void square_compute_vector_bwd(const Vmm &vmm_src);
+    void abs_compute_vector_bwd(const Vmm &vmm_src);
+    void sqrt_compute_vector_bwd(const Vmm &vmm_src);
+    void linear_compute_vector_bwd(const Vmm &vmm_src);
+    void bounded_relu_compute_vector_bwd(const Vmm &vmm_src);
+    void soft_relu_compute_vector_bwd(const Vmm &vmm_src);
+    void logistic_compute_vector_bwd(const Vmm &vmm_src);
+    void gelu_tanh_compute_vector_bwd(const Vmm &vmm_src);
+    void swish_compute_vector_bwd(const Vmm &vmm_src);
+    void log_compute_vector_bwd(const Vmm &vmm_src);
+    void clip_compute_vector_bwd(const Vmm &vmm_src);
+    void gelu_erf_compute_vector_bwd(const Vmm &vmm_src);
 
     enum key_t {
         scale = 0, // scale argument
@@ -295,7 +304,7 @@ private:
         return te.off + key_off_val_shift * scale;
     }
 
-    TRegS table_val(key_t key, TRegS zreg, size_t key_off_val_shift = 0) {
+    Vmm table_val(key_t key, Vmm zreg, size_t key_off_val_shift = 0) {
         Xbyak_loongarch::XReg x_addr(h->X_DEFAULT_ADDR);
         auto off = table_off(key, key_off_val_shift);
 
@@ -305,7 +314,8 @@ private:
             x_addr = x_table;
         }
 
-        h->ldr(TReg(zreg.getIdx()), ptr(x_addr));
+        //h->ldr(TReg(zreg.getIdx()), ptr(x_addr));
+        h->xvld(Vmm(zreg.getIdx()), x_addr, 0);
         return zreg;
     }
 
