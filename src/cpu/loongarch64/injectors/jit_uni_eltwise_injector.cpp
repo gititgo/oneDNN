@@ -398,6 +398,8 @@ template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::exp_compute_vector_fwd(
         const Vmm &vmm_src) {
 
+    /* This algorithm can not be used on LoongArch because of ARM:fexpa
+    
     //const auto &t0 = ZRegS(IDX(vmm_src));
     //const auto &t1 = ZRegS(IDX(vmm_aux1));
     //const auto &t2 = ZRegS(IDX(vmm_aux2));
@@ -430,6 +432,94 @@ void jit_uni_eltwise_injector_f32<isa>::exp_compute_vector_fwd(
     h->fmad(t0, p_all, t2, ZRegS(IDX(table_val(exp_coeff1, z_tmp))));
     h->fmad(t0, p_all, t2, ZRegS(IDX(table_val(one, z_tmp))));
     h->fmul(t0, t1, t0);
+*/
+
+    /* Use old algotithm */
+
+    // exp(x) =
+    // = exp(n * ln(2) + r) // divide x by ln(2) and get quot and rem
+    // = 2^n * exp(r) // simplify the exp(n*ln(2)) expression
+
+    // get mask of values lower than log(FLT_MIN) to zero them in the output
+    compute_cmp_mask(vmm_src, table_val(exp_ln_flt_min_f), _cmp_lt_os);
+
+    //h->mov(PRegB(IDX(p_tmp0)), h->P_ALL_ONE.b);
+    //h->mov(ZRegD(IDX(z_tmp)), ZRegD(IDX(table_val(exp_ln_flt_max_f))));
+    //h->fminnm(z_tmp, p_tmp0, vmm_src); //TODO
+    //h->fmin(z_tmp, p_tmp0, vmm_src);
+    //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(z_tmp)));
+    h->xvfmin_s(vmm_src, table_val(exp_ln_flt_max_f, z_tmp), vmm_src);
+
+    //h->mov(ZRegD(IDX(z_tmp)), ZRegD(IDX(table_val(exp_ln_flt_min_f))));
+    //h->fmaxnm(z_tmp, p_tmp0, vmm_src);
+    //h->fmax(z_tmp, p_tmp0, vmm_src);
+    //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(z_tmp)));
+    h->xvfmax_s(vmm_src, table_val(exp_ln_flt_min_f, z_tmp), vmm_src);
+
+    //h->mov(ZRegD(IDX(vmm_aux1)), ZRegD(IDX(vmm_src)));
+    h->xvbsll_v(vmm_aux1, vmm_src, 0);
+
+    // calculate exp(x)
+    // fx = x * log2ef + 0.5
+    //h->fmul(vmm_src, vmm_src, ZRegS(IDX(table_val(exp_log2ef))));
+    //h->fadd(vmm_src, vmm_src, ZRegS(IDX(table_val(half))));
+    h->xvfmadd_s(vmm_src, vmm_src, table_val(exp_log2ef, z_tmp), table_val(half, z_tmp2));
+
+    // tmp = floorf(fx)
+
+    //h->frintm(vmm_aux2, p_tmp0 / T_m, vmm_src);  //Round towards Minus Infinity
+    h->xvfrintrm_s(vmm_aux2, vmm_src);
+
+    // keep vmm_src = fx for further computations
+    //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(vmm_aux2)));
+    h->xvbsll_v(vmm_src, vmm_aux2, 0);
+
+    // x = x - fx * ln2
+    //h->fmls(vmm_aux1, p_tmp0 / T_m, vmm_aux2, ZRegS(IDX(table_val(ln2f))));
+    h->xvfnmsub_s(vmm_aux1, vmm_aux2, table_val(ln2f, z_tmp), vmm_aux1);
+
+    // We do not count 2^n here, because n can reach 128 and 2^128 is not
+    // representable by fp32, so to get around this problem, instead of computing
+    // 2^n * exp(r) will be counted 2*2^(n-1)*exp(r), because 2^127
+    // and 2 are numbers representable in fp32.
+
+    // compute 2^(n-1)
+    //h->fsub(vmm_src, vmm_src, ZRegS(IDX(table_val(one))));
+    h->xvfsub_s(vmm_src, vmm_src, table_val(one, z_tmp));
+    //h->frinti(vmm_aux2, p_tmp0 / T_m, vmm_src);  //rounding mode that is determined by the FPCR
+    h->xvfrintrne_s(vmm_aux2, vmm_src);  //FPCR default is RNE ?
+    //h->fcvtzs(vmm_aux2, p_tmp0 / T_m, vmm_aux2);
+    h->xvftintrz_w_s(vmm_aux2, vmm_aux2);
+    //h->add(vmm_aux2, vmm_aux2, ZRegS(IDX(table_val(exponent_bias))));
+    h->xvadd_w(vmm_aux2, vmm_aux2, table_val(exponent_bias, z_tmp));
+    //h->lsl(vmm_aux2, vmm_aux2, n_mantissa_bits); //Vmm(6) = 2^-fx
+    h->xvslli_w(vmm_aux2, vmm_aux2, n_mantissa_bits); //Vmm(6) = 2^-fx
+
+    // use vmm_src as tmp vmm_zero when applying mask
+    //h->eor(ZRegD(IDX(vmm_src)), ZRegD(IDX(vmm_src)), ZRegD(IDX(vmm_src)));
+    h->xvxor_v(vmm_src, vmm_src, vmm_src);
+    // set zeroes at those points which were < log(FLT_MIN)
+    blend_with_mask(vmm_aux2, vmm_src);
+
+    // compute polynomial
+    //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(table_val(exp_pol, 4))));
+    h->xvbsll_v(vmm_src, table_val(exp_pol, z_tmp, 4), 0);
+    //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(exp_pol, 3))));
+    h->xvfmadd_s(vmm_src, vmm_src, vmm_aux1, table_val(exp_pol, z_tmp, 3));
+    //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(exp_pol, 2))));
+    h->xvfmadd_s(vmm_src, vmm_src, vmm_aux1, table_val(exp_pol, z_tmp, 2));
+    //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(exp_pol, 1))));
+    h->xvfmadd_s(vmm_src, vmm_src, vmm_aux1, table_val(exp_pol, z_tmp, 1));
+    //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(exp_pol, 0))));
+    h->xvfmadd_s(vmm_src, vmm_src, vmm_aux1, table_val(exp_pol, z_tmp, 0));
+    //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(one))));
+    h->xvfmadd_s(vmm_src, vmm_src, vmm_aux1, table_val(one, z_tmp));
+
+    // y = y * 2^n
+    //h->fmul(vmm_src, vmm_src, vmm_aux2);
+    h->xvfmul_s(vmm_src, vmm_src, vmm_aux2);
+    //h->fmul(vmm_src, vmm_src, ZRegS(IDX(table_val(two))));
+    h->xvfmul_s(vmm_src, vmm_src, table_val(two, z_tmp));
 }
 
 template <cpu_isa_t isa>

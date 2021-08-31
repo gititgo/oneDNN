@@ -188,7 +188,7 @@ private:
      This index is changed by assign_regs() in case of eltwise injection.
   */
     Vmm z_tmp {31};
-    Vmm v_tmp {30};
+    Vmm z_tmp2 {30};
 
     size_t aux_vecs_count();
     size_t aux_gprs_count();
