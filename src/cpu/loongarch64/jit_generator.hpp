@@ -90,7 +90,7 @@ constexpr Xbyak_loongarch::Operand::Code abi_save_gpr_regs[] = {
         Xbyak_loongarch::Operand::s0,
         Xbyak_loongarch::Operand::s1,
         Xbyak_loongarch::Operand::s2,
-        //Xbyak_loongarch::Operand::s3,
+        Xbyak_loongarch::Operand::s3,
         Xbyak_loongarch::Operand::s4,
         Xbyak_loongarch::Operand::s5,
         Xbyak_loongarch::Operand::s6,
@@ -134,7 +134,7 @@ private:
     const size_t num_abi_save_fpr_regs
             = sizeof(abi_save_fpr_regs) / sizeof(abi_save_fpr_regs[0]);
 
-    const size_t preserved_stack_size = xreg_len * (1 + num_abi_save_gpr_regs)  //2->1
+    const size_t preserved_stack_size = xreg_len * (2 + num_abi_save_gpr_regs) //fp+ra
             + vreg_len_preserve * vreg_to_preserve;
 
     const size_t size_of_abi_save_regs = num_abi_save_gpr_regs * xreg_len
@@ -182,6 +182,7 @@ public:
     void preamble() {
         int i = 1;
 	addi_d(sp, sp, -1*preserved_stack_size);
+	st_d(ra, sp, preserved_stack_size-8*(i++));
 	st_d(fp, sp, preserved_stack_size-8*(i++));
 	add_d(fp, sp, zero);
 
@@ -197,7 +198,7 @@ public:
     }
 
     void postamble() {
-        int i = 4;
+        int i = 3;
         add_d(sp, fp, zero);
 
         for (size_t j = 0; j < num_abi_save_fpr_regs; ++j) {
@@ -207,7 +208,8 @@ public:
             ld_d(Xbyak_loongarch::XReg(abi_save_gpr_regs[k]), sp, preserved_stack_size-8*(i++));
         }
 
-        ld_d(fp, sp, preserved_stack_size-8);
+        ld_d(ra, sp, preserved_stack_size-8);
+        ld_d(fp, sp, preserved_stack_size-8*2);
         addi_d(sp, sp, preserved_stack_size);
 
         jirl(zero, ra, 0);
