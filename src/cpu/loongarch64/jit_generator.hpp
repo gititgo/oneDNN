@@ -90,7 +90,7 @@ constexpr Xbyak_loongarch::Operand::Code abi_save_gpr_regs[] = {
         Xbyak_loongarch::Operand::s0,
         Xbyak_loongarch::Operand::s1,
         Xbyak_loongarch::Operand::s2,
-        Xbyak_loongarch::Operand::s3,
+        //Xbyak_loongarch::Operand::s3,
         Xbyak_loongarch::Operand::s4,
         Xbyak_loongarch::Operand::s5,
         Xbyak_loongarch::Operand::s6,
