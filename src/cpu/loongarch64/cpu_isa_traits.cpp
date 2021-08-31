@@ -117,16 +117,16 @@ struct isa_info_t {
     // do not coincide.
     dnnl_cpu_isa_t convert_to_public_enum(void) const {
         switch (isa) {
-            case lsx: return static_cast<dnnl_cpu_isa_t>(dnnl_cpu_isa_lsx);
             case lasx: return static_cast<dnnl_cpu_isa_t>(dnnl_cpu_isa_lasx);
+            case lsx: return static_cast<dnnl_cpu_isa_t>(dnnl_cpu_isa_lsx);
             default: return dnnl_cpu_isa_all;
         }
     }
 
     const char *get_name() const {
         switch (isa) {
-            case lsx: return "LOONGARCH LSX";
             case lasx: return "LOONGARCH LASX";
+            case lsx: return "LOONGARCH LSX";
             default: return "Intel 64";
         }
     }
@@ -138,8 +138,8 @@ static const isa_info_t get_isa_info_t(void) {
     // descending order due to mayiuse check
 #define HANDLE_CASE(cpu_isa) \
     if (mayiuse(cpu_isa)) return isa_info_t(cpu_isa);
-    HANDLE_CASE(lsx);
     HANDLE_CASE(lasx);
+    HANDLE_CASE(lsx);
 #undef HANDLE_CASE
     return isa_info_t(isa_any);
 }
