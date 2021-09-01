@@ -503,7 +503,7 @@ void jit_uni_eltwise_injector_f32<isa>::exp_compute_vector_fwd(
 
     // compute polynomial
     //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(table_val(exp_pol, 4))));
-    h->xvbsll_v(vmm_src, table_val(exp_pol, z_tmp, 4), 0);
+    table_val(exp_pol, vmm_src, 4);
     //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(exp_pol, 3))));
     h->xvfmadd_s(vmm_src, vmm_src, vmm_aux1, table_val(exp_pol, z_tmp, 3));
     //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(exp_pol, 2))));
@@ -738,31 +738,40 @@ void jit_uni_eltwise_injector_f32<isa>::soft_relu_compute_vector_fwd(
     // = n * ln(2) + ln(2^-n + exp(r)) // take the 2^n factor out of the ln
 
     // keep src for further computations
-    h->mov(ZRegD(IDX(vmm_aux2)), ZRegD(IDX(vmm_src)));
+    //h->mov(ZRegD(IDX(vmm_aux2)), ZRegD(IDX(vmm_src)));
+    h->xvbsll_v(vmm_aux2, vmm_src, 0);
 
-    h->fminnm(ZRegS(IDX(table_val(exp_ln_flt_max_f, z_tmp))), p_all, vmm_src);
-    h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(z_tmp)));
-    h->fmaxnm(ZRegS(IDX(table_val(exp_ln_flt_min_f, z_tmp))), p_all, vmm_src);
+    //h->fminnm(ZRegS(IDX(table_val(exp_ln_flt_max_f, z_tmp))), p_all, vmm_src);
+    //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(z_tmp)));
+    h->xvfmin_s(vmm_src, table_val(exp_ln_flt_max_f, z_tmp), vmm_src);
+    //h->fmaxnm(ZRegS(IDX(table_val(exp_ln_flt_min_f, z_tmp))), p_all, vmm_src);
+    //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(z_tmp)));
+    h->xvfmax_s(vmm_src, table_val(exp_ln_flt_min_f, z_tmp), vmm_src);
 
-    h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(z_tmp)));
-    h->mov(ZRegD(IDX(vmm_aux1)), ZRegD(IDX(vmm_src)));
+    //h->mov(ZRegD(IDX(vmm_aux1)), ZRegD(IDX(vmm_src))); 
+    h->xvbsll_v(vmm_aux1, vmm_src, 0);
 
     // calculate exp(x)
     // fx = x * log2ef + 0.5
-    h->fmul(vmm_src, vmm_src, ZRegS(IDX(table_val(exp_log2ef, z_tmp))));
-    h->fadd(vmm_src, p_all / T_m, 0.5f);
+    //h->fmul(vmm_src, vmm_src, ZRegS(IDX(table_val(exp_log2ef, z_tmp))));
+    //h->fadd(vmm_src, p_all / T_m, 0.5f);
+    h->xvfmadd_s(vmm_src, vmm_src, table_val(exp_log2ef, z_tmp), table_val(half, z_tmp2));
 
     // tmp = floorf(fx)
-    h->frintm(vmm_aux0, p_all / T_m, vmm_src);
+    //h->frintm(vmm_aux0, p_all / T_m, vmm_src);
+    h->xvfrintrm_s(vmm_aux0, vmm_src);
 
     // keep vmm_src = fx for further computations
-    h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(vmm_aux0)));
+    //h->mov(ZRegD(IDX(vmm_src)), ZRegD(IDX(vmm_aux0)));
+    h->xvbsll_v(vmm_src, vmm_aux0, 0);
 
     // x = x - fx * ln2
-    h->fmul(vmm_aux0, vmm_aux0, ZRegS(IDX(table_val(ln2f, z_tmp))));
-    h->fsub(vmm_aux1, vmm_aux1, vmm_aux0);
+    //h->fmul(vmm_aux0, vmm_aux0, ZRegS(IDX(table_val(ln2f, z_tmp))));
+    //h->fsub(vmm_aux1, vmm_aux1, vmm_aux0);
+    h->xvfmul_s(vmm_aux0, vmm_aux0, table_val(ln2f, z_tmp));
+    h->xvfsub_s(vmm_aux1, vmm_aux1, vmm_aux0);
     // compute exponent polynomial
-    h->mov(ZRegD(IDX(vmm_aux3)), ZRegD(IDX(table_val(exp_pol, z_tmp, 4))));
+    /*h->mov(ZRegD(IDX(vmm_aux3)), ZRegD(IDX(table_val(exp_pol, z_tmp, 4))));
     h->fmad(vmm_aux3, p_all / T_m, vmm_aux1,
             ZRegS(IDX(table_val(exp_pol, z_tmp, 3))));
     h->fmad(vmm_aux3, p_all / T_m, vmm_aux1,
@@ -772,6 +781,14 @@ void jit_uni_eltwise_injector_f32<isa>::soft_relu_compute_vector_fwd(
     h->fmad(vmm_aux3, p_all / T_m, vmm_aux1,
             ZRegS(IDX(table_val(exp_pol, z_tmp, 0))));
     h->fmad(vmm_aux3, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(one, z_tmp))));
+    */
+
+    table_val(exp_pol, vmm_aux3, 4);
+    h->xvfmadd_s(vmm_aux3, vmm_aux3, vmm_aux1, table_val(exp_pol, z_tmp, 3));
+    h->xvfmadd_s(vmm_aux3, vmm_aux3, vmm_aux1, table_val(exp_pol, z_tmp, 2));
+    h->xvfmadd_s(vmm_aux3, vmm_aux3, vmm_aux1, table_val(exp_pol, z_tmp, 1));
+    h->xvfmadd_s(vmm_aux3, vmm_aux3, vmm_aux1, table_val(exp_pol, z_tmp, 0));
+    h->xvfmadd_s(vmm_aux3, vmm_aux3, vmm_aux1, table_val(one, z_tmp));
 
     // We do not count 2^-n here, because n can reach 128 and 2^(-128) is not
     // representable by fp32, so to get around this problem, instead of computing
@@ -780,29 +797,41 @@ void jit_uni_eltwise_injector_f32<isa>::soft_relu_compute_vector_fwd(
 
     // compute 2^-(n-1)
     // vmm_src now represents n-1
-    h->fsub(vmm_src, p_all / T_m, 1.f);
-    h->fneg(vmm_aux1, p_all / T_m, vmm_src);
+    //h->fsub(vmm_src, p_all / T_m, 1.f);
+    h->xvfsub_s(vmm_src, vmm_src, table_val(one, z_tmp));
+    //h->fneg(vmm_aux1, p_all / T_m, vmm_src);
+    h->xvfmul_s(vmm_aux1, vmm_src, table_val(minus_one, z_tmp)); //src*(-1)
 
-    h->frinti(vmm_aux1, p_all / T_m, vmm_aux1);
-    h->fcvtzs(vmm_aux1, p_all / T_m, vmm_aux1);
+    //h->frinti(vmm_aux1, p_all / T_m, vmm_aux1);
+    //h->fcvtzs(vmm_aux1, p_all / T_m, vmm_aux1);
+    h->xvfrintrne_s(vmm_aux1, vmm_aux1);
+    h->xvftintrz_w_s(vmm_aux1, vmm_aux1);
     // restore vmm_src to n
-    h->fadd(vmm_src, p_all / T_m, 1.f);
+    //h->fadd(vmm_src, p_all / T_m, 1.f);
+    h->xvfadd_s(vmm_src, vmm_src, table_val(one, z_tmp));
 
-    h->add(vmm_aux1, vmm_aux1, ZRegS(IDX(table_val(exponent_bias, z_tmp))));
-    h->lsl(vmm_aux1, vmm_aux1, n_mantissa_bits);
+    //h->add(vmm_aux1, vmm_aux1, ZRegS(IDX(table_val(exponent_bias, z_tmp))));
+    h->xvadd_w(vmm_aux1, vmm_aux1, table_val(exponent_bias, z_tmp));
+    //h->lsl(vmm_aux1, vmm_aux1, n_mantissa_bits);
+    h->xvslli_w(vmm_aux1, vmm_aux1, n_mantissa_bits);
     // calculate ln(1 + y)
-    h->fmul(vmm_aux3, p_all / T_m, 2.f); // 2*exp(r)
-    h->fadd(vmm_aux3, vmm_aux3,
-            vmm_aux1); // 2^-(n-1) + 2*exp(r)
-    h->fmul(vmm_aux3, p_all / T_m,
-            ZRegS(IDX(table_val(half, z_tmp)))); // (2^-(n-1) + 2*exp(r))/2
+    //h->fmul(vmm_aux3, p_all / T_m, 2.f); // 2*exp(r)
+    //h->fadd(vmm_aux3, vmm_aux3,
+      //      vmm_aux1); // 2^-(n-1) + 2*exp(r)
+    h->xvfmadd_s(vmm_aux3, vmm_aux3, table_val(two, z_tmp), vmm_aux1); // 2*exp(r)
+    //h->fmul(vmm_aux3, p_all / T_m,
+      //      ZRegS(IDX(table_val(half, z_tmp)))); // (2^-(n-1) + 2*exp(r))/2
+    h->xvfmul_s(vmm_aux3, vmm_aux3, table_val(half, z_tmp)); // (2^-(n-1) + 2*exp(r))/2
 
     // frexp()
-    h->lsr(vmm_src, vmm_aux3, n_mantissa_bits);
-    h->scvtf(vmm_src, p_all / T_m, vmm_src);
+    //h->lsr(vmm_src, vmm_aux3, n_mantissa_bits);
+    h->xvsrli_w(vmm_src, vmm_aux3, n_mantissa_bits);
+    //h->scvtf(vmm_src, p_all / T_m, vmm_src);
+    h->xvffint_s_w(vmm_src, vmm_src);
     // got n. where n is x = 2^n * y. y = 0.5 .. 1
-    h->fsub(vmm_src, vmm_src,
-            ZRegS(IDX(table_val(soft_relu_one_twenty_six, z_tmp))));
+    //h->fsub(vmm_src, vmm_src,
+      //      ZRegS(IDX(table_val(soft_relu_one_twenty_six, z_tmp))));
+    h->xvfsub_s(vmm_src, vmm_src, table_val(soft_relu_one_twenty_six, z_tmp));
 
     // and with mask (to get 0.5 * mantissa)
     h->and_(ZRegD(IDX(vmm_aux3)), ZRegD(IDX(vmm_aux3)),
