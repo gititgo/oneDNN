@@ -337,22 +337,22 @@ void jit_uni_eltwise_injector_f32<isa>::compute_cmp_mask(
         case EQ_OQ:
             //h->fcmeq(
               //      PRegS(IDX(p_mask)), p_tmp0 / T_z, vmm_src, compare_operand);
-            h->vfcmp_ceq_s(p_mask, vmm_src, compare_operand);
+            h->xvfcmp_ceq_s(p_mask, vmm_src, compare_operand);
             break;
         case LT_OS:
-            h->vfcmp_clt_s(p_mask, vmm_src, compare_operand);
+            h->xvfcmp_clt_s(p_mask, vmm_src, compare_operand);
             break;
         case LE_OS:
-            h->vfcmp_cle_s(p_mask, vmm_src, compare_operand);
+            h->xvfcmp_cle_s(p_mask, vmm_src, compare_operand);
             break;
         case NEQ_UQ:
-            h->vfcmp_cne_s(p_mask, vmm_src, compare_operand);
+            h->xvfcmp_cne_s(p_mask, vmm_src, compare_operand);
             break;
         case NLT_US:
-            h->vfcmp_cle_s(p_mask, compare_operand, vmm_src);
+            h->xvfcmp_cle_s(p_mask, compare_operand, vmm_src);
             break;
         case NLE_US:
-            h->vfcmp_clt_s(p_mask, compare_operand, vmm_src);
+            h->xvfcmp_clt_s(p_mask, compare_operand, vmm_src);
             break;
         case EQ_UQ:
             break;
@@ -487,7 +487,7 @@ void jit_uni_eltwise_injector_f32<isa>::exp_compute_vector_fwd(
     //h->fsub(vmm_src, vmm_src, ZRegS(IDX(table_val(one))));
     h->xvfsub_s(vmm_src, vmm_src, table_val(one, z_tmp));
     //h->frinti(vmm_aux2, p_tmp0 / T_m, vmm_src);  //rounding mode that is determined by the FPCR
-    h->xvfrintrne_s(vmm_aux2, vmm_src);  //FPCR default is RNE ?
+    h->xvfrintrne_s(vmm_aux2, vmm_src);  //TODO: FPCR default is RNE ?
     //h->fcvtzs(vmm_aux2, p_tmp0 / T_m, vmm_aux2);
     h->xvftintrz_w_s(vmm_aux2, vmm_aux2);
     //h->add(vmm_aux2, vmm_aux2, ZRegS(IDX(table_val(exponent_bias))));
@@ -527,36 +527,46 @@ void jit_uni_eltwise_injector_f32<isa>::relu_compute_vector_fwd(
         const Vmm &vmm_src) {
     /* Negative values are multiplied by alpha.
      Positive values are not modified. */
-    h->mov(ZRegD(vmm_aux0.getIdx()), ZRegD(vmm_src.getIdx()));
-    h->fminnm(vmm_src, p_all, 0.f);
-    h->fmaxnm(vmm_aux0, p_all, 0.f);
+    //h->mov(ZRegD(vmm_aux0.getIdx()), ZRegD(vmm_src.getIdx()));
+    h->xvbsll_v(vmm_aux0, vmm_src, 0);
+    //h->fminnm(vmm_src, p_all, 0.f);
+    //h->fmaxnm(vmm_aux0, p_all, 0.f);
+    h->xvfmin_s(vmm_src, vmm_src, table_val(zero, z_tmp2));
+    h->xvfmax_s(vmm_aux0, vmm_aux0, table_val(zero, z_tmp2));
     /* alpha is set to z_tmp in set_coef_to_regs(). */
-    h->fmul(vmm_src, vmm_src, z_tmp);
-    h->fadd(vmm_src, vmm_src, vmm_aux0);
+    //h->fmul(vmm_src, vmm_src, z_tmp);
+    //h->fadd(vmm_src, vmm_src, vmm_aux0);
+    h->xvfmadd_s(vmm_src, vmm_src, z_tmp, vmm_aux0);
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::relu_zero_ns_compute_vector_fwd(
         const Vmm &vmm_src) {
-    h->fmaxnm(vmm_src, p_all, 0.f);
+    //h->fmaxnm(vmm_src, p_all, 0.f);
+    h->xvfmax_s(vmm_src, vmm_src, table_val(zero, z_tmp2));
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::elu_compute_vector_fwd(
         const Vmm &vmm_src) {
     // IMPORTANT: we use vmm_aux3 for the mask as exp_compute does not use it.
-    h->mov(ZRegD(vmm_aux3.getIdx()), ZRegD(vmm_src.getIdx()));
+    //h->mov(ZRegD(vmm_aux3.getIdx()), ZRegD(vmm_src.getIdx()));
+    h->xvbsll_v(vmm_aux3, vmm_src, 0);
 
     // compute exponent
     exp_compute_vector_fwd(vmm_src);
 
     // alpha * (exp(x) - 1)
-    h->fsub(vmm_src, p_all / T_m, 1.f);
-    h->fmul(vmm_src, vmm_src, vmm_aux4);
+    //h->fsub(vmm_src, p_all / T_m, 1.f);
+    h->xvfsub_s(vmm_src, vmm_src, table_val(one, z_tmp2));
+    //h->fmul(vmm_src, vmm_src, vmm_aux4);
+    h->xvfmul_s(vmm_src, vmm_src, vmm_aux4);
 
     // combine with mask
-    h->fcmgt(p_mask.s, p_all / T_z, vmm_aux3, 0.f);
-    h->mov(vmm_src, p_mask / T_m, vmm_aux3);
+    //h->fcmgt(p_mask.s, p_all / T_z, vmm_aux3, 0.f);
+    //h->mov(vmm_src, p_mask / T_m, vmm_aux3);
+    h->xvfcmp_lt_s(p_mask, table_val(zero, z_tmp2), vmm_aux3);
+    h->xvbitsel_v(vmm_src, vmm_src, vmm_aux3, p_mask);
 }
 
 template <cpu_isa_t isa>
@@ -565,118 +575,155 @@ void jit_uni_eltwise_injector_f32<isa>::tanh_compute_vector_fwd(
     // tanh(x) = x(1 + (-1/3)x^2) for |x| < tanh_range
     // tanh(x) = 1 - 2/(1 + exp(2 x)) for otherwise
 
-    const auto &t0 = ZRegS(IDX(vmm_src));
-    const auto &t1 = ZRegS(IDX(vmm_aux1));
-    const auto &t2 = ZRegS(IDX(vmm_aux2));
-    const auto &t3 = ZRegS(IDX(vmm_aux3));
-    const auto &oneS = ZRegS(IDX(vmm_aux4));
-    const auto &mask = PReg(6); // avoid pred regs used in *conv_kernel*
+    const auto &t0 = vmm_src;
+    const auto &t1 = vmm_aux1;
+    const auto &t2 = vmm_aux2;
+    const auto &t3 = vmm_aux3;
+    const auto &oneS = vmm_aux4;
+    //const auto &mask = PReg(6); // avoid pred regs used in *conv_kernel*
+    const auto &mask = z_tmp2; // avoid pred regs used in *conv_kernel*
 
-    h->fcpy(oneS, p_all, 1);
+    //h->fcpy(oneS, p_all, 1);
+    table_val(tanh_range, oneS);
     // make mask for small x
-    h->mov(t3, p_all, t0);
-    h->fabs(t1, p_all, t0);
-    h->cmplt(mask.s, p_all, t1, ZRegS(IDX(table_val(tanh_range, z_tmp))));
+    //h->mov(t3, p_all, t0);
+    h->xvbsll_v(t3, t0, 0);
+    //h->fabs(t1, p_all, t0);
+    h->xvand_v(t1, t0, table_val(positive_mask, z_tmp));
+    //h->cmplt(mask.s, p_all, t1, ZRegS(IDX(table_val(tanh_range, z_tmp))));
+    h->xvfcmp_clt_s(mask, t1, table_val(tanh_range, z_tmp));
 
     // 2x
-    h->fadd(t0, t0, t0);
+    //h->fadd(t0, t0, t0);
+    h->xvfadd_s(t0, t0, t0);
     // exp(2x)
     exp_compute_vector_fwd(t0);
     // 1+exp(2x)
-    h->fadd(t0, t0, oneS);
+    //h->fadd(t0, t0, oneS);
+    h->xvfadd_s(t0, t0, oneS);
     // 1/(1+exp(2x))
     // 1st aprox ; a = 1/x + e
-    h->frecpe(t1, t0);
+    //h->frecpe(t1, t0);
+    h->xvfrecip_s(t1, t0);
+
+    /* NO WAY for frecps
     // 2nd aprox ; a' = (2 - ax)a = 1/x - e^2 x
     h->frecps(t2, t0, t1);
     h->fmul(t2, t2, t1);
     // 3rd aprox ; a'' = (2 - a'x)a'
     h->frecps(t0, t0, t2);
     h->fmul(t0, t0, t2);
+    */
 
+    /*calculate directly*/
     // 2/(1+exp(2x))
-    h->fadd(t0, t0, t0);
+    //h->fadd(t0, t0, t0);
+    h->xvfadd_s(t0, t1, t1);
     // 1-2/(1+exp(2x))
-    h->fsub(t0, oneS, t0);
+    //h->fsub(t0, oneS, t0);
+    h->xvfsub_s(t0, oneS, t0);
 
     // tanh(x) = x(1 - x^2/3) for |x| < tanh_range
-    h->fmul(t1, t3, t3);
-    h->fmad(t1, p_all, ZRegS(IDX(table_val(tanh_m1d3, z_tmp))), oneS);
-    h->fmul(t1, p_all, t3);
+    //h->fmul(t1, t3, t3);
+    h->xvfmul_s(t1, t3, t3);
+    //h->fmad(t1, p_all, ZRegS(IDX(table_val(tanh_m1d3, z_tmp))), oneS);
+    h->xvfmadd_s(t1, t1, table_val(tanh_m1d3, z_tmp), oneS);
+    //h->fmul(t1, p_all, t3);
+    h->xvfmul_s(t1, t1, t3);
     // select the correct value according to mask
-    h->mov(t0, mask, t1);
+    //h->mov(t0, mask, t1);
+    h->xvbitsel_v(t0, t0, t1, mask);
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::gelu_tanh_compute_vector_fwd(
         const Vmm &vmm_src) {
-    h->mov(ZRegD(IDX(vmm_aux0)), ZRegD(IDX(vmm_src)));
+    //h->mov(ZRegD(IDX(vmm_aux0)), ZRegD(IDX(vmm_src)));
+    h->xvbsll_v(vmm_aux0, vmm_src, 0);
 
     // compute G(x) = sqrt_root_two_over_pi * x * (1 + fitting_const * x * x)
-    h->fmul(vmm_src, vmm_src, vmm_src);
-    h->mov(ZRegD(IDX(vmm_aux1)),
-            ZRegD(IDX(table_val(gelu_tanh_fitting_const, z_tmp))));
-    h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(one, z_tmp))));
-    h->fmul(vmm_src, vmm_src, vmm_aux0);
-    h->fmul(vmm_src, vmm_src,
-            ZRegS(IDX(table_val(gelu_tanh_sqrt_two_over_pi, z_tmp))));
+    //h->fmul(vmm_src, vmm_src, vmm_src);
+    h->xvfmul_s(vmm_src, vmm_src, vmm_src);
+    //h->mov(ZRegD(IDX(vmm_aux1)),
+      //      ZRegD(IDX(table_val(gelu_tanh_fitting_const, z_tmp))));
+    table_val(gelu_tanh_fitting_const, vmm_aux1);
+    //h->fmad(vmm_src, p_all / T_m, vmm_aux1, ZRegS(IDX(table_val(one, z_tmp))));
+    h->xvfmadd_s(vmm_src, vmm_src, vmm_aux1, table_val(one, z_tmp));
+    //h->fmul(vmm_src, vmm_src, vmm_aux0);
+    h->xvfmul_s(vmm_src, vmm_src, vmm_aux0);
+    //h->fmul(vmm_src, vmm_src,
+      //      ZRegS(IDX(table_val(gelu_tanh_sqrt_two_over_pi, z_tmp))));
+    h->xvfmul_s(vmm_src, vmm_src, table_val(gelu_tanh_sqrt_two_over_pi, z_tmp));
 
     // save x on stack as tanh uses vmm_aux0
     h->sub_imm(h->X_SP, h->X_SP, vlen, h->X_TMP_0);
 
     h->add_imm(h->X_TMP_0, h->X_SP, 0, h->X_TMP_1);
-    h->str(ZReg(IDX(vmm_aux0)), ptr(h->X_TMP_0));
+    //h->str(ZReg(IDX(vmm_aux0)), ptr(h->X_TMP_0));
+    h->xvst(vmm_aux0, h->X_TMP_0, 0);
 
     // compute tanh(G(x))
     tanh_compute_vector_fwd(vmm_src);
 
     h->add_imm(h->X_TMP_0, h->X_SP, 0, h->X_TMP_1);
-    h->ldr(ZReg(IDX(vmm_aux0)), ptr(h->X_TMP_0));
+    //h->ldr(ZReg(IDX(vmm_aux0)), ptr(h->X_TMP_0));
+    h->xvld(vmm_aux0, h->X_TMP_0, 0);
     h->add_imm(h->X_SP, h->X_SP, vlen, h->X_TMP_0);
 
     // compute 0.5 * x * (1 + tanh(G(x)))
-    h->fadd(vmm_src, p_all / T_m, 1.f);
-    h->fmul(vmm_src, p_all / T_m, 0.5f);
-    h->fmul(vmm_src, vmm_src, vmm_aux0);
+    //h->fadd(vmm_src, p_all / T_m, 1.f);
+    //h->fmul(vmm_src, p_all / T_m, 0.5f);
+    table_val(half, z_tmp);
+    h->xvfmadd(vmm_src, vmm_src, z_tmp, z_tmp);
+    //h->fmul(vmm_src, vmm_src, vmm_aux0);
+    h->xvfmul_s(vmm_src, vmm_src, vmm_aux0);
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::square_compute_vector_fwd(
         const Vmm &vmm_src) {
-    h->fmul(vmm_src, vmm_src, vmm_src);
+    //h->fmul(vmm_src, vmm_src, vmm_src);
+    h->xvfmul_s(vmm_src, vmm_src, vmm_src);
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::abs_compute_vector_fwd(
         const Vmm &vmm_src) {
-    h->fabs(vmm_src, p_all / T_m, vmm_src);
+    //h->fabs(vmm_src, p_all / T_m, vmm_src);
+    h->xvand_v(vmm_src, vmm_src, table_val(positive_mask, z_tmp2));
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::sqrt_compute_vector_fwd(
         const Vmm &vmm_src) {
-    h->fsqrt(vmm_src, p_all / T_m, vmm_src);
+    //h->fsqrt(vmm_src, p_all / T_m, vmm_src);
+    h->xvfsqrt_s(vmm_src, vmm_src);
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::linear_compute_vector_fwd(
         const Vmm &vmm_src) {
     // compute x = alpha * x + beta;
-    h->fmad(vmm_src, p_all / T_m, z_tmp, vmm_aux0);
+    //h->fmad(vmm_src, p_all / T_m, z_tmp, vmm_aux0);
+    h->xvfmadd_s(vmm_src, vmm_src, z_tmp, vmm_aux0);
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::bounded_relu_compute_vector_fwd(
         const Vmm &vmm_src) {
-    h->fmaxnm(vmm_src, p_all, 0.f);
-    h->fminnm(vmm_src, p_all, z_tmp);
+    //h->fmaxnm(vmm_src, p_all, 0.f);
+    h->xvfmax_s(vmm_src, vmm_src, table_val(zero, z_tmp2));
+    //h->fminnm(vmm_src, p_all, z_tmp);
+    h->xvfmin_s(vmm_src, vmm_src, z_tmp);
 }
 
 template <cpu_isa_t isa>
 void jit_uni_eltwise_injector_f32<isa>::clip_compute_vector_fwd(
         const Vmm &vmm_src) {
-    h->fmaxnm(vmm_src, p_all, z_tmp);
-    h->fminnm(vmm_src, p_all, vmm_aux0);
+    //h->fmaxnm(vmm_src, p_all, z_tmp);
+    //h->fminnm(vmm_src, p_all, vmm_aux0);
+    h->xvfmax_s(vmm_src, vmm_src, z_tmp);
+    h->xvfmin_s(vmm_src, vmm_src, vmm_aux0);
 }
 
 template <cpu_isa_t isa>
