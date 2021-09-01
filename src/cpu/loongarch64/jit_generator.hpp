@@ -306,7 +306,7 @@ public:
 
     void uni_ll_d(const Xbyak_loongarch::XReg &rd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
-        if (simm > IMM14_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+        if (simm > IMM14_MAX_VALUE || simm < IMM14_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             ll_d(rd, X_TMP_2, 0);
             return;
@@ -326,7 +326,7 @@ public:
 
     void uni_ldptr_d(const Xbyak_loongarch::XReg &rd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
-        if (simm > IMM14_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+        if (simm > IMM14_MAX_VALUE || simm < IMM14_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             ldptr_d(rd, X_TMP_2, 0);
             return;
