@@ -456,8 +456,6 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
             xvreplgr2vr_w(vmm_tmp, X_TMP_1);
             xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
         }
-        xvpickev_h(vmm_tmp1, vmm_tmp1, vmm_tmp1);
-        xvpickev_b(vmm_tmp1, vmm_tmp1, vmm_tmp1);
         xvpickve2gr_wu(X_TMP_1, vmm_tmp1, 0);
         uni_st_b(X_TMP_1, mem_to, offset);
     }

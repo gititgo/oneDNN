@@ -181,19 +181,19 @@ public:
 
     void preamble() {
         int i = 1;
-	addi_d(sp, sp, -1*preserved_stack_size);
-	st_d(ra, sp, preserved_stack_size-8*(i++));
-	st_d(fp, sp, preserved_stack_size-8*(i++));
-	add_d(fp, sp, zero);
+        addi_d(sp, sp, -1*preserved_stack_size);
+        st_d(ra, sp, preserved_stack_size-8*(i++));
+        st_d(fp, sp, preserved_stack_size-8*(i++));
+        add_d(fp, sp, zero);
 
         for (size_t j = 0; j < num_abi_save_fpr_regs; ++j) {
             fst_d(Xbyak_loongarch::XReg(abi_save_fpr_regs[j]), sp, preserved_stack_size-8*(i++));
         }
         for (size_t k = 0; k < num_abi_save_gpr_regs; ++k) {
             st_d(Xbyak_loongarch::XReg(abi_save_gpr_regs[k]), sp, preserved_stack_size-8*(i++));
-	}
+        }
 
-	add_d(X_SP, sp, zero);
+        add_d(X_SP, sp, zero);
         sub_imm(X_TRANSLATOR_STACK, X_SP, translator_stack_offset, X_TMP_0);
     }
 
@@ -203,8 +203,8 @@ public:
 
         for (size_t j = 0; j < num_abi_save_fpr_regs; ++j) {
             fld_d(Xbyak_loongarch::XReg(abi_save_fpr_regs[j]), sp, preserved_stack_size-8*(i++));
-	}
-	for (size_t k = 0; k < num_abi_save_gpr_regs; ++k) {
+        }
+        for (size_t k = 0; k < num_abi_save_gpr_regs; ++k) {
             ld_d(Xbyak_loongarch::XReg(abi_save_gpr_regs[k]), sp, preserved_stack_size-8*(i++));
         }
 
@@ -230,7 +230,7 @@ public:
             mov_imm(X_TMP_2, simm);
 	        ldx_b(rd, rj, X_TMP_2);
 	        return;
-	    }
+        }
         ld_b(rd, rj, simm);
     }
 
@@ -498,17 +498,17 @@ public:
         if (odt == u8) {
             if (is_valid_isa(lasx))
                 //vmaxps(vmm, vmm, vmm_lbound);
-		        xvfmax_s(vmm, vmm, vmm_lbound);
+                xvfmax_s(vmm, vmm, vmm_lbound);
             else
                 //maxps(vmm, vmm_lbound);
-		        xvfmax_s(vmm, vmm, vmm_lbound);
+                xvfmax_s(vmm, vmm, vmm_lbound);
         }
         if (is_valid_isa(lasx))
             //vminps(vmm, vmm, vmm_ubound);
-	        xvfmin_s(vmm, vmm, vmm_ubound);
+            xvfmin_s(vmm, vmm, vmm_ubound);
         else
             //minps(vmm, vmm_ubound);
-	        xvfmin_s(vmm, vmm, vmm_ubound);
+            xvfmin_s(vmm, vmm, vmm_ubound);
     }
 
     /**
@@ -545,16 +545,16 @@ public:
         switch (load_size) {
             case 0: break;
             case 1:
-	        case 2:
-	        case 3:
-	        case 4:
+            case 2:
+            case 3:
+            case 4:
             case 5:
             case 6:
             case 7:
             case 8: 
                 uni_ld_d(X_TMP_3, reg, offset);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 0); 
-		        break;
+                break;
             case 9:
             case 10:
             case 11:
@@ -565,10 +565,10 @@ public:
             case 16:
                 uni_ld_d(X_TMP_3, reg, offset);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 0);
-		        uni_ld_d(X_TMP_3, reg, offset + 8);
+                uni_ld_d(X_TMP_3, reg, offset + 8);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 1);
-	            break;
-	        case 17:
+                break;
+            case 17:
             case 18:
             case 19:
             case 20:
@@ -576,17 +576,17 @@ public:
             case 22:
             case 23:
             case 24:
-		        uni_ld_d(X_TMP_3, reg, offset);
+                uni_ld_d(X_TMP_3, reg, offset);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 0);
                 uni_ld_d(X_TMP_3, reg, offset + 8);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 1);
-		        uni_ld_d(X_TMP_3, reg, offset + 16);
+                uni_ld_d(X_TMP_3, reg, offset + 16);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 2);
                 break;
             case 32:
             default:
                 uni_xvld(xvreg, reg, offset);
-		        break;
+                break;
         }
     }
 
@@ -627,7 +627,7 @@ public:
         switch (store_size) {
             case 0: break;
             case 1:
-	        case 2:
+            case 2:
             case 3:
             case 4:
             case 5:
@@ -635,8 +635,8 @@ public:
             case 7:
             case 8:
                 xvpickve2gr_d(X_TMP_3, xvreg, 0);
-		        uni_st_d(X_TMP_3, reg, offset);
-		        break;
+                uni_st_d(X_TMP_3, reg, offset);
+                break;
             case 9:
             case 10:
             case 11:
@@ -645,30 +645,30 @@ public:
             case 14:
             case 15:
             case 16:
-		        xvpickve2gr_d(X_TMP_3, xvreg, 0);
-                uni_st_d(X_TMP_3, reg, offset);
-		        xvpickve2gr_d(X_TMP_3, xvreg, 1);
-                uni_st_d(X_TMP_3, reg, offset + 8);
-	      	    break;
-            case 17:
-            case 18:
-	        case 19:
-	        case 20:
-	        case 21:
-            case 22:
-	        case 23:
-	        case 24:
-		        xvpickve2gr_d(X_TMP_3, xvreg, 0);
+                xvpickve2gr_d(X_TMP_3, xvreg, 0);
                 uni_st_d(X_TMP_3, reg, offset);
                 xvpickve2gr_d(X_TMP_3, xvreg, 1);
                 uni_st_d(X_TMP_3, reg, offset + 8);
-		        xvpickve2gr_d(X_TMP_3, xvreg, 2);
+                break;
+            case 17:
+            case 18:
+            case 19:
+            case 20:
+            case 21:
+            case 22:
+            case 23:
+            case 24:
+                xvpickve2gr_d(X_TMP_3, xvreg, 0);
+                uni_st_d(X_TMP_3, reg, offset);
+                xvpickve2gr_d(X_TMP_3, xvreg, 1);
+                uni_st_d(X_TMP_3, reg, offset + 8);
+                xvpickve2gr_d(X_TMP_3, xvreg, 2);
                 uni_st_d(X_TMP_3, reg, offset + 16);
                 break;
-	        case 32:
+            case 32:
             default:
-		        uni_xvst(xvreg, reg, offset);
-		        break;
+                uni_xvst(xvreg, reg, offset);
+                break;
         }
     }
 
