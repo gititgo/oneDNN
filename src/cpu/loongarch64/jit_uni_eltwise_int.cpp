@@ -165,7 +165,7 @@ private:
     */
 
     XReg reg_from = t0;
-    XReg reg_to = t1;
+    XReg reg_to = a6;
     XReg reg_work_amount = t4;
     XReg imm_addr64 = t2;
     XReg reg_int8 = t3;
@@ -191,7 +191,7 @@ private:
             // load exactly one data item
             //movss(Xmm(vr_from.getIdx()), mem_from);
             uni_ld_w(X_TMP_0, mem_from, offset);
-            xvreplgr2vr_w(vr_from, X_TMP_0);
+            xvinsgr2vr_w(vr_from, X_TMP_0, 0);
         }
     }
 
@@ -212,12 +212,12 @@ private:
             //mov(reg_int8.cvt8(), mem_from);
             if (is_signed)
                 //movsx(reg_int8.cvt32(), reg_int8.cvt8());
-                uni_ld_b(reg_int8, mem_from, offset);
+                uni_ld_b(X_TMP_1, mem_from, offset);
             else
                 //movzx(reg_int8.cvt32(), reg_int8.cvt8());
-                uni_ld_bu(reg_int8, mem_from, offset);
+                uni_ld_bu(X_TMP_1, mem_from, offset);
             //uni_vmovq(Xmm(vr_from.getIdx()), reg_int8);
-            xvreplgr2vr_d(vr_from, reg_int8);
+            xvinsgr2vr_w(vr_from, X_TMP_1, 0);
         }
     }
 
@@ -307,8 +307,8 @@ void jit_uni_subkernel_int_t<isa>::process_linear(
 
     // Saturate before converting from f32 to s32
     Vmm vmm_saturation_ubound = vmm_tmp;
-    XReg reg_tmp = t6;
     uni_vpxor(vmm_zero, vmm_zero, vmm_zero);
+    XReg reg_tmp = X_TMP_0;
     init_saturate_f32(vmm_zero, vmm_saturation_ubound, reg_tmp, data_type::f32,
             data_type());
     saturate_f32(vr_to, vmm_zero, vmm_saturation_ubound, data_type());
@@ -427,11 +427,15 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
         //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
         //}
-        xvpickev_h(vr_to, vr_to, vr_to);
-        xvpickev_b(vr_to, vr_to, vr_to);
-        //xvpickve2gr_d(X_TMP_1, vmm_tmp1, 0);
-        //uni_st_d(X_TMP_1, mem_to, offset);
-        xvstelm_d(vr_to, mem_to, offset, 0);
+        //xvpickev_h(vr_to, vr_to, vr_to);
+        //xvpickev_b(vr_to, vr_to, vr_to);
+        //xvstelm_d(vr_to, mem_to, offset, 0);
+
+        for (int32_t i = 0; i < 8; ++i) {
+            xvpickve2gr_wu(X_TMP_1, vr_to, i);
+            //mov_imm(X_TMP_1, 255);
+            uni_st_b(X_TMP_1, mem_to, offset + i);
+        }
     } else {
         // store exactly one data item
         // s32 save as s8/u8
@@ -458,9 +462,14 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //}
         //xvpickve2gr_wu(X_TMP_1, vmm_tmp1, 0);
         //uni_st_b(X_TMP_1, mem_to, offset);
-        xvpickev_h(vr_to, vr_to, vr_to);
-        xvpickev_b(vr_to, vr_to, vr_to);
-        xvstelm_b(vr_to, mem_to, offset, 0);
+        //xvpickev_h(vr_to, vr_to, vr_to);
+        //xvpickev_b(vr_to, vr_to, vr_to);
+        //xvstelm_b(vr_to, mem_to, offset, 0);
+        for (int32_t i = 0; i < 4; ++i) {
+            xvpickve2gr_wu(X_TMP_1, vr_to, i);
+            //mov_imm(X_TMP_1, 255);
+            uni_st_b(X_TMP_1, mem_to, offset + i);
+        }
     }
 }
 

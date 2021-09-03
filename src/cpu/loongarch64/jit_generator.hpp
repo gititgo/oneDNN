@@ -704,9 +704,9 @@ public:
                 && "routine is not supported for the current isa");
 	    for (int32_t i = 0; i < load_size; ++i) {
             if (is_signed)
-                uni_ld_b(X_TMP_1, reg, i);
+                uni_ld_b(X_TMP_1, reg, offset + i);
             else
-                uni_ld_bu(X_TMP_1, reg, i);
+                uni_ld_bu(X_TMP_1, reg, offset + i);
             xvinsgr2vr_w(vmm, reg, i);
         }
     }
