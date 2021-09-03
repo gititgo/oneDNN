@@ -22,19 +22,19 @@
 #include "common/nstl.hpp"
 #include "common/utils.hpp"
 
-#include "cpu/aarch64/jit_generator.hpp"
+#include "cpu/loongarch64/jit_generator.hpp"
 
-#include "cpu/aarch64/injectors/jit_uni_eltwise_injector.hpp"
-#include "cpu/aarch64/jit_uni_eltwise.hpp"
+#include "cpu/loongarch64/injectors/jit_uni_eltwise_injector.hpp"
+#include "cpu/loongarch64/jit_uni_eltwise.hpp"
 
 #define GET_OFF(field) offsetof(jit_args_t, field)
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace aarch64 {
+namespace loongarch64 {
 
-using namespace Xbyak_aarch64;
+using namespace Xbyak_loongarch;
 
 struct jit_args_t {
     const void *src; // fwd: src;  bwd: src/dst based on alg;
@@ -70,8 +70,8 @@ struct jit_uni_kernel_t : public jit_uni_eltwise_kernel {
         const bool save_state = is_fwd ? false : true;
         eltwise_injector_.reset(new jit_uni_eltwise_injector_f32<isa>(this,
                 desc.alg_kind, desc.alpha, desc.beta, 1.f, save_state,
-                reg_injector_table, injector_mask, injector_p_tmp0,
-                injector_p_all, is_fwd, pd_->use_dst()));
+                reg_injector_table, injector_mask,
+                is_fwd, pd_->use_dst()));
     }
 
     void generate() override {
@@ -80,23 +80,29 @@ struct jit_uni_kernel_t : public jit_uni_eltwise_kernel {
 
         XReg param = param1;
         add_imm(X_TMP_0, param, GET_OFF(src), X_TMP_1);
-        ldr(reg_src, ptr(X_TMP_0));
+        //ldr(reg_src, ptr(X_TMP_0));
+        ld_d(reg_src, X_TMP_0, 0);
         add_imm(X_TMP_0, param, GET_OFF(dst), X_TMP_1);
-        ldr(reg_dst, ptr(X_TMP_0));
+        //ldr(reg_dst, ptr(X_TMP_0));
+        ld_d(reg_dst, X_TMP_0, 0);
         if (!is_fwd) {
             add_imm(X_TMP_0, param, GET_OFF(diff_dst), X_TMP_1);
-            ldr(reg_diff_dst, ptr(X_TMP_0));
+            //ldr(reg_diff_dst, ptr(X_TMP_0));
+            ld_d(reg_diff_dst, X_TMP_0, 0);
         }
         add_imm(X_TMP_0, param, GET_OFF(work_amount), X_TMP_1);
-        ldr(reg_work_amount, ptr(X_TMP_0));
+        //ldr(reg_work_amount, ptr(X_TMP_0));
+        ld_d(reg_work_amount, X_TMP_0, 0);
         eltwise_injector_->load_table_addr();
-        ptrue(p_512.b);
+        //ptrue(p_512.b);
 
         Label reminder_loop_start, reminder_loop_end;
         Label vectorized_loop_start, vectorized_loop_end;
 
-        cmp(reg_work_amount, simd_w());
-        b(LT, reminder_loop_start);
+        //cmp(reg_work_amount, simd_w());
+        //b(LT, reminder_loop_start);
+        mov_imm(X_TMP_0, simd_w());
+        blt(reg_work_amount, X_TMP_0, reminder_loop_start);
 
         L(vectorized_loop_start);
 
@@ -110,13 +116,17 @@ struct jit_uni_kernel_t : public jit_uni_eltwise_kernel {
         // there's a restriction on certain blocked layouts, when this behavior
         // can be relevantly easy controlled, this will cost much from code
         // perspective and will complicate the compute logic significantly.
-        ldr(vmm_src, ptr(reg_src));
+        //ldr(vmm_src, ptr(reg_src));
+        ld_d(vmm_src, reg_src, 0);
         eltwise_injector_->compute_vector(vmm_src.getIdx());
         if (!is_fwd) {
-            ldr(ZReg(vmm_diff_dst.getIdx()), ptr(reg_diff_dst));
-            fmul(vmm_src.s, vmm_src.s, vmm_diff_dst);
+            //ldr(ZReg(vmm_diff_dst.getIdx()), ptr(reg_diff_dst));
+            //fmul(vmm_src.s, vmm_src.s, vmm_diff_dst);
+            xvld(vmm_diff_dst, reg_diff_dst, 0);
+            xvfmul_s(vmm_src, vmm_src, vmm_diff_dst);
         }
-        str(vmm_src, ptr(reg_dst));
+        //str(vmm_src, ptr(reg_dst));
+        xvst(vmm_src, reg_dst, 0);
 
         const auto shift = cpu_isa_traits<isa>::vlen;
         add_imm(reg_src, reg_src, shift, X_TMP_0);
@@ -124,28 +134,38 @@ struct jit_uni_kernel_t : public jit_uni_eltwise_kernel {
         if (!is_fwd) add_imm(reg_diff_dst, reg_diff_dst, shift, X_TMP_0);
 
         sub_imm(reg_work_amount, reg_work_amount, simd_w(), X_TMP_0);
-        cmp(reg_work_amount, simd_w());
-        b(GE, vectorized_loop_start);
+        //cmp(reg_work_amount, simd_w());
+        //b(GE, vectorized_loop_start);
+        mov_imm(X_TMP_0, simd_w());
+        bge(reg_work_amount, X_TMP_0, vectorized_loop_start);
 
         L(vectorized_loop_end);
 
         L(reminder_loop_start);
 
-        cmp(reg_work_amount, 0);
-        b(LE, reminder_loop_end);
+        //cmp(reg_work_amount, 0);
+        //b(LE, reminder_loop_end);
+        bge(zero, reg_work_amount, reminder_loop_end);
 
-        ld1(xmm_src[0], ptr(reg_src));
+        //ld1(xmm_src[0], ptr(reg_src));
+        ld_w(X_TMP_0, reg_src, 0);
+        xvinsgr2vr_w(vmm_src, X_TMP_0, 0);
         eltwise_injector_->compute_vector(xmm_src.getIdx());
         if (!is_fwd) {
-            ld1(xmm_diff_dst[0], ptr(reg_diff_dst));
-            fmul(xmm_src, xmm_src, xmm_diff_dst);
+            //ld1(xmm_diff_dst[0], ptr(reg_diff_dst));
+            //fmul(xmm_src, xmm_src, xmm_diff_dst);
+            ld_w(X_TMP_0, reg_diff_dst, 0);
+            xvinsgr2vr_w(vmm_diff_dst, X_TMP_0, 0);
+            xvfmul_s(xmm_src, xmm_src, xmm_diff_dst);
         }
-        st1(xmm_src[0], ptr(reg_dst));
+        //st1(xmm_src[0], ptr(reg_dst));
+        xvstelm_w(vmm_src, reg_dst, 0, 0);
         add_imm(reg_src, reg_src, dtype_size(), X_TMP_0);
         add_imm(reg_dst, reg_dst, dtype_size(), X_TMP_0);
         if (!is_fwd) add_imm(reg_diff_dst, reg_diff_dst, dtype_size(), X_TMP_0);
 
-        subs(reg_work_amount, reg_work_amount, 1);
+        //subs(reg_work_amount, reg_work_amount, 1);
+        sub_d(reg_work_amount, reg_work_amount, 1);
         b(reminder_loop_start);
 
         L(reminder_loop_end);
@@ -156,8 +176,9 @@ struct jit_uni_kernel_t : public jit_uni_eltwise_kernel {
     }
 
 private:
-    using TReg = typename cpu_isa_traits<isa>::TReg;
-    using TRegS = typename cpu_isa_traits<isa>::TRegS;
+    //using TReg = typename cpu_isa_traits<isa>::TReg;
+    //using TRegS = typename cpu_isa_traits<isa>::TRegS;
+    using Vmm = typename cpu_isa_traits<isa>::Vmm;
 
     int simd_w() {
         int simd_w = cpu_isa_traits<isa>::vlen / dtype_size();
@@ -165,7 +186,7 @@ private:
         assert(simd_w < (1 << 12));
         return simd_w;
     }
-
+/*
     XReg reg_src = x11;
     XReg reg_dst = x8;
     XReg reg_injector_table = x9;
@@ -175,15 +196,25 @@ private:
     PReg injector_mask = p1;
     PReg injector_p_tmp0 = p4;
     PReg injector_p_all = p7;
+*/
+    XReg reg_src = a1;
+    XReg reg_dst = a0;
+    XReg reg_injector_table = t1;
+    XReg reg_diff_dst = t2;
+    XReg reg_work_amount = a6;
+    XReg imm_addr64 = a3;
+    XReg injector_mask = Vmm(20);
 
-    VReg4S xmm_src {1};
-    TReg vmm_src {1};
-    VReg4S xmm_diff_dst {2};
-    TRegS vmm_diff_dst {2};
+    //VReg4S xmm_src {1};
+    //TReg vmm_src {1};
+    Vmm vmm_src {1};
+    //VReg4S xmm_diff_dst {2};
+    //TRegS vmm_diff_dst {2};
+    Vmm vmm_diff_dst {2};
     std::unique_ptr<jit_uni_eltwise_injector_f32<isa>> eltwise_injector_;
 
-    PReg p_512 {7}; /* Index is temporal. */
-    PReg p_tmp0 {4}; /* Index is temporal. */
+    //PReg p_512 {7}; /* Index is temporal. */
+    //PReg p_tmp0 {4}; /* Index is temporal. */
 };
 
 } // namespace
@@ -237,7 +268,8 @@ status_t jit_uni_eltwise_fwd_t<isa, d_type>::execute(
 
     const memory_desc_wrapper data_d(pd()->src_md());
     const auto nelems = data_d.nelems(true);
-    const int simd_w = 64 / data_d.data_type_size();
+    //const int simd_w = 64 / data_d.data_type_size();
+    const int simd_w = cpu_isa_traits<isa>::vlen / data_d.data_type_size();
 
     src += data_d.offset0();
     dst += data_d.offset0();
@@ -315,7 +347,8 @@ status_t jit_uni_eltwise_bwd_t<isa, d_type>::execute(
     const memory_desc_wrapper data_d(pd()->src_md());
     const memory_desc_wrapper diff_data_d(pd()->diff_src_md());
     const auto nelems = data_d.nelems(true);
-    const int simd_w = 64 / data_d.data_type_size();
+    //const int simd_w = 64 / data_d.data_type_size();
+    const int simd_w = cpu_isa_traits<isa>::vlen / data_d.data_type_size();
 
     src += data_d.offset0();
     diff_dst += diff_data_d.offset0();
@@ -340,10 +373,12 @@ status_t jit_uni_eltwise_bwd_t<isa, d_type>::execute(
     return status::success;
 }
 
-template struct jit_uni_eltwise_fwd_t<sve_512, data_type::f32>;
-template struct jit_uni_eltwise_bwd_t<sve_512, data_type::f32>;
+//template struct jit_uni_eltwise_fwd_t<sve_512, data_type::f32>;
+//template struct jit_uni_eltwise_bwd_t<sve_512, data_type::f32>;
+template struct jit_uni_eltwise_fwd_t<lasx, data_type::f32>;
+template struct jit_uni_eltwise_bwd_t<lasx, data_type::f32>;
 
-} // namespace aarch64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
