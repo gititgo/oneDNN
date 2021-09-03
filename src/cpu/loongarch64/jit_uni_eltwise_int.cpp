@@ -432,8 +432,7 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //xvstelm_d(vr_to, mem_to, offset, 0);
 
         for (int32_t i = 0; i < 8; ++i) {
-            xvpickve2gr_wu(X_TMP_1, vr_to, i);
-            //mov_imm(X_TMP_1, 255);
+            xvpickve2gr_w(X_TMP_1, vr_to, i);
             uni_st_b(X_TMP_1, mem_to, offset + i);
         }
     } else {
@@ -464,12 +463,11 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //uni_st_b(X_TMP_1, mem_to, offset);
         //xvpickev_h(vr_to, vr_to, vr_to);
         //xvpickev_b(vr_to, vr_to, vr_to);
-        //xvstelm_b(vr_to, mem_to, offset, 0);
-        for (int32_t i = 0; i < 4; ++i) {
-            xvpickve2gr_wu(X_TMP_1, vr_to, i);
-            //mov_imm(X_TMP_1, 255);
-            uni_st_b(X_TMP_1, mem_to, offset + i);
-        }
+        xvstelm_b(vr_to, mem_to, offset, 0);
+        //for (int32_t i = 0; i < 1; ++i) {
+        //    xvpickve2gr_wu(X_TMP_1, vr_to, i);
+            //uni_st_b(X_TMP_1, mem_to, offset);
+        //}
     }
 }
 

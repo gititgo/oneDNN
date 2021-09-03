@@ -707,7 +707,7 @@ public:
                 uni_ld_b(X_TMP_1, reg, offset + i);
             else
                 uni_ld_bu(X_TMP_1, reg, offset + i);
-            xvinsgr2vr_w(vmm, reg, i);
+            xvinsgr2vr_w(vmm, X_TMP_1, i);
         }
     }
 
