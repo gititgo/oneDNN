@@ -217,8 +217,7 @@ private:
                 //movzx(reg_int8.cvt32(), reg_int8.cvt8());
                 uni_ld_bu(reg_int8, mem_from, offset);
             //uni_vmovq(Xmm(vr_from.getIdx()), reg_int8);
-            xvxor_v(vr_from, vr_from, vr_from);
-            xvinsgr2vr_d(vr_from, reg_int8, 0);
+            xvreplgr2vr_d(vr_from, reg_int8);
         }
     }
 
@@ -276,7 +275,7 @@ private:
         for (size_t i = 0; i < uf; i++) {
             //load(vectorize, vreg_from(i), ptr[reg_from + i * shift]);
             load(vectorize, vreg_from(i), reg_from, i * shift);
-	}
+        }
 
         // 2. Process (vregs <- vergs)
         switch (alg) {
@@ -347,7 +346,7 @@ void jit_uni_subkernel_int_t<lasx>::process_relu(
     //vmulps(vr_to, vr_from, vmm_alpha);
     xvfmul_s(vr_to, vr_from, vmm_alpha);
     //vcmpgtps(vmm_mask, vr_from, vmm_zero);
-    xvfcmp_cle_s(vmm_mask, vmm_zero, vr_from);
+    xvfcmp_clt_s(vmm_mask, vmm_zero, vr_from);
     //vblendvps(vr_to, vr_to, vr_from, vmm_mask);
     xvbitsel_v(vr_to, vr_to, vr_from, vmm_mask);
     //vcvtps2dq(vr_to, vr_to);
@@ -415,23 +414,24 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //    vpackuswb(vr_to, vr_to, vmm_zero);
         //uni_vmovq(mem_to, Xmm(vr_to.getIdx()));
 
-        xvbsll_v(vmm_tmp1, vr_to, 0);
-        if (is_signed) {
-            mov_imm(X_TMP_1, 127);
-            xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-            xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-            mov_imm(X_TMP_1, -128);
-            xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-            xvmax_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        } else {
-            mov_imm(X_TMP_1, 255);
-            xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-            xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        }
-        xvpickev_h(vmm_tmp1, vmm_tmp1, vmm_tmp1);
-        xvpickev_b(vmm_tmp1, vmm_tmp1, vmm_tmp1);
-        xvpickve2gr_du(X_TMP_1, vmm_tmp1, 0);
-        uni_st_d(X_TMP_1, mem_to, offset);
+        //xvbsll_v(vmm_tmp1, vr_to, 0);
+        //if (is_signed) {
+        //    mov_imm(X_TMP_1, 127);
+        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
+        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
+        //    mov_imm(X_TMP_1, -128);
+        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
+        //    xvmax_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
+        //} else {
+        //    mov_imm(X_TMP_1, 255);
+        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
+        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
+        //}
+        xvpickev_h(vr_to, vr_to, vr_to);
+        xvpickev_b(vr_to, vr_to, vr_to);
+        //xvpickve2gr_d(X_TMP_1, vmm_tmp1, 0);
+        //uni_st_d(X_TMP_1, mem_to, offset);
+        xvstelm_d(vr_to, mem_to, offset, 0);
     } else {
         // store exactly one data item
         // s32 save as s8/u8
@@ -443,21 +443,24 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //vmovd(reg_int8.cvt32(), Xmm(vr_to.getIdx()));
         //mov(mem_to, reg_int8.cvt8());
 
-        xvbsll_v(vmm_tmp1, vr_to, 0);
-        if (is_signed) {
-            mov_imm(X_TMP_1, 127);
-            xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-            xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-            mov_imm(X_TMP_1, -128);
-            xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-            xvmax_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        } else {
-            mov_imm(X_TMP_1, 255);
-            xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-            xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        }
-        xvpickve2gr_wu(X_TMP_1, vmm_tmp1, 0);
-        uni_st_b(X_TMP_1, mem_to, offset);
+        //xvbsll_v(vmm_tmp1, vr_to, 0);
+        //if (is_signed) {
+        //    mov_imm(X_TMP_1, 127);
+        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
+        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
+        //    mov_imm(X_TMP_1, -128);
+        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
+        //    xvmax_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
+        //} else {
+        //    mov_imm(X_TMP_1, 255);
+        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
+        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
+        //}
+        //xvpickve2gr_wu(X_TMP_1, vmm_tmp1, 0);
+        //uni_st_b(X_TMP_1, mem_to, offset);
+        xvpickev_h(vr_to, vr_to, vr_to);
+        xvpickev_b(vr_to, vr_to, vr_to);
+        xvstelm_b(vr_to, mem_to, offset, 0);
     }
 }
 
