@@ -76,7 +76,7 @@ void jit_uni_eltwise_injector_f32<isa>::injector_preamble(
         for (size_t i = 0; i < preserved_gprs_count; ++i) {
             /* This route has not been tested */
             //h->str(XReg(preserved_gpr_idxs[i]), pre_ptr(h->X_SP, -8));
-            h->st_d(XReg(preserved_gpr_idxs[i]), h->X_SP, -8+(++sp_step));
+            h->st_d(XReg(preserved_gpr_idxs[i]), h->X_SP, -8*(++sp_step));
         }
 
         if (preserved_vecs_count)
