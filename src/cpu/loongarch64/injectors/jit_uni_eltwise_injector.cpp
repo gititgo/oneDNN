@@ -575,7 +575,7 @@ void jit_uni_eltwise_injector_f32<isa>::tanh_compute_vector_fwd(
 
     const auto &t0 = vmm_src;
     const auto &t1 = vmm_aux1;
-    const auto &t2 = vmm_aux2;
+    //const auto &t2 = vmm_aux2;
     const auto &t3 = vmm_aux3;
     const auto &oneS = vmm_aux4;
     //const auto &mask = PReg(6); // avoid pred regs used in *conv_kernel*
@@ -970,7 +970,7 @@ void jit_uni_eltwise_injector_f32<isa>::log_compute_vector_fwd(
     const auto &t4 = Vmm(IDX(vmm_aux4));
     //const auto &mask = p_tmp0.s;
     const auto &mask = z_tmp2;
-    const auto &wt0 = h->W_TMP_0;
+    //const auto &wt0 = h->W_TMP_0;
     const auto &xt0 = h->X_TMP_0;
     auto set_imm = [&](const Vmm &dst, uint32_t imm) {
         //h->mov_imm(wt0, imm);
