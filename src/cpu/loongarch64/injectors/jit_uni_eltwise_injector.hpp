@@ -256,6 +256,7 @@ private:
         ln2f, // 0.69314718f
         positive_mask, // changes sign to positive
         sign_mask, // gets sign value
+        minus_half, //-0.5f
         exponent_bias, // (127 = 2^7 - 1), gets exponent bits
         exp_log2ef, // 1.44269502f - formula-based for approx
         exp_ln_flt_max_f, // logf(FLT_MAX) - max normal value

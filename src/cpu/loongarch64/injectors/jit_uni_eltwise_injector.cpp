@@ -14,8 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifdef BUILD_IN
-
 #include "common/c_types_map.hpp"
 #include "common/dnnl_thread.hpp"
 #include "common/nstl.hpp"
@@ -332,7 +330,7 @@ void jit_uni_eltwise_injector_f32<isa>::compute_cmp_mask(
         TRUE_US = 31,
     };
 
-    h->mov(PRegB(IDX(p_tmp0)), h->P_ALL_ONE / T_z, h->P_ALL_ONE.b);
+    //h->mov(PRegB(IDX(p_tmp0)), h->P_ALL_ONE / T_z, h->P_ALL_ONE.b);
     switch (cmp_predicate) {
         case EQ_OQ:
             //h->fcmeq(
@@ -441,7 +439,7 @@ void jit_uni_eltwise_injector_f32<isa>::exp_compute_vector_fwd(
     // = 2^n * exp(r) // simplify the exp(n*ln(2)) expression
 
     // get mask of values lower than log(FLT_MIN) to zero them in the output
-    compute_cmp_mask(vmm_src, table_val(exp_ln_flt_min_f), _cmp_lt_os);
+    compute_cmp_mask(vmm_src, table_val(exp_ln_flt_min_f, z_tmp), _cmp_lt_os);
 
     //h->mov(PRegB(IDX(p_tmp0)), h->P_ALL_ONE.b);
     //h->mov(Vmm(IDX(z_tmp)), Vmm(IDX(table_val(exp_ln_flt_max_f))));
@@ -565,7 +563,7 @@ void jit_uni_eltwise_injector_f32<isa>::elu_compute_vector_fwd(
     // combine with mask
     //h->fcmgt(p_mask.s, p_all / T_z, vmm_aux3, 0.f);
     //h->mov(vmm_src, p_mask / T_m, vmm_aux3);
-    h->xvfcmp_lt_s(p_mask, table_val(zero, z_tmp2), vmm_aux3);
+    h->xvfcmp_clt_s(p_mask, table_val(zero, z_tmp2), vmm_aux3);
     h->xvbitsel_v(vmm_src, vmm_src, vmm_aux3, p_mask);
 }
 
@@ -674,7 +672,7 @@ void jit_uni_eltwise_injector_f32<isa>::gelu_tanh_compute_vector_fwd(
     //h->fadd(vmm_src, p_all / T_m, 1.f);
     //h->fmul(vmm_src, p_all / T_m, 0.5f);
     table_val(half, z_tmp);
-    h->xvfmadd(vmm_src, vmm_src, z_tmp, z_tmp);
+    h->xvfmadd_s(vmm_src, vmm_src, z_tmp, z_tmp);
     //h->fmul(vmm_src, vmm_src, vmm_aux0);
     h->xvfmul_s(vmm_src, vmm_src, vmm_aux0);
 }
@@ -988,7 +986,7 @@ void jit_uni_eltwise_injector_f32<isa>::log_compute_vector_fwd(
 		                   const Vmm &vmm_idxs) {
         for(int i=0; i<8; i++) {
             h->xvpickve2gr_w(h->X_TMP_1, vmm_idxs, i);
-	    h->xvslli_w(h->X_TMP_1, h->X_TMP_1, 2);
+	    h->slli_d(h->X_TMP_1, h->X_TMP_1, 2);
             h->ldx_wu(h->X_TMP_0, xr_base, h->X_TMP_1);
             h->xvinsgr2vr_w(vmm_dst, h->X_TMP_0, i);
         }
@@ -1061,18 +1059,21 @@ void jit_uni_eltwise_injector_f32<isa>::log_compute_vector_fwd(
     h->xvfmadd_s(t0, t0, t2, t1); // y * f + x
     // check nan/inf
     //h->fcmlt(mask, p_all, t4, 0.0f); // neg
-    h->xvxor(z_tmp, z_tmp, z_tmp);  //table_val(zero, z_tmp)
+    h->xvxor_v(z_tmp, z_tmp, z_tmp);  //table_val(zero, z_tmp)
     h->xvfcmp_clt_s(mask, t4, z_tmp); // neg
     //h->mov(wt0, 0x7fc00000); // qnan
     //h->cpy(t0, mask, wt0);
     h->mov_imm(xt0, 0x7fc00000); // qnan
-    h->xvbitsel_v(t0, t0, xt0, mask);
+    h->xvreplgr2vr_w(z_tmp, xt0);
+    h->xvbitsel_v(t0, t0, z_tmp, mask);
     //h->fcmeq(mask, p_all, t4, 0.0f); // = 0
+    h->xvxor_v(z_tmp, z_tmp, z_tmp);  //table_val(zero, z_tmp)
     h->xvfcmp_ceq_s(mask, t4, z_tmp); // = 0
     //h->mov(wt0, 0xff800000); // -Inf
     //h->cpy(t0, mask, wt0);
     h->mov_imm(xt0, 0xff800000); // -Inf
-    h->xvbitsel_v(t0, t0, xt0, mask);
+    h->xvreplgr2vr_w(z_tmp, xt0);
+    h->xvbitsel_v(t0, t0, z_tmp, mask);
 
     h->b(exitL);
     h->L(tbl1L);
@@ -1196,7 +1197,7 @@ void jit_uni_eltwise_injector_f32<isa>::relu_compute_vector_bwd(
     //h->fcmgt(p_mask.s, p_all / T_z, vmm_src, 0.f);
     //h->mov(Vmm(vmm_src.getIdx()), Vmm(z_tmp.getIdx()));
     //h->fmov(vmm_src, p_mask / T_m, 1.f);
-    h->xvxor(z_tmp2, z_tmp2, z_tmp2);
+    h->xvxor_v(z_tmp2, z_tmp2, z_tmp2);
     h->xvfcmp_clt_s(p_mask, z_tmp2, vmm_src);
     h->xvor_v(Vmm(vmm_src.getIdx()), Vmm(z_tmp.getIdx()), z_tmp);
     h->xvbitsel_v(vmm_src, vmm_src, table_val(one, z_tmp2), p_mask);
@@ -1232,7 +1233,7 @@ void jit_uni_eltwise_injector_f32<isa>::tanh_compute_vector_bwd(
     table_val(one, vmm_aux0);
 
     //h->fmls(vmm_aux0, p_all / T_m, vmm_src, vmm_src);
-    h->xvfnmsub_w(vmm_aux0, vmm_src, vmm_src, vmm_aux0);
+    h->xvfnmsub_s(vmm_aux0, vmm_src, vmm_src, vmm_aux0);
 
     //h->mov(Vmm(IDX(vmm_src)), Vmm(IDX(vmm_aux0)));
     h->xvor_v(Vmm(IDX(vmm_src)), Vmm(IDX(vmm_aux0)), vmm_aux0);
@@ -1408,7 +1409,7 @@ void jit_uni_eltwise_injector_f32<isa>::swish_compute_vector_bwd(
     // compute Q * (1 + R * (1 - Q))
     // T = R * (1 - Q) = R - R * Q
     //h->fmls(vmm_aux0, p_all / T_m, vmm_aux0, vmm_src);
-    h->xvfnmsub(vmm_aux0, vmm_aux0, vmm_src, vmm_aux0);
+    h->xvfnmsub_s(vmm_aux0, vmm_aux0, vmm_src, vmm_aux0);
 
     // Q * (1 + T) = Q + Q * T
     //h->fmla(vmm_src, p_all / T_m, vmm_src, vmm_aux0);
@@ -1440,7 +1441,7 @@ void jit_uni_eltwise_injector_f32<isa>::clip_compute_vector_bwd(
     //h->fcmgt(p_mask.s, p_all / T_z, vmm_src, z_tmp);
     h->xvfcmp_clt_s(p_mask, z_tmp, vmm_src);
     //h->mov(vmm_aux1, p_mask / T_m, 0);
-    h->xvxor(z_tmp2, z_tmp2, z_tmp2);
+    h->xvxor_v(z_tmp2, z_tmp2, z_tmp2);
     h->xvbitsel_v(vmm_aux1, vmm_aux1, z_tmp2, p_mask);
     // get mask of values <= alpha and blend with 0.f
     //h->fcmle(p_tmp0.s, p_all / T_z, vmm_src, vmm_aux0);
@@ -1989,4 +1990,3 @@ template struct jit_uni_eltwise_injector_f32<lasx>;
 } // namespace impl
 } // namespace dnnl
 
-#endif
