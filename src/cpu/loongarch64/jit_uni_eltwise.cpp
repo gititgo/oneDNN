@@ -14,8 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifdef BUILD_IN
-
 #include "common/bfloat16.hpp"
 #include "common/c_types_map.hpp"
 #include "common/dnnl_thread.hpp"
@@ -117,7 +115,7 @@ struct jit_uni_kernel_t : public jit_uni_eltwise_kernel {
         // can be relevantly easy controlled, this will cost much from code
         // perspective and will complicate the compute logic significantly.
         //ldr(vmm_src, ptr(reg_src));
-        ld_d(vmm_src, reg_src, 0);
+        xvld(vmm_src, reg_src, 0);
         eltwise_injector_->compute_vector(vmm_src.getIdx());
         if (!is_fwd) {
             //ldr(ZReg(vmm_diff_dst.getIdx()), ptr(reg_diff_dst));
@@ -165,7 +163,7 @@ struct jit_uni_kernel_t : public jit_uni_eltwise_kernel {
         if (!is_fwd) add_imm(reg_diff_dst, reg_diff_dst, dtype_size(), X_TMP_0);
 
         //subs(reg_work_amount, reg_work_amount, 1);
-        sub_d(reg_work_amount, reg_work_amount, 1);
+        sub_imm(reg_work_amount, reg_work_amount, 1, X_TMP_0);
         b(reminder_loop_start);
 
         L(reminder_loop_end);
@@ -203,13 +201,15 @@ private:
     XReg reg_diff_dst = t2;
     XReg reg_work_amount = a6;
     XReg imm_addr64 = a3;
-    XReg injector_mask = Vmm(20);
+    XVReg injector_mask = Vmm(20);
 
     //VReg4S xmm_src {1};
     //TReg vmm_src {1};
+    Vmm xmm_src {1};
     Vmm vmm_src {1};
     //VReg4S xmm_diff_dst {2};
     //TRegS vmm_diff_dst {2};
+    Vmm xmm_diff_dst {2};
     Vmm vmm_diff_dst {2};
     std::unique_ptr<jit_uni_eltwise_injector_f32<isa>> eltwise_injector_;
 
@@ -383,4 +383,3 @@ template struct jit_uni_eltwise_bwd_t<lasx, data_type::f32>;
 } // namespace impl
 } // namespace dnnl
 
-#endif
