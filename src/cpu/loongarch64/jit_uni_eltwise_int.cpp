@@ -417,7 +417,7 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         xvpickev_h(vmm_tmp1, vr_to, vr_to);
         xvpermi_d(vmm_tmp1, vmm_tmp1, 0x58);
         xvpickev_b(vmm_tmp1, vmm_tmp1, vmm_tmp1);
-        xvstelm_d(vmm_tmp1, mem_to, offset, 0);
+        uni_xvstelm_d(vmm_tmp1, mem_to, offset, 0);
         //for (int32_t i = 0; i < 8; ++i) {
         //    xvpickve2gr_w(X_TMP_1, vr_to, i);
         //    uni_st_b(X_TMP_1, mem_to, offset + i);
@@ -450,7 +450,7 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //uni_st_b(X_TMP_1, mem_to, offset);
         //xvpickev_h(vr_to, vr_to, vr_to);
         //xvpickev_b(vr_to, vr_to, vr_to);
-        xvstelm_b(vr_to, mem_to, offset, 0);
+        uni_xvstelm_b(vr_to, mem_to, offset, 0);
         //for (int32_t i = 0; i < 1; ++i) {
         //    xvpickve2gr_wu(X_TMP_1, vr_to, i);
         //    uni_st_b(X_TMP_1, mem_to, offset);

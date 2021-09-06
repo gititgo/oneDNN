@@ -44,6 +44,14 @@
     const char *name() const override { return STRINGIFY(jit_name); } \
     const char *source_file() const override { return __FILE__; }
 
+#define IMM8_MIN_VALUE     -128
+#define IMM8_MAX_VALUE      127
+#define IMM9_MIN_VALUE     -256
+#define IMM9_MAX_VALUE      255
+#define IMM10_MIN_VALUE    -512
+#define IMM10_MAX_VALUE     511
+#define IMM11_MIN_VALUE    -1024
+#define IMM11_MAX_VALUE     1023
 #define IMM12_MIN_VALUE    -2048
 #define IMM12_MAX_VALUE     2047
 #define UIMM12_MAX_VALUE    4095
@@ -457,6 +465,90 @@ public:
     void uni_vpxor(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
             const Xbyak_loongarch::XVReg &xk) {
         xvxor_v(xd, xj, xk);
+    }
+
+    void uni_xvldrepl_b(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvldrepl_b(xd, X_TMP_2, 0);
+            return;
+        }
+        xvldrepl_b(xd, rj, simm);
+    }
+
+    void uni_xvldrepl_h(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if ((simm >> 1) > IMM11_MAX_VALUE || (simm >> 1) < IMM11_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvldrepl_h(xd, X_TMP_2, 0);
+            return;
+        }
+        xvldrepl_h(xd, rj, simm >> 1);
+    }
+
+    void uni_xvldrepl_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if ((simm >> 2) > IMM10_MAX_VALUE || (simm >> 2) < IMM10_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvldrepl_w(xd, X_TMP_2, 0);
+            return;
+        }
+        xvldrepl_w(xd, rj, simm >> 2);
+    }
+
+    void uni_xvldrepl_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if ((simm >> 3) > IMM9_MAX_VALUE || (simm >> 3) < IMM9_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvldrepl_d(xd, X_TMP_2, 0);
+            return;
+        }
+        xvldrepl_d(xd, rj, simm >> 3);
+    }
+
+    // we use the real offset
+    void uni_xvstelm_b(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if (simm > IMM8_MAX_VALUE || simm < IMM8_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvstelm_b(xd, X_TMP_2, 0, idx);
+            return;
+        }
+        xvstelm_b(xd, rj, simm, idx);
+    }
+
+    // we use the real offset(but the xvstelm.h use si8 << 1)
+    void uni_xvstelm_h(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if ((simm >> 1) > IMM8_MAX_VALUE || (simm >> 1) < IMM8_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvstelm_h(xd, X_TMP_2, 0, idx);
+            return;
+        }
+        xvstelm_h(xd, rj, simm >> 1, idx);
+    }
+
+    // we use the real offset(but the xvstelm.w use si8 << 2)
+    void uni_xvstelm_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if ((simm >> 2) > IMM8_MAX_VALUE || (simm >> 2) < IMM8_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvstelm_w(xd, X_TMP_2, 0, idx);
+            return;
+        }
+        xvstelm_w(xd, rj, simm >> 2, idx);
+    }
+
+    // we use the real offset(but the xvstelm.d use si8 << 3)
+    void uni_xvstelm_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if ((simm >> 3) > IMM8_MAX_VALUE || (simm >> 3) < IMM8_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvstelm_d(xd, X_TMP_2, 0, idx);
+            return;
+        }
+        xvstelm_d(xd, rj, simm >> 3, idx);
     }
 
     /*
