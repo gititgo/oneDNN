@@ -63,6 +63,7 @@ const impl_list_item_t impl_list[] = {
 #if DNNL_LOONGARCH64
         CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_int_fwd_t<lasx, s32>)
         CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_int_fwd_t<lasx, s8>)
+        CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_int_fwd_t<lasx, u8>)
 #endif
         CPU_INSTANCE_AARCH64(jit_uni_eltwise_fwd_t<sve_512, f32>)
         CPU_INSTANCE_AARCH64(jit_uni_eltwise_bwd_t<sve_512, f32>)

@@ -414,27 +414,14 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //    vpackuswb(vr_to, vr_to, vmm_zero);
         //uni_vmovq(mem_to, Xmm(vr_to.getIdx()));
 
-        //xvbsll_v(vmm_tmp1, vr_to, 0);
-        //if (is_signed) {
-        //    mov_imm(X_TMP_1, 127);
-        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        //    mov_imm(X_TMP_1, -128);
-        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-        //    xvmax_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        //} else {
-        //    mov_imm(X_TMP_1, 255);
-        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
+        xvpickev_h(vmm_tmp1, vr_to, vr_to);
+        xvpermi_d(vmm_tmp1, vmm_tmp1, 0x58);
+        xvpickev_b(vmm_tmp1, vmm_tmp1, vmm_tmp1);
+        xvstelm_d(vmm_tmp1, mem_to, offset, 0);
+        //for (int32_t i = 0; i < 8; ++i) {
+        //    xvpickve2gr_w(X_TMP_1, vr_to, i);
+        //    uni_st_b(X_TMP_1, mem_to, offset + i);
         //}
-        //xvpickev_h(vr_to, vr_to, vr_to);
-        //xvpickev_b(vr_to, vr_to, vr_to);
-        //xvstelm_d(vr_to, mem_to, offset, 0);
-
-        for (int32_t i = 0; i < 8; ++i) {
-            xvpickve2gr_w(X_TMP_1, vr_to, i);
-            uni_st_b(X_TMP_1, mem_to, offset + i);
-        }
     } else {
         // store exactly one data item
         // s32 save as s8/u8
@@ -466,7 +453,7 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         xvstelm_b(vr_to, mem_to, offset, 0);
         //for (int32_t i = 0; i < 1; ++i) {
         //    xvpickve2gr_wu(X_TMP_1, vr_to, i);
-            //uni_st_b(X_TMP_1, mem_to, offset);
+        //    uni_st_b(X_TMP_1, mem_to, offset);
         //}
     }
 }
