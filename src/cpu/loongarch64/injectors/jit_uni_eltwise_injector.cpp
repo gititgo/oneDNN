@@ -79,6 +79,9 @@ void jit_uni_eltwise_injector_f32<isa>::injector_preamble(
             h->st_d(XReg(preserved_gpr_idxs[i]), h->X_SP, -8*(++sp_step));
         }
 
+	if (sp_step)
+            h->sub_imm(h->X_SP, h->X_SP, sp_step * 8, h->X_TMP_0);
+
         if (preserved_vecs_count)
             h->sub_imm(
                     h->X_SP, h->X_SP, preserved_vecs_count * vlen, h->X_TMP_0);

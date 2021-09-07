@@ -196,7 +196,7 @@ private:
     PReg injector_p_all = p7;
 */
     XReg reg_src = a1;
-    XReg reg_dst = a0;
+    XReg reg_dst = t0;
     XReg reg_injector_table = t1;
     XReg reg_diff_dst = t2;
     XReg reg_work_amount = a6;
