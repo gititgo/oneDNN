@@ -190,8 +190,7 @@ private:
         } else {
             // load exactly one data item
             //movss(Xmm(vr_from.getIdx()), mem_from);
-            uni_ld_w(X_TMP_0, mem_from, offset);
-            xvinsgr2vr_w(vr_from, X_TMP_0, 0);
+            uni_xvldrepl_w(vr_from, mem_from, offset);
         }
     }
 
@@ -206,7 +205,11 @@ private:
             //    uni_vpmovsxbd(vr_from, mem_from);
             //else
             //    uni_vpmovzxbd(vr_from, mem_from);
-            load_bytes_to_dword_extension(vr_from, mem_from, offset, is_signed, 8);
+            uni_xvldrepl_d(vmm_tmp1, mem_from, offset);
+            if (is_signed)
+	        vext2xv_w_b(vr_from, vmm_tmp1);
+            else
+                vext2xv_wu_bu(vr_from, vmm_tmp1);
         } else {
             // load exactly one data item
             //mov(reg_int8.cvt8(), mem_from);
@@ -247,8 +250,7 @@ private:
         } else {
             // store exactly one data item
             //movss(mem_to, Xmm(vr_to.getIdx()));
-            xvpickve2gr_w(X_TMP_1, vr_to, 0);
-            uni_st_w(X_TMP_1, mem_to, offset);
+            uni_xvstelm_w(vr_to, mem_to, offset, 0);
         }
     }
 
@@ -307,7 +309,6 @@ void jit_uni_subkernel_int_t<isa>::process_linear(
 
     // Saturate before converting from f32 to s32
     Vmm vmm_saturation_ubound = vmm_tmp;
-    uni_vpxor(vmm_zero, vmm_zero, vmm_zero);
     XReg reg_tmp = X_TMP_0;
     init_saturate_f32(vmm_zero, vmm_saturation_ubound, reg_tmp, data_type::f32,
             data_type());
@@ -418,10 +419,6 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         xvpermi_d(vmm_tmp1, vmm_tmp1, 0x58);
         xvpickev_b(vmm_tmp1, vmm_tmp1, vmm_tmp1);
         uni_xvstelm_d(vmm_tmp1, mem_to, offset, 0);
-        //for (int32_t i = 0; i < 8; ++i) {
-        //    xvpickve2gr_w(X_TMP_1, vr_to, i);
-        //    uni_st_b(X_TMP_1, mem_to, offset + i);
-        //}
     } else {
         // store exactly one data item
         // s32 save as s8/u8
@@ -433,28 +430,9 @@ void jit_uni_subkernel_int_t<lasx>::store_8bit(const bool vectorize,
         //vmovd(reg_int8.cvt32(), Xmm(vr_to.getIdx()));
         //mov(mem_to, reg_int8.cvt8());
 
-        //xvbsll_v(vmm_tmp1, vr_to, 0);
-        //if (is_signed) {
-        //    mov_imm(X_TMP_1, 127);
-        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        //    mov_imm(X_TMP_1, -128);
-        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-        //    xvmax_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        //} else {
-        //    mov_imm(X_TMP_1, 255);
-        //    xvreplgr2vr_w(vmm_tmp, X_TMP_1);
-        //    xvmin_w(vmm_tmp1, vmm_tmp1, vmm_tmp);
-        //}
-        //xvpickve2gr_wu(X_TMP_1, vmm_tmp1, 0);
-        //uni_st_b(X_TMP_1, mem_to, offset);
         //xvpickev_h(vr_to, vr_to, vr_to);
         //xvpickev_b(vr_to, vr_to, vr_to);
         uni_xvstelm_b(vr_to, mem_to, offset, 0);
-        //for (int32_t i = 0; i < 1; ++i) {
-        //    xvpickve2gr_wu(X_TMP_1, vr_to, i);
-        //    uni_st_b(X_TMP_1, mem_to, offset);
-        //}
     }
 }
 
