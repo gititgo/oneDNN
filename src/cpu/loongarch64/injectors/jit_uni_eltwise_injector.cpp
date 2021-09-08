@@ -582,10 +582,10 @@ void jit_uni_eltwise_injector_f32<isa>::tanh_compute_vector_fwd(
     const auto &t3 = vmm_aux3;
     const auto &oneS = vmm_aux4;
     //const auto &mask = PReg(6); // avoid pred regs used in *conv_kernel*
-    const auto &mask = z_tmp2; // avoid pred regs used in *conv_kernel*
+    const auto &mask = vmm_aux5; // avoid pred regs used in *conv_kernel*
 
     //h->fcpy(oneS, p_all, 1);
-    table_val(tanh_range, oneS);
+    table_val(one, oneS);
     // make mask for small x
     //h->mov(t3, p_all, t0);
     h->xvbsll_v(t3, t0, 0);
@@ -593,6 +593,7 @@ void jit_uni_eltwise_injector_f32<isa>::tanh_compute_vector_fwd(
     h->xvand_v(t1, t0, table_val(positive_mask, z_tmp));
     //h->cmplt(mask.s, p_all, t1, Vmm(IDX(table_val(tanh_range, z_tmp))));
     h->xvslt_w(mask, t1, table_val(tanh_range, z_tmp));
+    //h->xvfcmp_clt_s(mask, t1, table_val(tanh_range, z_tmp));  //same as xvslt_w in this situation, amazing !
 
     // 2x
     //h->fadd(t0, t0, t0);

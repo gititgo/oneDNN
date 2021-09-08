@@ -29,6 +29,7 @@ using namespace dnnl::impl::cpu::x64;
 using namespace dnnl::impl::cpu::aarch64;
 #elif DNNL_LOONGARCH64
 #include "cpu/loongarch64/jit_uni_eltwise_int.hpp"
+#include "cpu/loongarch64/jit_uni_eltwise.hpp"
 using namespace dnnl::impl::cpu::loongarch64;
 #endif
 
@@ -64,6 +65,8 @@ const impl_list_item_t impl_list[] = {
         CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_int_fwd_t<lasx, s32>)
         CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_int_fwd_t<lasx, s8>)
         CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_int_fwd_t<lasx, u8>)
+        CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_fwd_t<lasx, f32>)
+        CPU_INSTANCE_LOONGARCH64(jit_uni_eltwise_bwd_t<lasx, f32>)
 #endif
         CPU_INSTANCE_AARCH64(jit_uni_eltwise_fwd_t<sve_512, f32>)
         CPU_INSTANCE_AARCH64(jit_uni_eltwise_bwd_t<sve_512, f32>)
