@@ -1,3 +1,0 @@
-[submodule "src/cpu/loongarch64/xbyak_loongarch"]
-	path = src/cpu/loongarch64/xbyak_loongarch
-	url = http://10.140.3.207:30127/ai/xbyak_loongarch.git
