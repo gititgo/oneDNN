@@ -1,0 +1,29 @@
+sudo: true
+dist: bionic
+language: cpp
+compiler:
+  - gcc
+addons:
+  apt:
+    packages:
+      - binutils-loongarch-linux-gnu
+      - cpp-8-loongarch-linux-gnu
+      - cpp-loongarch-linux-gnu
+      - g++-8-loongarch-linux-gnu
+      - g++-loongarch-linux-gnu
+      - gcc-8-loongarch-linux-gnu
+      - gcc-8-loongarch-linux-gnu-base:amd64
+      - gcc-loongarch-linux-gnu
+      - pkg-config-loongarch-linux-gnu
+#      - qemu
+#      - qemu-block-extra:amd64
+#      - qemu-system-arm
+#      - qemu-system-common
+#      - qemu-system-data
+#      - qemu-system-gui
+#      - qemu-user
+#      - qemu-user-static
+#      - qemu-utils
+script:
+  - make
+  - make -C test test
