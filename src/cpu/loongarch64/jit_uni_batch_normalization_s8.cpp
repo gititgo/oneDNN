@@ -37,7 +37,7 @@ namespace loongarch64 {
 
 namespace {
 
-using namespace Xbyak_loongarch64;
+using namespace Xbyak_loongarch;
 
 using data_t = int8_t;
 
@@ -59,7 +59,7 @@ struct jit_bnorm_base_t : public jit_generator {
     const batch_normalization_pd_t *pd_;
 
     XReg reg_param = abi_param1;
-
+/*
     XReg reg_scale_shift = x3;
     XReg reg_mean = x5;
 
@@ -72,29 +72,49 @@ struct jit_bnorm_base_t : public jit_generator {
     XReg reg_var = x14;
     XReg reg_channel_offt_1byte = x15;
     XReg reg_channel_offt_4byte = x1;
+*/
+    XReg reg_scale_shift = a4;
+    XReg reg_mean = a5;
 
+    XReg reg_channel_offt_count = a6;
+    XReg reg_spat_offt = a7;
+    XReg reg_spat_offt_count = t3;
+    XReg reg_tmp = t0;
+    XReg reg_src = a1;
+    XReg reg_dst = a2;
+    XReg reg_var = a3;
+    XReg reg_channel_offt_1byte = t1;
+    XReg reg_channel_offt_4byte = t2;
+/*    
     ZReg vzero = z29;
     ZReg vone = z30;
     ZReg veps = z31;
     ZReg z_tmp0 = z25;
+*/
+    XVReg vzero = xr29;
+    XVReg vone = xr30;
+    XVReg veps = xr31;
+    XVReg z_tmp0 = xr25;
+    XVReg z_tmp1 = xr26;
 
     size_t c_in_xmm_ = 16;
     size_t chan_data_offt_;
     size_t num_c16_blocks_;
     size_t c_tail_;
     bool with_relu_;
-
+/*
     PReg p_512 = p7;
     PReg p_lsb_128 = p6;
     PReg p_tmp0 = p5;
-
+*/
     XReg xreg_addr(const XReg &base, const XReg &off = XReg(DUMMY_IDX),
             const int disp = 0) {
         XReg x_addr = base;
         uint32_t offIdx = off.getIdx();
 
         if (offIdx <= SP_IDX) {
-            add(X_DEFAULT_ADDR, base, off);
+            //add(X_DEFAULT_ADDR, base, off);
+            add_d(X_DEFAULT_ADDR, base, off);
             x_addr = X_DEFAULT_ADDR;
         }
         if (disp) {
@@ -104,14 +124,14 @@ struct jit_bnorm_base_t : public jit_generator {
 
         return x_addr;
     }
-
+/*
     void uni_fmax(const ZReg &dst, const ZReg &src, const ZReg &src2) {
         mov(z_tmp0.d, src2.d);
         fmaxnm(z_tmp0.s, p_512, src.s);
         fmax(z_tmp0.s, p_512, src.s);
         mov(dst.d, z_tmp0.d);
     }
-
+*/
     void compute_predefined_variables() {
         chan_data_offt_ = pd_->C() * sizeof(float);
         num_c16_blocks_ = pd_->C() / c_in_xmm_;
@@ -121,21 +141,28 @@ struct jit_bnorm_base_t : public jit_generator {
     }
 
     void load_common_params() {
-        mov(WReg(IDX(reg_tmp)), float2int(1.0f));
-        dup(vone.s, WReg(IDX(reg_tmp)));
+        //mov(WReg(IDX(reg_tmp)), float2int(1.0f));
+        //dup(vone.s, WReg(IDX(reg_tmp)));
+        mov_imm(reg_tmp, float2int(1.0f));
+        xvreplgr2vr_w(vone, reg_tmp);
 
 #define PARAM_OFF(x) offsetof(call_params_t, x)
 #define PARAM_OFF_DIFF(x, y) \
     (static_cast<int32_t>(PARAM_OFF(x)) - static_cast<int32_t>(PARAM_OFF(y)))
 #define LDR_PARAM(r, x, y) \
     assert(-256 <= PARAM_OFF_DIFF(x, y) && PARAM_OFF_DIFF(x, y) <= 255); \
-    ldr(r, pre_ptr(X_DEFAULT_ADDR, PARAM_OFF_DIFF(x, y)))
+    ld_d(r, X_DEFAULT_ADDR, PARAM_OFF_DIFF(x, y))
+    //ldr(r, pre_ptr(X_DEFAULT_ADDR, PARAM_OFF_DIFF(x, y)))
 
-        mov(X_DEFAULT_ADDR, reg_param);
+        //mov(X_DEFAULT_ADDR, reg_param);
+        add_d(X_DEFAULT_ADDR, reg_param, zero);
 
-        ldr(W_TMP_0, pre_ptr(X_DEFAULT_ADDR, PARAM_OFF(eps)));
-        dup(veps.s, W_TMP_0);
-        uni_eor(vzero, vzero, vzero);
+        //ldr(W_TMP_0, pre_ptr(X_DEFAULT_ADDR, PARAM_OFF(eps)));
+        ld_w(W_TMP_0, X_DEFAULT_ADDR, PARAM_OFF(eps));
+        //dup(veps.s, W_TMP_0);
+        xvreplgr2vr_w(veps, W_TMP_0);
+        //uni_eor(vzero, vzero, vzero);
+        xvor_v(vzero, vzero, vzero);
 
         LDR_PARAM(reg_channel_offt_count, channel_offt_count, eps);
         LDR_PARAM(reg_spat_offt_count, spat_offt_count, channel_offt_count);
@@ -176,38 +203,48 @@ struct jit_bnorm_base_t : public jit_generator {
     }
 
     virtual void prepare_tail_mask() {}
-    virtual void load_mean_and_var(const ZReg &vmean, const ZReg &vsqrtvar,
+    virtual void load_mean_and_var(const XVReg &vmean, const XVReg &vsqrtvar,
             size_t offt, bool need_tail) {}
-    virtual void load_scale_and_shift(const ZReg &vscale, const ZReg &vshift,
+    virtual void load_scale_and_shift(const XVReg &vscale, const XVReg &vshift,
             size_t offt, bool need_tail) {}
     virtual void compute_dst(bool need_tail) {}
 
     // Precomputes vscale and vshift for following
     // `vdst = vscale * vsrc + vshift`
-    void compute_vscaleshift(const ZReg &vscale, const ZReg &vshift,
-            const ZReg &vmean, const ZReg &vsqrtvar, size_t offt,
+    void compute_vscaleshift(const XVReg &vscale, const XVReg &vshift,
+            const XVReg &vmean, const XVReg &vsqrtvar, size_t offt,
             bool need_tail) {
         load_mean_and_var(vmean, vsqrtvar, offt, need_tail);
-        fadd(vsqrtvar.s, vsqrtvar.s, veps.s);
-        fsqrt(vsqrtvar.s, p_512 / T_m, vsqrtvar.s);
+        //fadd(vsqrtvar.s, vsqrtvar.s, veps.s);
+        //fsqrt(vsqrtvar.s, p_512 / T_m, vsqrtvar.s);
+        xvfadd_s(vsqrtvar, vsqrtvar, veps);
+        xvfsqrt_s(vsqrtvar, vsqrtvar);
 
         if (pd_->use_scaleshift()) {
             load_scale_and_shift(vscale, vshift, offt, need_tail);
-            uni_fdiv(vscale.s, vscale.s, vsqrtvar.s, z_tmp0.s, p_512);
-            fmls(vshift.s, p_512 / T_m, vmean.s, vscale.s);
+            //uni_fdiv(vscale.s, vscale.s, vsqrtvar.s, z_tmp0.s, p_512);
+            //fmls(vshift.s, p_512 / T_m, vmean.s, vscale.s);
+            xvfdiv_s(vscale, vscale, vsqrtvar);
+            xvfnmsub_s(vshift, vmean, vscale, vshift);
         } else {
-            uni_fdiv(vscale.s, vone.s, vsqrtvar.s, z_tmp0.s, p_512);
-            fmul(vmean.s, vmean.s, vscale.s);
-            uni_fsub(vshift.s, vzero.s, vmean.s);
+            //uni_fdiv(vscale.s, vone.s, vsqrtvar.s, z_tmp0.s, p_512);
+            //fmul(vmean.s, vmean.s, vscale.s);
+            //uni_fsub(vshift.s, vzero.s, vmean.s);
+            xvfdiv_s(vscale, vone, vsqrtvar);
+            xvfmul_s(vmean, vmean, vscale);
+            xvfsub_s(vshift, vzero, vmean);
         }
     }
 
     void forward() {
-        eor(reg_channel_offt_1byte, reg_channel_offt_1byte,
-                reg_channel_offt_1byte);
-        eor(reg_channel_offt_4byte, reg_channel_offt_4byte,
-                reg_channel_offt_4byte);
-        mov(WReg(IDX(reg_tmp)), sizeof(data_t) * c_in_xmm_);
+        //eor(reg_channel_offt_1byte, reg_channel_offt_1byte,
+          //      reg_channel_offt_1byte);
+        //eor(reg_channel_offt_4byte, reg_channel_offt_4byte,
+          //      reg_channel_offt_4byte);
+        //mov(WReg(IDX(reg_tmp)), sizeof(data_t) * c_in_xmm_);
+        xor_(reg_channel_offt_1byte, reg_channel_offt_1byte, reg_channel_offt_1byte);
+        xor_(reg_channel_offt_4byte, reg_channel_offt_4byte, reg_channel_offt_4byte);
+        mov_imm(reg_tmp, sizeof(data_t) * c_in_xmm_);
 
         if (num_c16_blocks_) compute_dst(false);
         if (c_tail_) compute_dst(true);
@@ -218,15 +255,15 @@ struct jit_bnorm_base_t : public jit_generator {
     // initialization.
     void generate() override {
         preamble();
-
+/*
         if (isa == sve_512) {
             ptrue(p_lsb_128.b, VL16);
             ptrue(p_512.b);
         }
-
+*/
         compute_predefined_variables();
         load_common_params();
-        prepare_tail_mask();
+        //prepare_tail_mask();
         forward();
         postamble();
     }
@@ -238,7 +275,9 @@ template <cpu_isa_t isa>
 struct jit_bnorm_t;
 
 template <>
-struct jit_bnorm_t<sve_512> : public jit_bnorm_base_t<sve_512> {
+//struct jit_bnorm_t<sve_512> : public jit_bnorm_base_t<sve_512> {
+struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
+/*
     PReg tail_opmask = PReg(1); // f32 mask for channel math
 
     void prepare_tail_mask() override {
@@ -262,26 +301,34 @@ struct jit_bnorm_t<sve_512> : public jit_bnorm_base_t<sve_512> {
                 break;
         }
     }
-
-    void load_mean_and_var(const ZReg &vmean, const ZReg &vsqrtvar, size_t offt,
+*/
+    void load_mean_and_var(const XVReg &vmean, const XVReg &vsqrtvar, size_t offt,
             bool need_tail) override {
         if (need_tail) {
-            ld1w(vmean.s, tail_opmask / T_z, ptr(mean_ptr(offt)));
-            ld1w(vsqrtvar.s, tail_opmask / T_z, ptr(var_ptr(offt)));
+            //ld1w(vmean.s, tail_opmask / T_z, ptr(mean_ptr(offt)));
+            //ld1w(vsqrtvar.s, tail_opmask / T_z, ptr(var_ptr(offt)));
+            xvld(vmean, mean_ptr(offt), 0);
+            xvld(vsqrtvar, var_ptr(offt), 0);
         } else {
-            ldr(vmean, ptr(mean_ptr(offt)));
-            ldr(vsqrtvar, ptr(var_ptr(offt)));
+            //ldr(vmean, ptr(mean_ptr(offt)));
+            //ldr(vsqrtvar, ptr(var_ptr(offt)));
+            xvld(vmean, mean_ptr(offt), 0);
+            xvld(vsqrtvar, var_ptr(offt), 0);
         }
     }
 
-    void load_scale_and_shift(const ZReg &vscale, const ZReg &vshift,
+    void load_scale_and_shift(const XVReg &vscale, const XVReg &vshift,
             size_t offt, bool need_tail) override {
         if (need_tail) {
-            ld1w(vscale.s, tail_opmask / T_z, ptr(scale_ptr(offt)));
-            ld1w(vshift.s, tail_opmask / T_z, ptr(shift_ptr(offt)));
+            //ld1w(vscale.s, tail_opmask / T_z, ptr(scale_ptr(offt)));
+            //ld1w(vshift.s, tail_opmask / T_z, ptr(shift_ptr(offt)));
+            xvld(vscale, scale_ptr(offt), 0);
+            xvld(vshift, shift_ptr(offt), 0);
         } else {
-            ldr(vscale, ptr(scale_ptr(offt)));
-            ldr(vshift, ptr(shift_ptr(offt)));
+            //ldr(vscale, ptr(scale_ptr(offt)));
+            //ldr(vshift, ptr(shift_ptr(offt)));
+            xvld(vscale, scale_ptr(offt), 0);
+            xvld(vshift, shift_ptr(offt), 0);
         }
     }
 
@@ -289,22 +336,30 @@ struct jit_bnorm_t<sve_512> : public jit_bnorm_base_t<sve_512> {
         Label c_loop;
         L(c_loop);
         {
+/*
             ZReg v = ZReg(0);
             ZReg vscale = ZReg(1);
             ZReg vshift = ZReg(2);
             ZReg vmean = ZReg(3);
             ZReg vsqrtvar = ZReg(4);
+*/
+            XVReg v = XVReg(0);
+            XVReg vscale = XVReg(1);
+            XVReg vshift = XVReg(2);
+            XVReg vmean = XVReg(3);
+            XVReg vsqrtvar = XVReg(4);
 
             // compute single vscale and vshift vectors...
             compute_vscaleshift(vscale, vshift, vmean, vsqrtvar, 0, need_tail);
 
             // ... then process all spatial loop with it and move to the
             // next channel chunk
-            mov(reg_spat_offt, reg_channel_offt_1byte);
+            //mov(reg_spat_offt, reg_channel_offt_1byte);
+            add_d(reg_spat_offt, reg_channel_offt_1byte, zero);
             Label mb_sp_loop;
             L(mb_sp_loop);
             {
-                if (need_tail) {
+                if (need_tail) {/*
                     if (c_tail_ != 0) {
                         if (c_tail_ <= 8) {
                             ptrue(p_tmp0.b, Pattern((int)c_tail_));
@@ -318,21 +373,28 @@ struct jit_bnorm_t<sve_512> : public jit_bnorm_base_t<sve_512> {
                     zip1(z_tmp0.b, v.b, v.b);
                     zip1(z_tmp0.h, z_tmp0.h, z_tmp0.h);
                     sxtb(v.s, p_512 / T_m, z_tmp0.s);
-                } else {
-                    ld1b(z_tmp0.b, p_lsb_128 / T_z, ptr(src_ptr()));
-                    zip1(z_tmp0.b, z_tmp0.b, z_tmp0.b);
-                    zip1(z_tmp0.h, z_tmp0.h, z_tmp0.h);
-                    sxtb(v.s, p_512 / T_m, z_tmp0.s);
+                */} else {
+                    //ld1b(z_tmp0.b, p_lsb_128 / T_z, ptr(src_ptr()));
+                    //zip1(z_tmp0.b, z_tmp0.b, z_tmp0.b);
+                    //zip1(z_tmp0.h, z_tmp0.h, z_tmp0.h);
+                    //sxtb(v.s, p_512 / T_m, z_tmp0.s);
+		    xvldrepl_d(z_tmp0, src_ptr(), 0);
+		    vext2xv_w_b(v, z_tmp0);
                 }
 
-                scvtf(v.s, p_512 / T_m, v.s);
+                //scvtf(v.s, p_512 / T_m, v.s);
+                xvffint_s_w(v, v);
 
-                fmad(v.s, p_512, vscale.s, vshift.s);
-                if (with_relu_) uni_fmax(v, v, vzero);
+                //fmad(v.s, p_512, vscale.s, vshift.s);
+                xvfmadd_s(v, v, vscale, vshift);
+                //if (with_relu_) uni_fmax(v, v, vzero);
+                if (with_relu_) xvfmax_s(v, v, vzero);
 
-                frinti(v.s, p_512 / T_m, v.s);
-                fcvtzs(v.s, p_512 / T_m, v.s);
-                if (need_tail) {
+                //frinti(v.s, p_512 / T_m, v.s);
+                //fcvtzs(v.s, p_512 / T_m, v.s);
+                xvfrintrne_s(v, v);
+                xvftintrz_w_s(v, v);
+                if (need_tail) {/*
                     mov(z_tmp0.d, v.d);
                     dup(v.d, 0);
                     smin(z_tmp0.s, 127);
@@ -342,11 +404,19 @@ struct jit_bnorm_t<sve_512> : public jit_bnorm_base_t<sve_512> {
 
                     if (c_tail_ != 0) {
                         st1b(v.b, p_tmp0 / T_m, ptr(dst_ptr()));
-                    }
+                    */}
                 } else {
-                    mov(z_tmp0.d, v.d);
-                    smin(z_tmp0.s, 127);
-                    smax(z_tmp0.s, -128);
+                    //mov(z_tmp0.d, v.d);
+                    xvor_v(z_tmp0, v, v);
+                    //smin(z_tmp0.s, 127);
+                    addi_w(X_TMP_0, zero, 127);
+		    xvreplgr2vr_w(z_tmp1, X_TMP_0);
+		    xvmin_w(z_tmp0, z_tmp0, z_tmp1);
+                    //smax(z_tmp0.s, -128);
+                    addi_w(X_TMP_0, zero, -128);
+		    xvreplgr2vr_w(z_tmp1, X_TMP_0);
+		    xvmax_w(z_tmp0, z_tmp0, z_tmp1);
+                    //st1b(z_tmp0.s, p_512 / T_m, ptr(dst_ptr()));
                     st1b(z_tmp0.s, p_512 / T_m, ptr(dst_ptr()));
                 }
 
