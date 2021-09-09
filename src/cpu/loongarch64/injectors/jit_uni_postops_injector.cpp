@@ -16,12 +16,12 @@
 #ifdef BUILD_IN
 
 #include <cassert>
-#include "cpu/x64/injectors/jit_uni_postops_injector.hpp"
+#include "cpu/loongarch64/injectors/jit_uni_postops_injector.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 namespace injector {
 
 bool is_supported(const post_ops_ok_args_t &post_ops_ok_args) {
@@ -72,7 +72,7 @@ jit_uni_postops_injector_t<isa, Vmm>::jit_uni_postops_injector_t(
             is_binary = true;
         }
     }
-
+/*
     if (is_superset(isa, avx512_common) && is_eltwise && is_binary
             && binary_static_params.rhs_arg_static_params.tail_size)
         assert(eltwise_static_params.k_mask
@@ -80,7 +80,7 @@ jit_uni_postops_injector_t<isa, Vmm>::jit_uni_postops_injector_t(
                 "Binary tail opmask should be different than eltwise injector \
                 opmask. Otherwise eltwise injector will overwrite binary tail \
                 opmask.");
-
+*/
     if (is_binary)
         binary_injector_ = utils::make_unique<
                 binary_injector::jit_uni_binary_injector_t<isa, Vmm>>(
@@ -264,7 +264,7 @@ bool post_ops_ok(const post_ops_ok_args_t &post_ops_ok_args) {
 
     return true;
 }
-
+/*
 template class jit_uni_postops_injector_t<avx512_core_bf16>;
 template class jit_uni_postops_injector_t<avx512_core>;
 template class jit_uni_postops_injector_t<avx512_common>;
@@ -274,9 +274,13 @@ template class jit_uni_postops_injector_t<avx2, Xbyak::Xmm>;
 template class jit_uni_postops_injector_t<avx>;
 template class jit_uni_postops_injector_t<avx, Xbyak::Xmm>;
 template class jit_uni_postops_injector_t<sse41>;
+*/
+
+template class jit_uni_postops_injector_t<lasx>;
+template class jit_uni_postops_injector_t<lasx, Xbyak_loongarch::XVReg>;
 
 } // namespace injector
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

@@ -22,12 +22,12 @@
 #include "common/primitive_attr.hpp"
 #include "common/primitive_exec_types.hpp"
 #include "common/utils.hpp"
-#include "cpu/x64/injectors/jit_uni_binary_injector.hpp"
+#include "cpu/loongarch64/injectors/jit_uni_binary_injector.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 namespace binary_injector {
 
 static bcast_set_t get_all_strategies_supported_by_injector() {
@@ -1488,7 +1488,7 @@ template class jit_uni_binary_injector_t<avx, Xbyak::Xmm>;
 template class jit_uni_binary_injector_t<sse41>;
 
 } // namespace binary_injector
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

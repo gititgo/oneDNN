@@ -14,8 +14,8 @@
 * limitations under the License.
 *******************************************************************************/
 
-#ifndef CPU_X64_JIT_UNI_BINARY_INJECTOR_HPP
-#define CPU_X64_JIT_UNI_BINARY_INJECTOR_HPP
+#ifndef CPU_LOONGARCH64_JIT_UNI_BINARY_INJECTOR_HPP
+#define CPU_LOONGARCH64_JIT_UNI_BINARY_INJECTOR_HPP
 
 #include <array>
 #include <cassert>
@@ -30,14 +30,14 @@
 #include "common/primitive_attr.hpp"
 #include "common/primitive_exec_types.hpp"
 #include "cpu/binary_injector_utils.hpp"
-#include "cpu/x64/cpu_isa_traits.hpp"
-#include "cpu/x64/injectors/injector_utils.hpp"
-#include "cpu/x64/jit_generator.hpp"
+#include "cpu/loongarch64/cpu_isa_traits.hpp"
+#include "cpu/loongarch64/injectors/injector_utils.hpp"
+#include "cpu/loongarch64/jit_generator.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 namespace binary_injector {
 using dnnl::impl::cpu::binary_injector_utils::prepare_binary_args;
 
@@ -408,7 +408,7 @@ private:
 };
 
 } // namespace binary_injector
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

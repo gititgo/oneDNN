@@ -13,8 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifndef CPU_X64_JIT_UNI_POSTOPS_INJECTOR_HPP
-#define CPU_X64_JIT_UNI_POSTOPS_INJECTOR_HPP
+#ifndef CPU_LOONGARCH64_JIT_UNI_POSTOPS_INJECTOR_HPP
+#define CPU_LOONGARCH64_JIT_UNI_POSTOPS_INJECTOR_HPP
 
 #include <functional>
 #include <map>
@@ -24,16 +24,16 @@
 #include "common/primitive_attr.hpp"
 #include "common/type_helpers.hpp"
 #include "common/utils.hpp"
-#include "cpu/x64/injectors/injector_utils.hpp"
-#include "cpu/x64/injectors/jit_uni_binary_injector.hpp"
-#include "cpu/x64/injectors/jit_uni_eltwise_injector.hpp"
-#include "cpu/x64/jit_generator.hpp"
+#include "cpu/loongarch64/injectors/injector_utils.hpp"
+#include "cpu/loongarch64/injectors/jit_uni_binary_injector.hpp"
+#include "cpu/loongarch64/injectors/jit_uni_eltwise_injector.hpp"
+#include "cpu/loongarch64/jit_generator.hpp"
 #include <initializer_list>
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 namespace injector {
 
 /*
@@ -169,7 +169,7 @@ struct post_ops_ok_args_t {
 bool post_ops_ok(const post_ops_ok_args_t &args);
 
 } // namespace injector
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
