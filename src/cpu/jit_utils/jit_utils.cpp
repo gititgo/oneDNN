@@ -93,8 +93,8 @@ void register_jit_code_vtune(const void *code, size_t code_size,
                 iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED, (void *)&jmethod);
     }
 #else
-    if (flags & DNNL_JIT_PROFILE_VTUNE)
-        fprintf(stderr, "VTune Amplifier integration is not supported.\n");
+    //if (flags & DNNL_JIT_PROFILE_VTUNE)
+    //    fprintf(stderr, "VTune Amplifier integration is not supported.\n");
 #endif
 #else
     UNUSED(code);
