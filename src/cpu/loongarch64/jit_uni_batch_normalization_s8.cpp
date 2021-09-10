@@ -111,7 +111,8 @@ struct jit_bnorm_base_t : public jit_generator {
         XReg x_addr = base;
         uint32_t offIdx = off.getIdx();
 
-        if (offIdx <= SP_IDX) {
+        //if (offIdx <= SP_IDX) {
+        if (offIdx <= 31) {
             //add(X_DEFAULT_ADDR, base, off);
             add_d(X_DEFAULT_ADDR, base, off);
             x_addr = X_DEFAULT_ADDR;
@@ -150,14 +151,16 @@ struct jit_bnorm_base_t : public jit_generator {
     (static_cast<int32_t>(PARAM_OFF(x)) - static_cast<int32_t>(PARAM_OFF(y)))
 #define LDR_PARAM(r, x, y) \
     assert(-256 <= PARAM_OFF_DIFF(x, y) && PARAM_OFF_DIFF(x, y) <= 255); \
-    ld_d(r, X_DEFAULT_ADDR, PARAM_OFF_DIFF(x, y))
+    addi_d(X_DEFAULT_ADDR, X_DEFAULT_ADDR, PARAM_OFF_DIFF(x, y)); \
+    ld_d(r, X_DEFAULT_ADDR, 0)
     //ldr(r, pre_ptr(X_DEFAULT_ADDR, PARAM_OFF_DIFF(x, y)))
 
         //mov(X_DEFAULT_ADDR, reg_param);
         add_d(X_DEFAULT_ADDR, reg_param, zero);
 
         //ldr(W_TMP_0, pre_ptr(X_DEFAULT_ADDR, PARAM_OFF(eps)));
-        ld_w(W_TMP_0, X_DEFAULT_ADDR, PARAM_OFF(eps));
+	addi_d(X_DEFAULT_ADDR, X_DEFAULT_ADDR, PARAM_OFF(eps));
+        ld_w(W_TMP_0, X_DEFAULT_ADDR, 0);
         //dup(veps.s, W_TMP_0);
         xvreplgr2vr_w(veps, W_TMP_0);
         //uni_eor(vzero, vzero, vzero);
@@ -358,8 +361,8 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
             Label mb_sp_loop;
             L(mb_sp_loop);
             {
-                if (need_tail) {/*
-                    if (c_tail_ != 0) {
+                if (need_tail) {
+                    /*if (c_tail_ != 0) {
                         if (c_tail_ <= 8) {
                             ptrue(p_tmp0.b, Pattern((int)c_tail_));
                         } else {
@@ -368,11 +371,13 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
                             zip1(p_tmp0.d, P_TMP_1.d, p_tmp0.d);
                         }
                         ld1b(v.b, p_tmp0 / T_m, ptr(src_ptr()));
-                    }
-                    zip1(z_tmp0.b, v.b, v.b);
-                    zip1(z_tmp0.h, z_tmp0.h, z_tmp0.h);
-                    sxtb(v.s, p_512 / T_m, z_tmp0.s);
-                */} else {
+                    }*/
+                    //zip1(z_tmp0.b, v.b, v.b);
+                    //zip1(z_tmp0.h, z_tmp0.h, z_tmp0.h);
+                    //sxtb(v.s, p_512 / T_m, z_tmp0.s);
+		    xvldrepl_d(z_tmp0, src_ptr(), 0);
+		    vext2xv_w_b(v, z_tmp0);
+                } else {
                     //ld1b(z_tmp0.b, p_lsb_128 / T_z, ptr(src_ptr()));
                     //zip1(z_tmp0.b, z_tmp0.b, z_tmp0.b);
                     //zip1(z_tmp0.h, z_tmp0.h, z_tmp0.h);
@@ -393,18 +398,29 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
                 //fcvtzs(v.s, p_512 / T_m, v.s);
                 xvfrintrne_s(v, v);
                 xvftintrz_w_s(v, v);
-                if (need_tail) {/*
-                    mov(z_tmp0.d, v.d);
-                    dup(v.d, 0);
-                    smin(z_tmp0.s, 127);
-                    smax(z_tmp0.s, -128);
-                    uzp1(z_tmp0.h, z_tmp0.h, v.h);
-                    uzp1(v.b, z_tmp0.b, v.b);
+                if (need_tail) {
+                    //mov(z_tmp0.d, v.d);
+                    xvor_v(z_tmp0, v, v);
+                    //dup(v.d, 0);
+		    xvxor_v(v, v, v);
+                    //smin(z_tmp0.s, 127);
+                    addi_w(X_TMP_0, zero, 127);
+		    xvreplgr2vr_w(z_tmp1, X_TMP_0);
+		    xvmin_w(z_tmp0, z_tmp0, z_tmp1);
+                    //smax(z_tmp0.s, -128);
+                    addi_w(X_TMP_0, zero, -128);
+		    xvreplgr2vr_w(z_tmp1, X_TMP_0);
+		    xvmax_w(z_tmp0, z_tmp0, z_tmp1);
+                    //uzp1(z_tmp0.h, z_tmp0.h, v.h);
+                    //uzp1(v.b, z_tmp0.b, v.b);
+                    xvpickev_h(z_tmp0, z_tmp0, v);
+                    xvpickev_b(v, z_tmp0, v);
 
                     if (c_tail_ != 0) {
-                        st1b(v.b, p_tmp0 / T_m, ptr(dst_ptr()));
+                        //st1b(v.b, p_tmp0 / T_m, ptr(dst_ptr()));
+                        xvstelm_b(v, dst_ptr(), 0, 0);  //TODO
                     }
-                */} else {
+                } else {
                     //mov(z_tmp0.d, v.d);
                     xvor_v(z_tmp0, v, v);
                     //smin(z_tmp0.s, 127);
