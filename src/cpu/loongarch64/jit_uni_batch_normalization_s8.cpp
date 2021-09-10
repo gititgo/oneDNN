@@ -417,22 +417,32 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
 		    xvreplgr2vr_w(z_tmp1, X_TMP_0);
 		    xvmax_w(z_tmp0, z_tmp0, z_tmp1);
                     //st1b(z_tmp0.s, p_512 / T_m, ptr(dst_ptr()));
-                    st1b(z_tmp0.s, p_512 / T_m, ptr(dst_ptr()));
+	            xvpickev_h(z_tmp, z_tmp, z_tmp);
+                    xvpickev_b(z_tmp, z_tmp, z_tmp);
+                    xvstelm_d(z_tmp, dst_ptr(), 0, 0);
                 }
 
-                add(reg_spat_offt, reg_spat_offt, reg_channel_offt_count);
-                cmp(reg_spat_offt, reg_spat_offt_count);
-                b(LT, mb_sp_loop);
+                //add(reg_spat_offt, reg_spat_offt, reg_channel_offt_count);
+                add_d(reg_spat_offt, reg_spat_offt, reg_channel_offt_count);
+                //cmp(reg_spat_offt, reg_spat_offt_count);
+                //b(LT, mb_sp_loop);
+                blt(reg_spat_offt, reg_spat_offt_count, mb_sp_loop);
             }
 
             // reg_tmp checks c_in_xmm_ channels ahead for further tail process
-            add(reg_tmp, reg_tmp, sizeof(data_t) * c_in_xmm_);
-            add(reg_channel_offt_1byte, reg_channel_offt_1byte,
-                    sizeof(data_t) * c_in_xmm_);
-            add(reg_channel_offt_4byte, reg_channel_offt_4byte,
-                    sizeof(float) * c_in_xmm_);
-            cmp(reg_tmp, reg_channel_offt_count);
-            b(LE, c_loop);
+            //add(reg_tmp, reg_tmp, sizeof(data_t) * c_in_xmm_);
+            //add(reg_channel_offt_1byte, reg_channel_offt_1byte,
+              //      sizeof(data_t) * c_in_xmm_);
+            //add(reg_channel_offt_4byte, reg_channel_offt_4byte,
+              //      sizeof(float) * c_in_xmm_);
+            add_imm(reg_tmp, reg_tmp, sizeof(data_t) * c_in_xmm_, X_TMP_0);
+            add_imm(reg_channel_offt_1byte, reg_channel_offt_1byte,
+                    sizeof(data_t) * c_in_xmm_, X_TMP_0);
+            add_imm(reg_channel_offt_4byte, reg_channel_offt_4byte,
+                    sizeof(float) * c_in_xmm_, X_TMP_0);
+            //cmp(reg_tmp, reg_channel_offt_count);
+            //b(LE, c_loop);
+            bge(reg_channel_offt_count, reg_tmp, c_loop);
         }
     }
 
@@ -555,7 +565,8 @@ jit_uni_batch_normalization_s8_fwd_t<
 }
 
 /* struct instantiation */
-template struct jit_uni_batch_normalization_s8_fwd_t<sve_512>;
+//template struct jit_uni_batch_normalization_s8_fwd_t<sve_512>;
+template struct jit_uni_batch_normalization_s8_fwd_t<lasx>;
 
 } // namespace loongarch64
 } // namespace cpu
