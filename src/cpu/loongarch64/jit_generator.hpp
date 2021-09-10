@@ -184,6 +184,7 @@ public:
     const int EVEX_max_8b_offt = 0x200;
     constexpr static size_t translator_stack_offset = 1024 * 128;
     const Xbyak_loongarch::XReg reg_EVEX_max_8b_offt = t0;
+    constexpr static uint32_t DUMMY_IDX = 99;
 
     inline size_t get_size_of_abi_save_regs() { return size_of_abi_save_regs; }
 

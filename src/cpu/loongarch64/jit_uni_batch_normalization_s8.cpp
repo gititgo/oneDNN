@@ -14,7 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifdef BUILD_IN
 #include <assert.h>
 
 #include "common/c_types_map.hpp"
@@ -404,8 +403,8 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
 
                     if (c_tail_ != 0) {
                         st1b(v.b, p_tmp0 / T_m, ptr(dst_ptr()));
-                    */}
-                } else {
+                    }
+                */} else {
                     //mov(z_tmp0.d, v.d);
                     xvor_v(z_tmp0, v, v);
                     //smin(z_tmp0.s, 127);
@@ -417,9 +416,9 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
 		    xvreplgr2vr_w(z_tmp1, X_TMP_0);
 		    xvmax_w(z_tmp0, z_tmp0, z_tmp1);
                     //st1b(z_tmp0.s, p_512 / T_m, ptr(dst_ptr()));
-	            xvpickev_h(z_tmp, z_tmp, z_tmp);
-                    xvpickev_b(z_tmp, z_tmp, z_tmp);
-                    xvstelm_d(z_tmp, dst_ptr(), 0, 0);
+                    xvpickev_h(z_tmp0, z_tmp0, z_tmp0);
+                    xvpickev_b(z_tmp0, z_tmp0, z_tmp0);
+                    xvstelm_d(z_tmp0, dst_ptr(), 0, 0);
                 }
 
                 //add(reg_spat_offt, reg_spat_offt, reg_channel_offt_count);
@@ -447,7 +446,7 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
     }
 
     jit_bnorm_t(const batch_normalization_pd_t *pd)
-        : jit_bnorm_base_t<sve_512>(pd) {}
+        : jit_bnorm_base_t<lasx>(pd) {}
 };
 
 } // namespace
@@ -572,4 +571,3 @@ template struct jit_uni_batch_normalization_s8_fwd_t<lasx>;
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
-#endif
