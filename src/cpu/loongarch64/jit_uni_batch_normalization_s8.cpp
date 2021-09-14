@@ -425,18 +425,18 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
 			    case 1: xvstelm_b(v, dst_ptr(), 0, 0); break;
 			    case 2: xvstelm_h(v, dst_ptr(), 0, 0); break;
 			    case 3: xvstelm_h(v, dst_ptr(), 0, 0); 
-			            xvstelm_b(v, dst_ptr(), 0, 2); 
+			            xvstelm_b(v, dst_ptr(2), 0, 2); 
 				    break;
 			    case 4: xvstelm_w(v, dst_ptr(), 0, 0); break;
 			    case 5: xvstelm_w(v, dst_ptr(), 0, 0);
-			            xvstelm_b(v, dst_ptr(), 0, 4);
+			            xvstelm_b(v, dst_ptr(4), 0, 4);
 				    break; 
 			    case 6: xvstelm_w(v, dst_ptr(), 0, 0);
-			            xvstelm_h(v, dst_ptr(), 0, 2);
+			            xvstelm_h(v, dst_ptr(4), 0, 2);
 				    break; 
 			    case 7: xvstelm_w(v, dst_ptr(), 0, 0);
-			            xvstelm_h(v, dst_ptr(), 0, 2);
-			            xvstelm_b(v, dst_ptr(), 0, 6);
+			            xvstelm_h(v, dst_ptr(4), 0, 2);
+			            xvstelm_b(v, dst_ptr(6), 0, 6);
 				    break; 
 			    case 8: xvstelm_d(v, dst_ptr(), 0, 0); break;
 			}
