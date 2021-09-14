@@ -164,7 +164,7 @@ struct jit_bnorm_base_t : public jit_generator {
         //dup(veps.s, W_TMP_0);
         xvreplgr2vr_w(veps, W_TMP_0);
         //uni_eor(vzero, vzero, vzero);
-        xvor_v(vzero, vzero, vzero);
+        xvxor_v(vzero, vzero, vzero);
 
         LDR_PARAM(reg_channel_offt_count, channel_offt_count, eps);
         LDR_PARAM(reg_spat_offt_count, spat_offt_count, channel_offt_count);
@@ -234,7 +234,7 @@ struct jit_bnorm_base_t : public jit_generator {
             //uni_fsub(vshift.s, vzero.s, vmean.s);
             xvfdiv_s(vscale, vone, vsqrtvar);
             xvfmul_s(vmean, vmean, vscale);
-            xvfsub_s(vshift, vzero, vmean);
+            xvfsub_s(vshift, vzero, vmean); //TODO: xvfnmsub_s
         }
     }
 
@@ -362,20 +362,21 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
             L(mb_sp_loop);
             {
                 if (need_tail) {
-                    /*if (c_tail_ != 0) {
+                    if (c_tail_ != 0) {/*
                         if (c_tail_ <= 8) {
                             ptrue(p_tmp0.b, Pattern((int)c_tail_));
                         } else {
                             ptrue(p_tmp0.b, Pattern((int)c_tail_ - 8));
                             ptrue(P_TMP_1.b, VL8);
                             zip1(p_tmp0.d, P_TMP_1.d, p_tmp0.d);
-                        }
-                        ld1b(v.b, p_tmp0 / T_m, ptr(src_ptr()));
-                    }*/
+                        }*/
+                        //ld1b(v.b, p_tmp0 / T_m, ptr(src_ptr()));
+                        xvld(z_tmp0, src_ptr(), 0);
+                    }
                     //zip1(z_tmp0.b, v.b, v.b);
                     //zip1(z_tmp0.h, z_tmp0.h, z_tmp0.h);
                     //sxtb(v.s, p_512 / T_m, z_tmp0.s);
-		    xvldrepl_d(z_tmp0, src_ptr(), 0);
+		    /*xvldrepl_d(z_tmp0, src_ptr(), 0);*/
 		    vext2xv_w_b(v, z_tmp0);
                 } else {
                     //ld1b(z_tmp0.b, p_lsb_128 / T_z, ptr(src_ptr()));
@@ -414,6 +415,7 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
                     //uzp1(z_tmp0.h, z_tmp0.h, v.h);
                     //uzp1(v.b, z_tmp0.b, v.b);
                     xvpickev_h(z_tmp0, z_tmp0, v);
+                    xvpermi_d(z_tmp0, z_tmp0, 0xD8);
                     xvpickev_b(v, z_tmp0, v);
 
                     if (c_tail_ != 0) {
@@ -433,6 +435,7 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
 		    xvmax_w(z_tmp0, z_tmp0, z_tmp1);
                     //st1b(z_tmp0.s, p_512 / T_m, ptr(dst_ptr()));
                     xvpickev_h(z_tmp0, z_tmp0, z_tmp0);
+                    xvpermi_d(z_tmp0, z_tmp0, 0xD8);
                     xvpickev_b(z_tmp0, z_tmp0, z_tmp0);
                     xvstelm_d(z_tmp0, dst_ptr(), 0, 0);
                 }
