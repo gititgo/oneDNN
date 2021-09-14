@@ -96,7 +96,8 @@ struct jit_bnorm_base_t : public jit_generator {
     XVReg z_tmp0 = xr25;
     XVReg z_tmp1 = xr26;
 
-    size_t c_in_xmm_ = 16;
+    //size_t c_in_xmm_ = 16;
+    size_t c_in_xmm_ = 8;
     size_t chan_data_offt_;
     size_t num_c16_blocks_;
     size_t c_tail_;
@@ -403,7 +404,7 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
                     //mov(z_tmp0.d, v.d);
                     xvor_v(z_tmp0, v, v);
                     //dup(v.d, 0);
-		    xvxor_v(v, v, v);
+		    /*xvxor_v(v, v, v);*/
                     //smin(z_tmp0.s, 127);
                     addi_w(X_TMP_0, zero, 127);
 		    xvreplgr2vr_w(z_tmp1, X_TMP_0);
@@ -414,13 +415,31 @@ struct jit_bnorm_t<lasx> : public jit_bnorm_base_t<lasx> {
 		    xvmax_w(z_tmp0, z_tmp0, z_tmp1);
                     //uzp1(z_tmp0.h, z_tmp0.h, v.h);
                     //uzp1(v.b, z_tmp0.b, v.b);
-                    xvpickev_h(z_tmp0, z_tmp0, v);
+                    xvpickev_h(z_tmp0, z_tmp0, z_tmp0);
                     xvpermi_d(z_tmp0, z_tmp0, 0xD8);
-                    xvpickev_b(v, z_tmp0, v);
+                    xvpickev_b(v, z_tmp0, z_tmp0);
 
                     if (c_tail_ != 0) {
                         //st1b(v.b, p_tmp0 / T_m, ptr(dst_ptr()));
-                        xvstelm_b(v, dst_ptr(), 0, 0);  //TODO
+			switch(c_tail_) {
+			    case 1: xvstelm_b(v, dst_ptr(), 0, 0); break;
+			    case 2: xvstelm_h(v, dst_ptr(), 0, 0); break;
+			    case 3: xvstelm_h(v, dst_ptr(), 0, 0); 
+			            xvstelm_b(v, dst_ptr(), 0, 2); 
+				    break;
+			    case 4: xvstelm_w(v, dst_ptr(), 0, 0); break;
+			    case 5: xvstelm_w(v, dst_ptr(), 0, 0);
+			            xvstelm_b(v, dst_ptr(), 0, 4);
+				    break; 
+			    case 6: xvstelm_w(v, dst_ptr(), 0, 0);
+			            xvstelm_h(v, dst_ptr(), 0, 2);
+				    break; 
+			    case 7: xvstelm_w(v, dst_ptr(), 0, 0);
+			            xvstelm_h(v, dst_ptr(), 0, 2);
+			            xvstelm_b(v, dst_ptr(), 0, 6);
+				    break; 
+			    case 8: xvstelm_d(v, dst_ptr(), 0, 0); break;
+			}
                     }
                 } else {
                     //mov(z_tmp0.d, v.d);
