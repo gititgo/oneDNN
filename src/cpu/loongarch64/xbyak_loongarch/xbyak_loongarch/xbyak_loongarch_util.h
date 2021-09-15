@@ -150,6 +150,8 @@ public:
   uint64_t getSimdLen() const { return simdLen_; }
   bool isLasxSupported() const { return type_ & tLASX; }
   bool isLsxSupported() const { return type_ & tLSX; }
+  //bool isAtomicSupported() const { return type_ & tATOMIC; }
+  bool isAtomicSupported() const { return isLasxSupported(); }
 };
 } // namespace util
 } // namespace Xbyak_loongarch

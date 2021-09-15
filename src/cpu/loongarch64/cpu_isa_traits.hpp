@@ -115,6 +115,11 @@ static inline bool mayiuse(const cpu_isa_t cpu_isa, bool soft = false) {
     return false;
 }
 
+static inline bool mayiuse_atomic() {
+    using namespace Xbyak_loongarch::util;
+    return cpu.isAtomicSupported();
+}
+
 inline bool isa_has_bf16(cpu_isa_t isa) {
     return false;
 }

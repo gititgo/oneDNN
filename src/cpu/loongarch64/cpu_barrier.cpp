@@ -18,77 +18,98 @@
 
 #include <assert.h>
 
-#include "cpu/aarch64/cpu_barrier.hpp"
+#include "cpu/loongarch64/cpu_barrier.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace aarch64 {
+namespace loongarch64 {
 
 namespace simple_barrier {
 
-void generate(jit_generator &code, Xbyak_aarch64::XReg reg_ctx,
-        Xbyak_aarch64::XReg reg_nthr, bool usedAsFunc) {
+void generate(jit_generator &code, Xbyak_loongarch::XReg reg_ctx,
+        Xbyak_loongarch::XReg reg_nthr, bool usedAsFunc) {
 #define BAR_CTR_OFF offsetof(ctx_t, ctr)
 #define BAR_SENSE_OFF offsetof(ctx_t, sense)
-    using namespace Xbyak_aarch64;
-
+    using namespace Xbyak_loongarch;
+/*
     const XReg x_tmp_0 = (usedAsFunc) ? code.x9 : code.X_TMP_0;
     const WReg w_tmp_1 = (usedAsFunc) ? code.w10 : code.W_TMP_1;
     const XReg x_addr_sense = (usedAsFunc) ? code.x11 : code.X_TMP_2;
     const XReg x_addr_ctx = (usedAsFunc) ? code.x12 : code.X_TMP_3;
     const XReg x_sense = (usedAsFunc) ? code.x13 : code.X_TMP_4;
     const XReg x_tmp_addr = (usedAsFunc) ? code.x14 : code.X_DEFAULT_ADDR;
+*/
+    const XReg x_tmp_0 = (usedAsFunc) ? code.t0 : code.X_TMP_0;
+    const WReg x_tmp_1 = (usedAsFunc) ? code.t1 : code.W_TMP_1;
+    const XReg x_addr_sense = (usedAsFunc) ? code.t2 : code.X_TMP_2;
+    const XReg x_addr_ctx = (usedAsFunc) ? code.t3 : code.X_TMP_3;
+    const XReg x_sense = (usedAsFunc) ? code.t8 : code.X_TMP_4;
+    const XReg x_tmp_addr = (usedAsFunc) ? code.t9 : code.X_DEFAULT_ADDR;
 
     Label barrier_exit_label, spin_label, atomic_label;
 
-    code.cmp(reg_nthr, 1);
-    code.b(EQ, barrier_exit_label);
+    //code.cmp(reg_nthr, 1);
+    //code.b(EQ, barrier_exit_label);
+    code.mov_imm(x_tmp_0, 1);
+    code.beq(reg_nthr, x_tmp_0, barrier_exit_label);
 
     /* take and save current sense */
     code.add_imm(x_addr_sense, reg_ctx, BAR_SENSE_OFF, x_tmp_0);
-    code.ldr(x_sense, ptr(x_addr_sense));
+    //code.ldr(x_sense, ptr(x_addr_sense));
+    code.ld_d(x_sense, x_addr_sense, 0);
 
     code.add_imm(x_addr_ctx, reg_ctx, BAR_CTR_OFF, x_tmp_addr);
-    if (mayiuse(sve_512)) {
+    /*if (mayiuse(sve_512)) {
         code.prfm(PLDL1KEEP, ptr(x_addr_ctx));
         code.prfm(PLDL1KEEP, ptr(x_addr_ctx));
-    }
+    }*/
 
     if (mayiuse_atomic()) {
-        code.mov(x_tmp_0, 1);
-        code.ldaddal(x_tmp_0, x_tmp_0, ptr(x_addr_ctx));
-        code.add(x_tmp_0, x_tmp_0, 1);
-    } else {
+        //code.mov(x_tmp_0, 1);
+        code.mov_imm(x_tmp_1, 1);
+        //code.ldaddal(x_tmp_0, x_tmp_0, ptr(x_addr_ctx));
+        code.amadd_d(x_tmp_0, x_tmp_1, x_addr_ctx);
+        //code.add(x_tmp_0, x_tmp_0, 1);
+        code.addi_d(x_tmp_0, x_tmp_0, 1);
+    } else {/*
         code.L(atomic_label);
         code.ldaxr(x_tmp_0, ptr(x_addr_ctx));
         code.add(x_tmp_0, x_tmp_0, 1);
         code.stlxr(w_tmp_1, x_tmp_0, ptr(x_addr_ctx));
         code.cbnz(w_tmp_1, atomic_label);
-    }
-    code.cmp(x_tmp_0, reg_nthr);
-    code.b(NE, spin_label);
+    */}
+    //code.cmp(x_tmp_0, reg_nthr);
+    //code.b(NE, spin_label);
+    code.bne(spin_label, x_tmp_0, spin_label);
 
     /* the last thread {{{ */
     code.mov_imm(x_tmp_0, 0);
-    code.str(x_tmp_0, ptr(x_addr_ctx)); // reset ctx
+    //code.str(x_tmp_0, ptr(x_addr_ctx)); // reset ctx
+    code.st_d(x_tmp_0, x_addr_ctx, 0); // reset ctx
     /* commit CTX clear, before modify SENSE,
        otherwise other threads load old SENSE value. */
-    code.dmb(ISH);
+    //code.dmb(ISH);
+    code.dbar(0);
 
     // notify waiting threads
-    code.mvn(x_sense, x_sense);
-    code.str(x_sense, ptr(x_addr_sense));
+    //code.mvn(x_sense, x_sense);
+    code.nor(x_sense, x_sense, x_sense);
+    //code.str(x_sense, ptr(x_addr_sense));
+    code.st_d(x_sense, x_addr_sense, 0);
     code.b(barrier_exit_label);
     /* }}} the last thread */
 
     code.L(spin_label);
-    code.yield();
-    code.ldr(x_tmp_0, ptr(x_addr_sense));
-    code.cmp(x_tmp_0, x_sense);
-    code.b(EQ, spin_label);
+    //code.yield();
+    //code.ldr(x_tmp_0, ptr(x_addr_sense));
+    code.ld_d(x_tmp_0, x_addr_sense, 0);
+    //code.cmp(x_tmp_0, x_sense);
+    //code.b(EQ, spin_label);
+    code.beq(x_tmp_0 x_sense, spin_label);
 
-    code.dmb(ISH);
+    //code.dmb(ISH);
+    code.dbar(0);
     code.L(barrier_exit_label);
 
 #undef BAR_CTR_OFF
@@ -100,7 +121,8 @@ struct jit_t : public jit_generator {
 
     void generate() override {
         simple_barrier::generate(*this, abi_param1, abi_param2, true);
-        ret();
+        //ret();
+        jirl(zero, ra, 0);
     }
 
     // TODO: Need to check status
@@ -116,7 +138,7 @@ void barrier(ctx_t *ctx, int nthr) {
 
 } // namespace simple_barrier
 
-} // namespace aarch64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

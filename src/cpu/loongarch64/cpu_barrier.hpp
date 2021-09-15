@@ -15,18 +15,18 @@
 * limitations under the License.
 *******************************************************************************/
 
-#ifndef CPU_AARCH64_CPU_BARRIER_HPP
-#define CPU_AARCH64_CPU_BARRIER_HPP
+#ifndef CPU_LOONGARCH64_CPU_BARRIER_HPP
+#define CPU_LOONGARCH64_CPU_BARRIER_HPP
 
 #include <assert.h>
 
 #include "common/utils.hpp"
-#include "cpu/aarch64/jit_generator.hpp"
+#include "cpu/loongarch64/jit_generator.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace aarch64 {
+namespace loongarch64 {
 
 namespace simple_barrier {
 
@@ -69,12 +69,12 @@ void barrier(ctx_t *ctx, int nthr);
  *   reg_ctx   -- read-only register with pointer to the barrier context
  *   reg_nnthr -- read-only register with the # of synchronizing threads
  */
-void generate(jit_generator &code, Xbyak_aarch64::XReg reg_ctx,
-        Xbyak_aarch64::XReg reg_nthr, bool usedAsFunc = false);
+void generate(jit_generator &code, Xbyak_loongarch::XReg reg_ctx,
+        Xbyak_loongarch::XReg reg_nthr, bool usedAsFunc = false);
 
 } // namespace simple_barrier
 
-} // namespace aarch64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
