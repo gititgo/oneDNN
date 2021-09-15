@@ -263,67 +263,114 @@ struct jit_bnorm_t : public jit_generator {
 
     void load_common_params() {
 #define PARAM_OFF(x) offsetof(call_params_t, x)
-        mov(reg_rbuf1, ptr[reg_param + PARAM_OFF(rbuf1)]);
-        if (bdesc_->is_bwd()) mov(reg_rbuf2, ptr[reg_param + PARAM_OFF(rbuf2)]);
-        mov(reg_coff_max, ptr[reg_param + PARAM_OFF(coff_max)]);
-        mov(reg_soff_max, ptr[reg_param + PARAM_OFF(soff_max)]);
-        mov(reg_mb_stride_Bc, ptr[reg_param + PARAM_OFF(mb_stride_Bc)]);
-        shl(reg_coff_max, 2);
+        //mov(reg_rbuf1, ptr[reg_param + PARAM_OFF(rbuf1)]);
+        ld_d(reg_rbuf1, reg_param, PARAM_OFF(rbuf1));
+        //if (bdesc_->is_bwd()) mov(reg_rbuf2, ptr[reg_param + PARAM_OFF(rbuf2)]);
+        if (bdesc_->is_bwd()) ld_d(reg_rbuf2, reg_param, PARAM_OFF(rbuf2));
+        //mov(reg_coff_max, ptr[reg_param + PARAM_OFF(coff_max)]);
+        //mov(reg_soff_max, ptr[reg_param + PARAM_OFF(soff_max)]);
+        //mov(reg_mb_stride_Bc, ptr[reg_param + PARAM_OFF(mb_stride_Bc)]);
+        ld_d(reg_coff_max, reg_param, PARAM_OFF(coff_max));
+        ld_d(reg_soff_max, reg_param, PARAM_OFF(soff_max));
+        ld_d(reg_mb_stride_Bc, reg_param, PARAM_OFF(mb_stride_Bc));
+        //shl(reg_coff_max, 2);
+        slli_d(reg_coff_max, reg_coff_max, 2);
 
-        mov(reg_mean, ptr[reg_param + PARAM_OFF(mean)]);
-        mov(reg_scale, ptr[reg_param + PARAM_OFF(scale)]);
+        //mov(reg_mean, ptr[reg_param + PARAM_OFF(mean)]);
+        //mov(reg_scale, ptr[reg_param + PARAM_OFF(scale)]);
+        ld_d(reg_mean, reg_param, PARAM_OFF(mean));
+        ld_d(reg_scale, reg_param, PARAM_OFF(scale));
 
-        uni_vbroadcastss(vchan_size, vmmword[reg_param + PARAM_OFF(chan_size)]);
-        uni_vbroadcastss(vone, vmmword[reg_param + PARAM_OFF(one)]);
-        uni_vbroadcastss(veps, vmmword[reg_param + PARAM_OFF(eps)]);
+        //uni_vbroadcastss(vchan_size, vmmword[reg_param + PARAM_OFF(chan_size)]);
+        //uni_vbroadcastss(vone, vmmword[reg_param + PARAM_OFF(one)]);
+        //uni_vbroadcastss(veps, vmmword[reg_param + PARAM_OFF(eps)]);
+        xvldrepl_w(vchan_size, reg_param, PARAM_OFF(chan_size));
+        xvldrepl_w(vone, reg_param, PARAM_OFF(one));
+        xvldrepl_w(veps, reg_param, PARAM_OFF(eps));
 
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(N_nthr)]);
-        mov(ptr[rsp + stack_off_N_nthr], reg_tmp);
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(N_ithr)]);
-        mov(ptr[rsp + stack_off_N_ithr], reg_tmp);
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(src)]);
-        mov(ptr[rsp + stack_off_src], reg_tmp);
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(dst)]);
-        mov(ptr[rsp + stack_off_dst], reg_tmp);
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_src)]);
-        mov(ptr[rsp + stack_off_diff_src], reg_tmp);
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_dst)]);
-        mov(ptr[rsp + stack_off_diff_dst], reg_tmp);
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(ws)]);
-        mov(ptr[rsp + stack_off_ws], reg_tmp);
-        mov(reg_tmp, ptr[reg_param + PARAM_OFF(barrier)]);
-        mov(ptr[rsp + stack_off_barrier], reg_tmp);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(N_nthr)]);
+        //mov(ptr[rsp + stack_off_N_nthr], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(N_nthr));
+        st_d(reg_tmp, rsp, stack_off_N_nthr);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(N_ithr)]);
+        //mov(ptr[rsp + stack_off_N_ithr], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(N_ithr));
+        st_d(teg_tmp, rsp, stack_off_N_ithr);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(src)]);
+        //mov(ptr[rsp + stack_off_src], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(src));
+        st_d(reg_tmp, rsp, stack_off_src);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(dst)]);
+        //mov(ptr[rsp + stack_off_dst], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(dst));
+        st_d(reg_tmp, rsp, stack_off_dst);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_src)]);
+        //mov(ptr[rsp + stack_off_diff_src], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(diff_src));
+        st_d(reg_tmp, rsp, stack_off_diff_src);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_dst)]);
+        //mov(ptr[rsp + stack_off_diff_dst], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(diff_dst));
+        st_d(reg_tmp, rsp, stack_off_diff_dst);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(ws)]);
+        //mov(ptr[rsp + stack_off_ws], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(ws));
+        st_d(reg_tmp, rsp, stack_off_ws);
+        //mov(reg_tmp, ptr[reg_param + PARAM_OFF(barrier)]);
+        //mov(ptr[rsp + stack_off_barrier], reg_tmp);
+        ld_d(reg_tmp, reg_param, PARAM_OFF(barrier));
+        st_d(reg_tmp, rsp, stack_off_barrier);
         if (is_spatial_thr_) {
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(spat_size_loc)]);
-            mov(ptr[rsp + stack_off_spat_size_loc], reg_tmp);
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(S_s)]);
-            mov(ptr[rsp + stack_off_s_s], reg_tmp);
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(S_tail)]);
-            mov(ptr[rsp + stack_off_s_tail], reg_tmp);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(spat_size_loc)]);
+            //mov(ptr[rsp + stack_off_spat_size_loc], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(spat_size_loc));
+            st_d(reg_tmp, rsp, stack_off_spat_size_loc);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(S_s)]);
+            //mov(ptr[rsp + stack_off_s_s], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(S_s));
+            st_d(reg_tmp, rsp, stack_off_s_s);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(S_tail)]);
+            //mov(ptr[rsp + stack_off_s_tail], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(S_tail));
+            st_d(reg_tmp, rsp, stack_off_s_tail);
         }
         if (is_c_padded()) {
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(is_cblk_tail)]);
-            mov(ptr[rsp + stack_off_is_cblk_tail], reg_tmp);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(is_cblk_tail)]);
+            //mov(ptr[rsp + stack_off_is_cblk_tail], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(is_cblk_tail));
+            st_d(reg_tmp, rsp, stack_off_is_cblk_tail);
         }
 
         if (bdesc_->is_fwd()) {
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(shift)]);
-            mov(ptr[rsp + stack_off_shift], reg_tmp);
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(var)]);
-            mov(reg_var, reg_tmp);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(shift)]);
+            //mov(ptr[rsp + stack_off_shift], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(shift));
+            st_d(reg_tmp, rsp, stack_off_shift);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(var)]);
+            //mov(reg_var, reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(var));
+            add_d(reg_var, reg_tmp, zero);
         } else {
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_scale)]);
-            mov(ptr[rsp + stack_off_diff_scale], reg_tmp);
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_shift)]);
-            mov(ptr[rsp + stack_off_diff_shift], reg_tmp);
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(soff_max)]);
-            mov(ptr[rsp + stack_off_soff_max], reg_tmp);
-            mov(reg_tmp, ptr[reg_param + PARAM_OFF(var)]);
-            mov(reg_var, reg_tmp);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_scale)]);
+            //mov(ptr[rsp + stack_off_diff_scale], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(diff_scale));
+            st_d(reg_tmp, rsp, stack_off_diff_scale);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(diff_shift)]);
+            //mov(ptr[rsp + stack_off_diff_shift], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(diff_shift));
+            st_d(reg_tmp, rsp, stack_off_diff_shift);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(soff_max)]);
+            //mov(ptr[rsp + stack_off_soff_max], reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(soff_max));
+            st_d(reg_tmp, rsp, stack_off_soff_max);
+            //mov(reg_tmp, ptr[reg_param + PARAM_OFF(var)]);
+            //mov(reg_var, reg_tmp);
+            ld_d(reg_tmp, reg_param, PARAM_OFF(var));
+            add_d(reg_var, reg_tmp, zero);
         }
 #undef PARAM_OFF
     }
-
+/*
     void prepare_tail_mask_avx512_common() {
         if (!is_c_padded()) return;
 
@@ -334,7 +381,7 @@ struct jit_bnorm_t : public jit_generator {
         mov(regw_tmp, mask);
         kmovw(ktail_mask, regw_tmp);
     }
-
+*/
     void prepare_tail_mask_avx2_common() {
         if (!is_c_padded()) return;
 
@@ -356,14 +403,18 @@ struct jit_bnorm_t : public jit_generator {
 
         vzero = bdesc_->is_fwd() ? vdiff_beta : vbeta;
         if (with_relu) {
-            uni_vpxor(vzero, vzero, vzero);
-            if (!bdesc_->is_fwd() && isa == avx2) prepare_l_relu_mask_avx2();
+            //uni_vpxor(vzero, vzero, vzero);
+            //if (!bdesc_->is_fwd() && isa == avx2) prepare_l_relu_mask_avx2();
+            xvxor_v(vzero, vzero, vzero);
+            if (!bdesc_->is_fwd() && isa == lasx) prepare_l_relu_mask_lasx();
         }
     }
 
-    void prepare_l_relu_mask_avx2() {
+    //void prepare_l_relu_mask_avx2() {
+    void prepare_l_relu_mask_lasx() {
         Label l_mask_after;
-        jmp(l_mask_after);
+        //jmp(l_mask_after);
+        b(l_mask_after);
         align(32);
         L(l_relu_mask_avx2); /* [0x80 0x40 0x20 0x10 0x08 0x04 0x02 0x01] */
         for (int i = 0; i < 8; ++i)
@@ -371,15 +422,25 @@ struct jit_bnorm_t : public jit_generator {
         L(l_mask_after);
     }
 
-    void fwd_process_relu_avx2(Vmm vdst, int offt, Vmm vstore_mask) {
-        Reg64 reg_store_mask = reg_diff_scale;
-        shr(reg_soff, bit_shift());
-        vcmpps(vstore_mask, vzero, vdst, _cmp_lt_os);
-        vmovmskps(reg_store_mask, vstore_mask);
-        mov(ptr[reg_ws + reg_soff + offt / (1 << bit_shift())],
-                reg_store_mask.cvt8());
-        vblendvps(vdst, vzero, vdst, vstore_mask);
-        shl(reg_soff, bit_shift());
+    //void fwd_process_relu_avx2(Vmm vdst, int offt, Vmm vstore_mask) {
+    void fwd_process_relu_lasx(Vmm vdst, int offt, Vmm vstore_mask) {
+        //Reg64 reg_store_mask = reg_diff_scale;
+        XReg reg_store_mask = reg_diff_scale;
+        //shr(reg_soff, bit_shift());
+        srli_d(reg_soff, reg_soff, bit_shift());
+        //vcmpps(vstore_mask, vzero, vdst, _cmp_lt_os);
+        xvfcmp_clt_s(vstore_mask, vzero, vdst);
+        //vmovmskps(reg_store_mask, vstore_mask);
+        vmovmskps(reg_store_mask, vstore_mask);  //TODO
+        //mov(ptr[reg_ws + reg_soff + offt / (1 << bit_shift())],
+          //      reg_store_mask.cvt8());
+        add_imm(X_TMP_0, reg_soff, offt / (1 << bit_shift()), X_TMP_1);
+        add_d(X_TMP_0, X_TMP_0, reg_ws);
+        st_d(reg_store_mask, X_TMP_0, 0);
+        //vblendvps(vdst, vzero, vdst, vstore_mask);
+        xvbitsel_v(vdst, vzero, vdst, vstore_mask);
+        //shl(reg_soff, bit_shift());
+        slli_d(reg_soff, reg_soff, bit_shift());
     }
 
     void fwd_process_relu_avx512_common(Vmm vdst, int offt = 0) {
