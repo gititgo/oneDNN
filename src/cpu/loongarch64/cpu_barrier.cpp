@@ -14,8 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifdef BUILD_IN
-
 #include <assert.h>
 
 #include "cpu/loongarch64/cpu_barrier.hpp"
@@ -41,11 +39,11 @@ void generate(jit_generator &code, Xbyak_loongarch::XReg reg_ctx,
     const XReg x_tmp_addr = (usedAsFunc) ? code.x14 : code.X_DEFAULT_ADDR;
 */
     const XReg x_tmp_0 = (usedAsFunc) ? code.t0 : code.X_TMP_0;
-    const WReg x_tmp_1 = (usedAsFunc) ? code.t1 : code.W_TMP_1;
+    const XReg x_tmp_1 = (usedAsFunc) ? code.t1 : code.X_TMP_1;
     const XReg x_addr_sense = (usedAsFunc) ? code.t2 : code.X_TMP_2;
     const XReg x_addr_ctx = (usedAsFunc) ? code.t3 : code.X_TMP_3;
-    const XReg x_sense = (usedAsFunc) ? code.t8 : code.X_TMP_4;
-    const XReg x_tmp_addr = (usedAsFunc) ? code.t9 : code.X_DEFAULT_ADDR;
+    const XReg x_sense = (usedAsFunc) ? code.t4 : code.X_TMP_4;
+    const XReg x_tmp_addr = (usedAsFunc) ? code.t5 : code.X_DEFAULT_ADDR;
 
     Label barrier_exit_label, spin_label, atomic_label;
 
@@ -81,7 +79,7 @@ void generate(jit_generator &code, Xbyak_loongarch::XReg reg_ctx,
     */}
     //code.cmp(x_tmp_0, reg_nthr);
     //code.b(NE, spin_label);
-    code.bne(spin_label, x_tmp_0, spin_label);
+    code.bne(x_tmp_0, reg_nthr, spin_label);
 
     /* the last thread {{{ */
     code.mov_imm(x_tmp_0, 0);
@@ -106,7 +104,7 @@ void generate(jit_generator &code, Xbyak_loongarch::XReg reg_ctx,
     code.ld_d(x_tmp_0, x_addr_sense, 0);
     //code.cmp(x_tmp_0, x_sense);
     //code.b(EQ, spin_label);
-    code.beq(x_tmp_0 x_sense, spin_label);
+    code.beq(x_tmp_0, x_sense, spin_label);
 
     //code.dmb(ISH);
     code.dbar(0);
@@ -144,4 +142,3 @@ void barrier(ctx_t *ctx, int nthr) {
 } // namespace dnnl
 
 // vim: et ts=4 sw=4 cindent cino+=l0,\:4,N-s
-#endif
