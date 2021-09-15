@@ -14,8 +14,8 @@
 * limitations under the License.
 *******************************************************************************/
 
-#ifndef CPU_X64_JIT_UNI_BATCH_NORMALIZATION_HPP
-#define CPU_X64_JIT_UNI_BATCH_NORMALIZATION_HPP
+#ifndef CPU_LOONGARCH64_JIT_UNI_BATCH_NORMALIZATION_HPP
+#define CPU_LOONGARCH64_JIT_UNI_BATCH_NORMALIZATION_HPP
 
 #include <assert.h>
 
@@ -25,13 +25,13 @@
 #include "common/utils.hpp"
 
 #include "cpu/cpu_batch_normalization_pd.hpp"
-#include "cpu/x64/cpu_isa_traits.hpp"
-#include "cpu/x64/jit_avx512_core_bf16cvt.hpp"
+#include "cpu/loongarch64/cpu_isa_traits.hpp"
+//#include "cpu/loongarch64/jit_avx512_core_bf16cvt.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 
 namespace bnorm_impl {
 template <cpu_isa_t isa>
@@ -48,11 +48,12 @@ struct jit_uni_batch_normalization_fwd_t : public primitive_t {
 
         DECLARE_COMMON_PD_T(
                 JIT_IMPL_NAME_HELPER("bnorm_jit:",
-                        (this->desc()->data_desc.data_type == data_type::bf16)
+                        /*(this->desc()->data_desc.data_type == data_type::bf16)
                                 ? (mayiuse(avx512_core_bf16)
                                                 ? avx512_core_bf16
                                                 : bf16_emulation_t::get_isa())
-                                : isa,
+                                : isa,*/
+                        isa,
                         ""),
                 jit_uni_batch_normalization_fwd_t);
 
@@ -82,11 +83,12 @@ struct jit_uni_batch_normalization_bwd_t : public primitive_t {
 
         DECLARE_COMMON_PD_T(
                 JIT_IMPL_NAME_HELPER("bnorm_jit:",
-                        (this->desc()->data_desc.data_type == data_type::bf16)
+                        /*(this->desc()->data_desc.data_type == data_type::bf16)
                                 ? (mayiuse(avx512_core_bf16)
                                                 ? avx512_core_bf16
                                                 : bf16_emulation_t::get_isa())
-                                : isa,
+                                : isa,*/
+                        isa,
                         ""),
                 jit_uni_batch_normalization_bwd_t);
 
@@ -106,7 +108,7 @@ private:
     bnorm_impl::driver_t<isa> *bnorm_driver_;
 };
 
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

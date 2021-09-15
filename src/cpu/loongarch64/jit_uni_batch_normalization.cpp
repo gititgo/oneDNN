@@ -27,22 +27,22 @@
 
 #include "cpu/cpu_batch_normalization_utils.hpp"
 #include "cpu/platform.hpp"
-#include "cpu/x64/cpu_barrier.hpp"
-#include "cpu/x64/jit_generator.hpp"
+#include "cpu/loongarch64/cpu_barrier.hpp"
+#include "cpu/loongarch64/jit_generator.hpp"
 
-#include "cpu/x64/jit_avx512_core_bf16cvt.hpp"
-#include "cpu/x64/jit_uni_batch_normalization.hpp"
+//#include "cpu/loongarch64/jit_avx512_core_bf16cvt.hpp"
+#include "cpu/loongarch64/jit_uni_batch_normalization.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 
 namespace {
 
 using namespace memory_tracking::names;
 
-using namespace Xbyak;
+using namespace Xbyak_loongarch;
 namespace barrier = simple_barrier;
 
 using acc_data_t = float;
@@ -72,12 +72,14 @@ struct jit_bnorm_t : public jit_generator {
     DECLARE_CPU_JIT_AUX_FUNCTIONS(jit_bnorm_t)
 
     /* cpu specific part */
-    using Vmm = typename utils::conditional3<isa == sse41, Xmm, isa == avx2,
-            Ymm, Zmm>::type;
-    const AddressFrame &vmmword
-            = (isa == sse41) ? xword : (isa == avx2) ? yword : zword;
+    //using Vmm = typename utils::conditional3<isa == sse41, Xmm, isa == avx2,
+      //      Ymm, Zmm>::type;
+    using Vmm = typename cpu_isa_traits<isa>::Vmm;
+    //const AddressFrame &vmmword
+      //      = (isa == sse41) ? xword : (isa == avx2) ? yword : zword;
 
-    const int vlen = isa == sse41 ? 32 : cpu_isa_traits<isa>::vlen;
+    //const int vlen = isa == sse41 ? 32 : cpu_isa_traits<isa>::vlen;
+    const int vlen = cpu_isa_traits<isa>::vlen;
     int vlen_spat_data_; // set by ctor depending on data type (BF16 or FP32);
 
     const batch_normalization_pd_t *bdesc_;
@@ -85,19 +87,34 @@ struct jit_bnorm_t : public jit_generator {
     bool is_nspc_;
     bool is_bf16_;
 
-    Reg64 reg_param = abi_param1;
+    //Reg64 reg_param = abi_param1;
+    XReg reg_param = abi_param1;
 
+/*
     Reg64 reg_scale = rbx;
     Reg64 reg_rbuf1 = abi_not_param1;
     Reg64 reg_rbuf2 = rdx;
     Reg64 reg_coff_max_fwd_copy = reg_rbuf2;
+*/
+    XReg reg_scale = a3;
+    XReg reg_rbuf1 = a1;
+    XReg reg_rbuf2 = a2;
+    XReg reg_coff_max_fwd_copy = reg_rbuf2;
 
+/*
     Reg64 reg_mean = rbp;
     Reg64 reg_var = reg_param;
     Reg64 reg_diff_scale = rax;
     Reg64 reg_coff_max_bwd_copy = reg_diff_scale;
     Reg64 reg_shift = reg_rbuf1;
+*/
+    XReg reg_mean = a5;
+    XReg reg_var = reg_param;
+    XReg reg_diff_scale = a7;
+    XReg reg_coff_max_bwd_copy = reg_diff_scale;
+    XReg reg_shift = reg_rbuf1;
 
+ /*
     Reg64 reg_coff = r8;
     Reg64 reg_coff_max = r9;
     Reg64 reg_soff = r10;
@@ -105,7 +122,16 @@ struct jit_bnorm_t : public jit_generator {
     Reg64 reg_diff_shift = reg_soff_max;
     Reg64 reg_ctr = r12;
     Reg64 reg_roff = r13;
+*/
+    XReg reg_coff = t0;
+    XReg reg_coff_max = t1;
+    XReg reg_soff = t2;
+    XReg reg_soff_max = t3;
+    XReg reg_diff_shift = reg_soff_max;
+    XReg reg_ctr = t4;
+    XReg reg_roff = t5;
 
+/*
     Reg64 reg_mb_stride_Bc = r14;
     Reg64 reg_soff_nspc = reg_mb_stride_Bc;
 
@@ -115,32 +141,46 @@ struct jit_bnorm_t : public jit_generator {
     Reg64 reg_diff_dst = reg_dst;
 
     Reg64 reg_tmp_off = reg_roff;
+*/
+    XReg reg_mb_stride_Bc = t6;
+    XReg reg_soff_nspc = reg_mb_stride_Bc;
+    XReg reg_src = t7;
+    XReg reg_diff_src = reg_rbuf1;
+    XReg reg_dst = a6;
+    XReg reg_diff_dst = reg_dst;
+    XReg reg_tmp_off = reg_roff;
 
     // Reuse loop counters
-    Reg64 reg_bar = reg_coff;
-    Reg64 reg_nnthr = reg_soff; // must be usable w/ loops over coff
-    Reg64 reg_tmp = reg_ctr;
+    //Reg64 reg_bar = reg_coff;
+    //Reg64 reg_nnthr = reg_soff; // must be usable w/ loops over coff
+    //Reg64 reg_tmp = reg_ctr;
+    XReg reg_bar = reg_coff;
+    XReg reg_nnthr = reg_soff; // must be usable w/ loops over coff
+    XReg reg_tmp = reg_ctr;
 
     // Relu section
     bool with_relu, with_relu_inf_only;
     Vmm vzero; // is_fwd() ? vdiff_beta : vbeta
-    Reg64 reg_ws = reg_roff;
+    //Reg64 reg_ws = reg_roff;
+    XReg reg_ws = reg_roff;
     Label l_relu_mask_avx2;
-    Opmask kstore_mask = Opmask(1);
+    //Opmask kstore_mask = Opmask(1);
 
     // channel tail processing
-    Opmask ktail_mask = Opmask(2);
+    //Opmask ktail_mask = Opmask(2);
 
     // FP32->BF16 emulation
+/*    
     bf16_emulation_t *bf16_emu_ {nullptr};
     Reg64 reg_bf16_tmp = reg_tmp;
     Zmm bf16_emu_reserved_1 = Zmm(16);
     Zmm bf16_emu_reserved_2 = Zmm(17);
     Zmm bf16_emu_reserved_3 = Zmm(18);
     Zmm bf16_emu_reserved_4 = Zmm(19);
-
+*/
     size_t unroll_blocks;
     size_t unroll_regs;
+/*
     Vmm vbuf = Vmm(isa == avx512_common ? 20 : 5);
     Vmm vdiff_beta = Vmm(isa == avx512_common ? 21 : 6);
     Vmm vdiff_gamma = Vmm(isa == avx512_common ? 22 : 7);
@@ -152,6 +192,18 @@ struct jit_bnorm_t : public jit_generator {
     Vmm veps = Vmm(isa == avx512_common ? 28 : 13);
     Vmm vchan_size = Vmm(isa == avx512_common ? 29 : 14);
     Vmm vtail_mask = Vmm(isa == avx512_common ? 30 : 15);
+*/
+    Vmm vbuf = Vmm(5);
+    Vmm vdiff_beta = Vmm(6);
+    Vmm vdiff_gamma = Vmm(7);
+    Vmm vsqrtvar = Vmm(8);
+    Vmm vone = Vmm(9);
+    Vmm vmean = Vmm(10);
+    Vmm vgamma = Vmm(11);
+    Vmm vbeta = Vmm(12);
+    Vmm veps = Vmm(13);
+    Vmm vchan_size = Vmm(14);
+    Vmm vtail_mask = Vmm(15);
 
     size_t t0_pf_offt;
     size_t t1_pf_offt;
@@ -199,7 +251,8 @@ struct jit_bnorm_t : public jit_generator {
         mb_offt = spat_step * spat_size;
         ws_mb_offt = (spat_step / (is_bf16_ ? 16 : 32)) * spat_size;
 
-        if (isa == avx512_mic) {
+        //if (isa == avx512_mic) {
+        if (false) {
             t0_pf_offt = 4096;
             t1_pf_offt = 0;
         } else {
@@ -2238,7 +2291,7 @@ template struct jit_uni_batch_normalization_bwd_t<avx2>;
 template struct jit_uni_batch_normalization_fwd_t<avx512_common>;
 template struct jit_uni_batch_normalization_bwd_t<avx512_common>;
 
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
