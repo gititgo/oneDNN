@@ -453,6 +453,16 @@ public:
         xvld(xd, rj, simm);
     }
 
+    void uni_xvld(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &r1,
+            const Xbyak_loongarch::XReg &r2, const int32_t simm) {
+        if (0 != simm) {
+            add_imm(X_TMP_2, r2, simm, X_TMP_0);
+            xvldx(xd, r1, X_TMP_2);
+            return;
+        }
+        xvldx(xd, r1, r2);
+    }
+
     void uni_xvst(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
@@ -461,6 +471,16 @@ public:
             return;
         }
         xvst(xd, rj, simm);
+    }
+
+    void uni_xvst(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &r1,
+            const Xbyak_loongarch::XReg &r2, const int32_t simm) {
+        if (0 != simm) {
+            add_imm(X_TMP_2, r2, simm, X_TMP_0);
+            xvstx(xd, r1, X_TMP_2);
+            return;
+        }
+        xvstx(xd, r1, r2);
     }
 
     void uni_vpxor(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
