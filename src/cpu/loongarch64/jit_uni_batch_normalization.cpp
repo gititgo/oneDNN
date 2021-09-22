@@ -384,7 +384,8 @@ struct jit_bnorm_t : public jit_generator {
         kmovw(ktail_mask, regw_tmp);
     }
 */
-    void prepare_tail_mask_avx2_common() {
+    //void prepare_tail_mask_avx2_common() {
+    void prepare_tail_mask_lasx_common() {
         if (!is_c_padded()) return;
 
         //const int tail = bdesc_->C() % (int)(vlen / sizeof(float));
@@ -2383,12 +2384,14 @@ struct jit_bnorm_t : public jit_generator {
         Label diff_spatial;
         L(diff_spatial);
         {
-            xor_(reg_coff, reg_coff);
+            //xor_(reg_coff, reg_coff);
+            xor_(reg_coff, reg_coff, reg_coff);
             // diff_shift is shared with soff_max.
-            mov(reg_diff_shift, ptr[rsp + stack_off_diff_shift]);
-            if (isa == sse41) { mov(reg_tmp_off, reg_soff); }
+            //mov(reg_diff_shift, ptr[rsp + stack_off_diff_shift]);
+            ld_d(reg_diff_shift, rsp, stack_off_diff_shift);
+            //if (isa == sse41) { mov(reg_tmp_off, reg_soff); }
             is_nspc_ ? backward_diff_channels_nspc() : backward_diff_channels();
-            if (isa == sse41) {
+            /*if (isa == sse41) {
                 mov(reg_soff, reg_tmp_off);
                 add(reg_diff_dst, vlen / 2);
                 add(reg_diff_src, vlen / 2);
@@ -2398,42 +2401,56 @@ struct jit_bnorm_t : public jit_generator {
                 sub(reg_diff_dst, vlen / 2);
                 sub(reg_diff_src, vlen / 2);
                 sub(reg_src, vlen / 2);
-            }
+            }*/
             // Process next image
             if (is_nspc_) {
                 // Can use static offset since we comeback after spatial loop
-                if (!bdesc_->use_global_stats()) add(reg_src, mb_offt);
-                add(reg_diff_dst, mb_offt);
-                add(reg_diff_src, mb_offt);
-                add(reg_soff, mb_offt);
-                add(reg_ws, ws_mb_offt);
+                //if (!bdesc_->use_global_stats()) add(reg_src, mb_offt);
+                //add(reg_diff_dst, mb_offt);
+                //add(reg_diff_src, mb_offt);
+                //add(reg_soff, mb_offt);
+                //add(reg_ws, ws_mb_offt);
+                if (!bdesc_->use_global_stats()) add_imm(reg_src, reg_src, mb_offt, X_TMP_0);
+                add(reg_diff_dst, reg_diff_dst, mb_offt, X_TMP_0);
+                add(reg_diff_src, mb_offt, X_TMP_0);
+                add(reg_soff, reg_soff, mb_offt, X_TMP_0);
+                add(reg_ws, reg_ws, ws_mb_offt, X_TMP_0);
             } else {
-                add(reg_soff, reg_mb_stride_Bc);
+                //add(reg_soff, reg_mb_stride_Bc);
+                add_d(reg_soff, reg_soff, reg_mb_stride_Bc);
             }
 
             // comeback soff_max. Shared with diff_shift.
-            mov(reg_soff_max, ptr[rsp + stack_off_soff_max]);
-            cmp(reg_soff, reg_soff_max);
-            jl(diff_spatial);
+            //mov(reg_soff_max, ptr[rsp + stack_off_soff_max]);
+            //cmp(reg_soff, reg_soff_max);
+            //jl(diff_spatial);
+            ld_d(reg_soff_max, rsp, stack_off_soff_max);
+            blt(reg_soff, reg_soff_max, diff_spatial);
         }
         if (is_nspc_) {
             // comeback
             if (!bdesc_->use_global_stats())
-                mov(reg_src, ptr[rsp + stack_off_src]);
-            mov(reg_diff_dst, ptr[rsp + stack_off_diff_dst]);
-            mov(reg_diff_src, ptr[rsp + stack_off_diff_src]);
-            if (with_relu) mov(reg_ws, ptr[rsp + stack_off_ws]);
+                //mov(reg_src, ptr[rsp + stack_off_src]);
+                ld_d(reg_src, rsp, stack_off_src);
+            //mov(reg_diff_dst, ptr[rsp + stack_off_diff_dst]);
+            //mov(reg_diff_src, ptr[rsp + stack_off_diff_src]);
+            ld_d(reg_diff_dst, rsp, stack_off_diff_dst);
+            ld_d(reg_diff_src, rsp, stack_off_diff_src);
+            //if (with_relu) mov(reg_ws, ptr[rsp + stack_off_ws]);
+            if (with_relu) ld_d(reg_ws, rsp, stack_off_ws);
         }
     }
 
     jit_bnorm_t(const batch_normalization_pd_t *bdesc) : bdesc_(bdesc) {
-        static_assert(isa == sse41 || isa == avx2 || isa == avx512_common
-                        || isa == avx512_mic,
-                "unsupported isa");
+        //static_assert(isa == sse41 || isa == avx2 || isa == avx512_common
+          //              || isa == avx512_mic,
+            //    "unsupported isa");
+        static_assert(isa == lasx, "unsupported isa");
 
-        const int simd_w = isa == sse41
-                ? 8
-                : cpu_isa_traits<isa>::vlen / sizeof(acc_data_t);
+        //const int simd_w = isa == sse41
+          //      ? 8
+            //    : cpu_isa_traits<isa>::vlen / sizeof(acc_data_t);
+        const int simd_w = cpu_isa_traits<isa>::vlen / sizeof(acc_data_t);
         is_bf16_ = bdesc_->desc()->data_desc.data_type == data_type::bf16;
         size_t dt_size
                 = types::data_type_size(bdesc_->desc()->data_desc.data_type);
@@ -2444,8 +2461,10 @@ struct jit_bnorm_t : public jit_generator {
                 bdesc_, is_nspc_, simd_w, dt_size);
         vlen_spat_data_ = vlen / (1 + is_bf16_); // 32B of BF16 -> 64B of FP32
 
-        unroll_blocks = isa == avx512_common && !is_spatial_thr_ ? 4 : 1;
-        unroll_regs = isa == avx512_common && !is_spatial_thr_ ? 4 : 1;
+        //unroll_blocks = isa == avx512_common && !is_spatial_thr_ ? 4 : 1;
+        //unroll_regs = isa == avx512_common && !is_spatial_thr_ ? 4 : 1;
+        unroll_blocks = 1;
+        unroll_regs = 1;
     }
 
     void generate() override {
@@ -2453,21 +2472,23 @@ struct jit_bnorm_t : public jit_generator {
 
         if (is_bf16_) {
             // init emulation of bfloat16 operations
-            if (!mayiuse(avx512_core_bf16)) {
+            /*if (!mayiuse(avx512_core_bf16)) {
                 bf16_emu_ = new bf16_emulation_t(this, bf16_emu_reserved_1,
                         bf16_emu_reserved_2, bf16_emu_reserved_3, reg_bf16_tmp,
                         bf16_emu_reserved_4, bf16_emu_reserved_4);
                 bf16_emu_->init_vcvtneps2bf16();
-            }
+            }*/
         }
 
-        if (isa == avx512_common)
+        /*if (isa == avx512_common)
             prepare_tail_mask_avx512_common();
         else if (isa == avx2)
-            prepare_tail_mask_avx2_common();
+            prepare_tail_mask_avx2_common();*/
+            prepare_tail_mask_lasx_common();
 
         compute_static_strides();
-        sub(rsp, stack_size_required);
+        //sub(rsp, stack_size_required);
+        sub_imm(rsp, rsp, stack_size_required, X_TMP_0);
         load_common_params();
         prepare_relu();
 
@@ -2477,13 +2498,15 @@ struct jit_bnorm_t : public jit_generator {
         } else {
             backward();
         }
-        add(rsp, stack_size_required);
+        //add(rsp, stack_size_required);
+        addi_d(rsp, rsp, stack_size_required);
         postamble();
     }
 
     void operator()(const call_params_t *p) { jit_generator::operator()(p); }
 
-    ~jit_bnorm_t() override { delete bf16_emu_; }
+    //~jit_bnorm_t() override { delete bf16_emu_; }
+    ~jit_bnorm_t() override { }
 };
 } // namespace
 
@@ -2683,9 +2706,10 @@ struct driver_t : public c_compatible {
 
 private:
     enum {
-        simd_w = isa == sse41 ? 8
-                              : cpu_isa_traits<isa>::vlen
-                        / sizeof(acc_data_t) // BF16 will expand to FP32
+        //simd_w = isa == sse41 ? 8
+          //                    : cpu_isa_traits<isa>::vlen
+            //            / sizeof(acc_data_t) // BF16 will expand to FP32
+        simd_w = cpu_isa_traits<isa>::vlen / sizeof(acc_data_t)
     };
 
     static bool use_tmp_stats(const batch_normalization_pd_t *bdesc) {
@@ -2734,28 +2758,32 @@ status_t jit_uni_batch_normalization_fwd_t<isa>::pd_t::init(engine_t *engine) {
             && dnnl_thr_syncable() && mayiuse(isa) && is_fwd()
             && !has_zero_dim_memory() && one_of(ndims(), 4, 5)
             && one_of(src_md()->data_type, f32, bf16)
-            && IMPLICATION(src_md()->data_type == bf16, mayiuse(avx512_core))
+            //&& IMPLICATION(src_md()->data_type == bf16, mayiuse(avx512_core))
+            && IMPLICATION(src_md()->data_type == bf16, false)
             && check_scale_shift_data_type()
             && (attr()->has_default_values() || this->with_relu_post_op());
     if (!ok) return status::unimplemented;
 
     const memory_desc_wrapper src_d(src_md());
-    if (isa == avx512_common) {
+    /*if (isa == avx512_common) {
         if (!src_d.matches_one_of_tag(nChw16c, nCdhw16c, nhwc, ndhwc))
             return status::unimplemented;
-    } else {
+    } else */{
         if (!src_d.matches_one_of_tag(nChw8c, nCdhw8c))
             return status::unimplemented;
     }
 
-    const bool isa_supports_avx2 = is_superset(isa, avx2);
+    //const bool isa_supports_avx2 = is_superset(isa, avx2);
+    const bool isa_supports_lasx = (isa == lasx);
     if (is_training() && fuse_norm_relu()) {
-        if (!isa_supports_avx2) return status::unimplemented;
+        //if (!isa_supports_avx2) return status::unimplemented;
+        if (!isa_supports_lasx) return status::unimplemented;
         init_default_ws(1);
     }
 
     if (memory_desc_wrapper(src_md()).padded_dims()[1] != C()
-            && !isa_supports_avx2)
+            //&& !isa_supports_avx2)
+            && !isa_supports_lasx)
         return status::unimplemented;
 
     // Only IC % 16 == 0 is supported for now
@@ -2842,7 +2870,8 @@ status_t jit_uni_batch_normalization_bwd_t<isa>::pd_t::init(engine_t *engine) {
                             f32, src_md()->data_type, diff_src_md()->data_type),
                     everyone_is(bf16, src_md()->data_type,
                             diff_src_md()->data_type))
-            && IMPLICATION(src_md()->data_type == bf16, mayiuse(avx512_core))
+            //&& IMPLICATION(src_md()->data_type == bf16, mayiuse(avx512_core))
+            && IMPLICATION(src_md()->data_type == bf16, false)
             && check_scale_shift_data_type() && attr()->has_default_values();
     if (!ok) return status::unimplemented;
 
@@ -2850,11 +2879,11 @@ status_t jit_uni_batch_normalization_bwd_t<isa>::pd_t::init(engine_t *engine) {
     const memory_desc_wrapper diff_src_d(diff_src_md());
 
     format_tag_t src_tag, diff_src_tag;
-    if (isa == avx512_common) {
+    /*if (isa == avx512_common) {
         src_tag = src_d.matches_one_of_tag(nChw16c, nCdhw16c, nhwc, ndhwc);
         diff_src_tag
                 = diff_src_d.matches_one_of_tag(nChw16c, nCdhw16c, nhwc, ndhwc);
-    } else {
+    } else */{
         src_tag = src_d.matches_one_of_tag(nChw8c, nCdhw8c);
         diff_src_tag = diff_src_d.matches_one_of_tag(nChw8c, nCdhw8c);
     }
@@ -2862,9 +2891,11 @@ status_t jit_uni_batch_normalization_bwd_t<isa>::pd_t::init(engine_t *engine) {
             && src_tag == diff_src_tag);
     if (!ok) return status::unimplemented;
 
-    const bool isa_supports_avx2 = is_superset(isa, avx2);
+    //const bool isa_supports_avx2 = is_superset(isa, avx2);
+    const bool isa_supports_lasx = (isa == lasx);
     if (memory_desc_wrapper(src_md()).padded_dims()[1] != C()
-            && !isa_supports_avx2)
+            //&& !isa_supports_avx2)
+            && !isa_supports_lasx)
         return status::unimplemented;
 
     // Only IC % 16 == 0 is supported for now
@@ -2874,7 +2905,8 @@ status_t jit_uni_batch_normalization_bwd_t<isa>::pd_t::init(engine_t *engine) {
     }
 
     if (fuse_norm_relu()) {
-        if (!isa_supports_avx2) return status::unimplemented;
+        //if (!isa_supports_avx2) return status::unimplemented;
+        if (!isa_supports_lasx) return status::unimplemented;
         init_default_ws(1);
         if (!compare_ws(hint_fwd_pd_)) return status::unimplemented;
     }
@@ -2942,12 +2974,15 @@ jit_uni_batch_normalization_bwd_t<isa>::~jit_uni_batch_normalization_bwd_t() {
 }
 
 /* struct instantiation */
-template struct jit_uni_batch_normalization_fwd_t<sse41>;
-template struct jit_uni_batch_normalization_bwd_t<sse41>;
-template struct jit_uni_batch_normalization_fwd_t<avx2>;
-template struct jit_uni_batch_normalization_bwd_t<avx2>;
-template struct jit_uni_batch_normalization_fwd_t<avx512_common>;
-template struct jit_uni_batch_normalization_bwd_t<avx512_common>;
+//template struct jit_uni_batch_normalization_fwd_t<sse41>;
+//template struct jit_uni_batch_normalization_bwd_t<sse41>;
+//template struct jit_uni_batch_normalization_fwd_t<avx2>;
+//template struct jit_uni_batch_normalization_bwd_t<avx2>;
+//template struct jit_uni_batch_normalization_fwd_t<avx512_common>;
+//template struct jit_uni_batch_normalization_bwd_t<avx512_common>;
+
+template struct jit_uni_batch_normalization_fwd_t<lasx>;
+template struct jit_uni_batch_normalization_bwd_t<lasx>;
 
 } // namespace loongarch64
 } // namespace cpu
