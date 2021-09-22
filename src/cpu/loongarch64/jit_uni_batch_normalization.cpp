@@ -13,8 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifdef BUILD_IN
-
 #include <assert.h>
 
 #include "common/c_types_map.hpp"
@@ -75,6 +73,7 @@ struct jit_bnorm_t : public jit_generator {
     //using Vmm = typename utils::conditional3<isa == sse41, Xmm, isa == avx2,
       //      Ymm, Zmm>::type;
     using Vmm = typename cpu_isa_traits<isa>::Vmm;
+    XReg rsp = XReg(sp.getIdx());  //use rsp as sp
     //const AddressFrame &vmmword
       //      = (isa == sse41) ? xword : (isa == avx2) ? yword : zword;
 
@@ -161,7 +160,7 @@ struct jit_bnorm_t : public jit_generator {
 
     // Relu section
     bool with_relu, with_relu_inf_only;
-    Vmm vzero; // is_fwd() ? vdiff_beta : vbeta
+    Vmm vzero = Vmm(0); // is_fwd() ? vdiff_beta : vbeta
     //Reg64 reg_ws = reg_roff;
     XReg reg_ws = reg_roff;
     Label l_relu_mask_avx2;
@@ -297,7 +296,7 @@ struct jit_bnorm_t : public jit_generator {
         //mov(reg_tmp, ptr[reg_param + PARAM_OFF(N_ithr)]);
         //mov(ptr[rsp + stack_off_N_ithr], reg_tmp);
         ld_d(reg_tmp, reg_param, PARAM_OFF(N_ithr));
-        st_d(teg_tmp, rsp, stack_off_N_ithr);
+        st_d(reg_tmp, rsp, stack_off_N_ithr);
         //mov(reg_tmp, ptr[reg_param + PARAM_OFF(src)]);
         //mov(ptr[rsp + stack_off_src], reg_tmp);
         ld_d(reg_tmp, reg_param, PARAM_OFF(src));
@@ -390,9 +389,9 @@ struct jit_bnorm_t : public jit_generator {
 
         //const int tail = bdesc_->C() % (int)(vlen / sizeof(float));
         tail_ = bdesc_->C() % (int)(vlen / sizeof(float));
-        static const uint32_t mask[16] = {0xffffffff, 0xffffffff, 0xffffffff,
-                0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0,
-                0, 0, 0, 0, 0, 0, 0};
+        //static const uint32_t mask[16] = {0xffffffff, 0xffffffff, 0xffffffff,
+          //      0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0,
+            //    0, 0, 0, 0, 0, 0, 0};
 
         //mov(reg_tmp, reinterpret_cast<size_t>(&mask[8 - tail]));
         //vmovups(vtail_mask, ptr[reg_tmp]);
@@ -429,18 +428,21 @@ struct jit_bnorm_t : public jit_generator {
     //void fwd_process_relu_avx2(Vmm vdst, int offt, Vmm vstore_mask) {
     void fwd_process_relu_lasx(Vmm vdst, int offt, Vmm vstore_mask) {
         //Reg64 reg_store_mask = reg_diff_scale;
-        XReg reg_store_mask = reg_diff_scale;
+        //XReg reg_store_mask = reg_diff_scale;
         //shr(reg_soff, bit_shift());
         srli_d(reg_soff, reg_soff, bit_shift());
         //vcmpps(vstore_mask, vzero, vdst, _cmp_lt_os);
         xvfcmp_clt_s(vstore_mask, vzero, vdst);
         //vmovmskps(reg_store_mask, vstore_mask);
-        vmovmskps(reg_store_mask, vstore_mask);  //TODO
+        xvpickev_h(v_tmp0, vstore_mask, vstore_mask);
+        xvpermi_d(v_tmp0, v_tmp0, 0xD8);
+        xvpickev_b(v_tmp0, v_tmp0, v_tmp0);
         //mov(ptr[reg_ws + reg_soff + offt / (1 << bit_shift())],
           //      reg_store_mask.cvt8());
         add_imm(X_TMP_0, reg_soff, offt / (1 << bit_shift()), X_TMP_1);
         add_d(X_TMP_0, X_TMP_0, reg_ws);
-        st_d(reg_store_mask, X_TMP_0, 0);
+        /*st_d(reg_store_mask, X_TMP_0, 0);*/
+        xvstelm_d(v_tmp0, X_TMP_0, 0, 0);
         //vblendvps(vdst, vzero, vdst, vstore_mask);
         xvbitsel_v(vdst, vzero, vdst, vstore_mask);
         //shl(reg_soff, bit_shift());
@@ -465,11 +467,13 @@ struct jit_bnorm_t : public jit_generator {
           //      ptr[reg_ws + reg_soff + offt / (1 << bit_shift())]);
         add_imm(X_TMP_0, reg_soff, offt / (1 << bit_shift()), X_TMP_1);
         add_d(X_TMP_0, X_TMP_0, reg_ws);
-        xvldrepl_b(vstore_mask, X_TMP_0, 0);
+        /*xvldrepl_b(vstore_mask, X_TMP_0, 0);*/
+        xvldrepl_d(vstore_mask, X_TMP_0, 0);  //load ziped mask
+        vext2xv_w_b(vstore_mask, vstore_mask);
         //vpand(vstore_mask, vstore_mask, ptr[rip + l_relu_mask_avx2]);
-        pcaddi(X_TMP_0, l_relu_mask_avx2);
+        /*pcaddi(X_TMP_0, l_relu_mask_avx2);
         xvld(v_tmp0, X_TMP_0, 0);
-        xvand_v(vstore_mask, vstore_mask, v_tmp0);
+        xvand_v(vstore_mask, vstore_mask, v_tmp0);*/  //no need l_relu_mask_avx2
         //vpcmpeqd(vstore_mask, vstore_mask, ptr[rip + l_relu_mask_avx2]);
         xvseq_d(vstore_mask, vstore_mask, v_tmp0);
         //vblendvps(vdiff_dst, vzero, vdiff_dst, vstore_mask);
@@ -492,7 +496,7 @@ struct jit_bnorm_t : public jit_generator {
     #define FLAG_XVST 0
 
     void uni_xvldst_spat_data(const XVReg &xvreg, const XReg &r1, const XReg &r2, int32_t off, bool ldFlag=FLAG_XVLD) {
-        add_imm(X_TMP_0, r2, off);
+        add_imm(X_TMP_0, r2, off, X_TMP_1);
         if(ldFlag == FLAG_XVLD) {
             xvldx(xvreg, r1, X_TMP_0);
         } else {
@@ -566,7 +570,7 @@ struct jit_bnorm_t : public jit_generator {
                         ld_w(X_TMP_1, X_TMP_0, 4*6);
                         xvinsgr2vr_w(xvreg, X_TMP_1, 6);
                         break;
-                case default: break; 
+                default: break; 
             }
         } else {
             switch(tail_) {
@@ -591,7 +595,7 @@ struct jit_bnorm_t : public jit_generator {
                         xvstelm_d(xvreg, X_TMP_0, 4*4, 2);
                         xvstelm_w(xvreg, X_TMP_0, 4*6, 6);
                         break;
-                case default: break; 
+                default: break; 
             }
         }
 
@@ -621,7 +625,7 @@ struct jit_bnorm_t : public jit_generator {
 */
 
     //void uni_vmovups_maybe_tail(const Operand &dst, const Operand &src) {
-    void uni_xvldst_maybe_tail(const XVReg &xvreg, const XReg &r1, bool ldFlag=FLAG_XVLD, const XReg &r2=zero int32_t off=0) {
+    void uni_xvldst_maybe_tail(const XVReg &xvreg, const XReg &r1, bool ldFlag=FLAG_XVLD, const XReg &r2=XReg(0), int32_t off=0) {
         Label l_no_mask, l_ret;
         XReg r2_tmp = r2;
         if(0 != off)
@@ -657,7 +661,7 @@ struct jit_bnorm_t : public jit_generator {
         else
             uni_vmovups(Vmm(dst.getIdx()), src.getAddress());
         */
-        if(ldFlag == FALG_XVLD)
+        if(ldFlag == FLAG_XVLD)
             xvldx(xvreg, r1, r2_tmp);
         else
             xvstx(xvreg, r1, r2_tmp);
@@ -721,19 +725,19 @@ struct jit_bnorm_t : public jit_generator {
     XReg var_ptr(size_t offt = 0) { return xreg_addr(reg_var, reg_coff, offt); }
 
     XReg diff_gamma_ptr(size_t offt = 0) {
-        return xreg_addr(reg_diff_scale_shift, reg_coff, offt);
+        return xreg_addr(reg_diff_scale, reg_coff, offt);
     }
 
     XReg diff_beta_ptr(size_t offt = 0) {
-        return xreg_addr(reg_diff_scale_shift, reg_coff, offt + chan_data_offt);
+        return xreg_addr(reg_diff_shift, reg_coff, offt);
     }
 
     XReg gamma_ptr(size_t offt = 0) {
-        return xreg_addr(reg_scale_shift, reg_coff, offt);
+        return xreg_addr(reg_scale, reg_coff, offt);
     }
 
     XReg beta_ptr(size_t offt = 0) {
-        return xreg_addr(reg_scale_shift, reg_coff, offt + chan_data_offt);
+        return xreg_addr(reg_shift, reg_coff, offt);
     }
 
     template <typename init_t, typename body_t, typename fini_t>
@@ -864,7 +868,7 @@ struct jit_bnorm_t : public jit_generator {
                 int coff = 0, offt = 0;
                 for (int ch_idx = 0; ch_idx < num_ch_blks; ++ch_idx) {
                     //uni_vmovups_maybe_tail(vmean, mean_ptr(coff));
-                    uni_xvldst_maybe_tail(vmean, mean_ptr(coff), FLAG_XVLD);
+                    uni_xvldst_maybe_tail(vmean, mean_ptr(coff));
 
                     //uni_vmovups_spat_data(Vmm(sp_idx),
                       //      vmmword[reg_src + reg_soff_nspc + offt]);
@@ -887,7 +891,7 @@ struct jit_bnorm_t : public jit_generator {
         for (int idx = 0, offt = 0; idx < num_ch_blks; ++idx, offt += vlen)
             //uni_vmovups(Vmm(idx), vmmword[reg_rbuf1 + reg_coff + offt]);
         {
-            add_imm(X_TMP_0, reg_coff, offt);
+            add_imm(X_TMP_0, reg_coff, offt, X_TMP_1);
             xvldx(Vmm(idx), reg_rbuf1, X_TMP_0);
         }
 
@@ -924,7 +928,7 @@ struct jit_bnorm_t : public jit_generator {
         for (int idx = 0, offt = 0; idx < num_ch_blks; ++idx, offt += vlen)
             //uni_vmovups(vmmword[reg_rbuf1 + reg_coff + offt], Vmm(idx));
         {
-            add_imm(X_TMP_0, reg_coff, offt);
+            add_imm(X_TMP_0, reg_coff, offt, X_TMP_1);
             xvstx(Vmm(idx), reg_rbuf1, X_TMP_0);
         }
     }
@@ -1027,7 +1031,7 @@ struct jit_bnorm_t : public jit_generator {
                     if (stream_store_allowed) {
                         //uni_vmovntps(vmmword[reg_dst + reg_soff_nspc + offt],
                           //      Vmm(idx));
-                        add_imm(X_TMP_0, reg_soff_nspc, offt);
+                        add_imm(X_TMP_0, reg_soff_nspc, offt, X_TMP_1);
                         xvstx(Vmm(idx), reg_dst, X_TMP_0);
                     } else {
                         //uni_vmovups_spat_data(
@@ -1174,7 +1178,7 @@ struct jit_bnorm_t : public jit_generator {
             //add(reg_coff, vlen);
             //cmp(reg_coff, reg_coff_max);
             //jl(ch_label);
-            add_imm(reg_coff, reg_coff, vlen);
+            add_imm(reg_coff, reg_coff, vlen, X_TMP_0);
             blt(reg_coff, reg_coff_max, ch_label);
         }
     }
@@ -1323,7 +1327,7 @@ struct jit_bnorm_t : public jit_generator {
                 //add(reg_src, mb_offt);
                 //add(reg_soff, mb_offt);
                 add_imm(reg_src, reg_src, mb_offt, X_TMP_0);
-                add(reg_soff, reg_soff, mb_offt, X_TMP_0);
+                add_imm(reg_soff, reg_soff, mb_offt, X_TMP_0);
             } else {
                 //add(reg_soff, reg_mb_stride_Bc);
                 add_d(reg_soff, reg_soff, reg_mb_stride_Bc);
@@ -1399,7 +1403,7 @@ struct jit_bnorm_t : public jit_generator {
             //uni_vaddps(vsqrtvar, vsqrtvar, veps);
             //uni_vsqrtps(vsqrtvar, vsqrtvar);
             xvfadd_s(vsqrtvar, vsqrtvar, veps);
-            xvsqrt_s(vsqrtvar, vsqrtvar);
+            xvfsqrt_s(vsqrtvar, vsqrtvar);
 
             if (bdesc_->use_scaleshift()) {
                 //uni_vmovups_maybe_tail(vgamma, gamma_ptr());
@@ -1456,7 +1460,7 @@ struct jit_bnorm_t : public jit_generator {
                                     || (bdesc_->use_scale()
                                             && bdesc_->use_shift())) {
                                 // --flags=S,CH
-                                uni_vfmadd213ps(v, vgamma, vbeta);
+                                //uni_vfmadd213ps(v, vgamma, vbeta);
                                 xvfmadd_s(v, vgamma, v, vbeta);
                             } else if (bdesc_->use_scale()) {
                                 // --flags=C
@@ -1481,9 +1485,9 @@ struct jit_bnorm_t : public jit_generator {
                                     fwd_process_relu_lasx(v, offt, Vmm(3));
                             }
                             if (stream_store_allowed) {
-                                uni_vmovntps(
-                                        vmmword[reg_dst + reg_soff + offt], v);
-                                add_imm(X_TMP_0, reg_soff, offt);
+                                //uni_vmovntps(
+                                  //      vmmword[reg_dst + reg_soff + offt], v);
+                                add_imm(X_TMP_0, reg_soff, offt, X_TMP_1);
                                 xvstx(v, reg_dst, X_TMP_0);
                             } else {
                                 //uni_vmovups_spat_data(
@@ -1553,7 +1557,7 @@ struct jit_bnorm_t : public jit_generator {
                 add_imm(reg_coff, reg_coff, vlen * ch_blk_size, X_TMP_0);
 
                 //add(reg_ws, 2 * ch_blk_size);
-                add(reg_ws, reg_ws, 2 * ch_blk_size, X_TMP_0);
+                add_imm(reg_ws, reg_ws, 2 * ch_blk_size, X_TMP_0);
 
                 //sub(reg_coff_max, vlen * ch_blk_size);
                 //jmp(ch_unroll_label[ch_idx], T_NEAR);
@@ -1684,7 +1688,7 @@ struct jit_bnorm_t : public jit_generator {
                         //uni_vmovups_spat_data(
                           //      t2, vmmword[reg_diff_dst + reg_soff + offt]);
                         uni_xvldst_spat_data(
-                                t2, reg_diff_dst, reg_soff, offt]);
+                                t2, reg_diff_dst, reg_soff, offt);
                         if (with_relu) {
                             /*if (isa == avx512_common)
                                 bwd_process_relu_avx512_common(t2, offt);
@@ -1747,8 +1751,8 @@ struct jit_bnorm_t : public jit_generator {
         for (int idx = 0, offt = 0; idx < 2 * num_ch_blks; offt += vlen) {
             //uni_vmovups(Vmm(idx++), vmmword[reg_rbuf1 + reg_coff + offt]);
             //uni_vmovups(Vmm(idx++), vmmword[reg_rbuf2 + reg_coff + offt]);
-            uni_xvld(Vmm(idx++), reg_rbuf1, reg_coff, offt]);
-            uni_xvld(Vmm(idx++), reg_rbuf2, reg_coff, offt]);
+            uni_xvld(Vmm(idx++), reg_rbuf1, reg_coff, offt);
+            uni_xvld(Vmm(idx++), reg_rbuf2, reg_coff, offt);
         }
 
         //xor_(reg_soff_nspc, reg_soff_nspc);
@@ -1901,7 +1905,7 @@ struct jit_bnorm_t : public jit_generator {
             //uni_vsqrtps(vsqrtvar, vsqrtvar);
             //uni_vdivps(vsqrtvar, vone, vsqrtvar, vbuf);
             xvfadd_s(vsqrtvar, vsqrtvar, veps);
-            xvsqrt_s(vsqrtvar, vsqrtvar);
+            xvfsqrt_s(vsqrtvar, vsqrtvar);
             xvfdiv_s(vsqrtvar, vone, vsqrtvar);
             if (bdesc_->use_scaleshift() || bdesc_->use_scale())
                 //uni_vmovups_maybe_tail(vgamma, gamma_ptr());
@@ -2060,11 +2064,11 @@ struct jit_bnorm_t : public jit_generator {
                     //uni_vmovups_maybe_tail(
                       //      vdiff_gamma, vmmword[reg_ws + reg_coff + coff]);
                     uni_xvldst_maybe_tail(
-                            vdiff_gamma, reg_ws, reg_coff, coff);
+                            vdiff_gamma, reg_ws, FLAG_XVLD, reg_coff, coff);
                     //uni_vmovups_maybe_tail(vdiff_beta,
                       //      vmmword[reg_diff_shift + reg_coff + coff]);
                     uni_xvldst_maybe_tail(vdiff_beta,
-                            reg_diff_shift, reg_coff, coff]);
+                            reg_diff_shift, FLAG_XVLD, reg_coff, coff);
                     //mov(reg_ws, ptr[rsp + stack_off_ws_off_copy]);
                     ld_d(reg_ws, rsp, stack_off_ws_off_copy);
 
@@ -2411,10 +2415,10 @@ struct jit_bnorm_t : public jit_generator {
                 //add(reg_soff, mb_offt);
                 //add(reg_ws, ws_mb_offt);
                 if (!bdesc_->use_global_stats()) add_imm(reg_src, reg_src, mb_offt, X_TMP_0);
-                add(reg_diff_dst, reg_diff_dst, mb_offt, X_TMP_0);
-                add(reg_diff_src, mb_offt, X_TMP_0);
-                add(reg_soff, reg_soff, mb_offt, X_TMP_0);
-                add(reg_ws, reg_ws, ws_mb_offt, X_TMP_0);
+                add_imm(reg_diff_dst, reg_diff_dst, mb_offt, X_TMP_0);
+                add_imm(reg_diff_src, reg_diff_src, mb_offt, X_TMP_0);
+                add_imm(reg_soff, reg_soff, mb_offt, X_TMP_0);
+                add_imm(reg_ws, reg_ws, ws_mb_offt, X_TMP_0);
             } else {
                 //add(reg_soff, reg_mb_stride_Bc);
                 add_d(reg_soff, reg_soff, reg_mb_stride_Bc);
@@ -2488,7 +2492,7 @@ struct jit_bnorm_t : public jit_generator {
 
         compute_static_strides();
         //sub(rsp, stack_size_required);
-        sub_imm(rsp, rsp, stack_size_required, X_TMP_0);
+        sub_imm(rsp, rsp, (int)stack_size_required, X_TMP_0);
         load_common_params();
         prepare_relu();
 
@@ -2988,4 +2992,3 @@ template struct jit_uni_batch_normalization_bwd_t<lasx>;
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
-#endif
