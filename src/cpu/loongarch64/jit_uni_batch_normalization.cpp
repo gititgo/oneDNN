@@ -1634,7 +1634,7 @@ struct jit_bnorm_t : public jit_generator {
                 add_imm(reg_ws, reg_ws, ws_mb_offt, X_TMP_0);
             } else {
                 //add(reg_soff, reg_mb_stride_Bc);
-                add_d(reg_soff, reg_mb_stride_Bc, zero);
+                add_d(reg_soff, reg_soff, reg_mb_stride_Bc);
             }
 
             //cmp(reg_soff, reg_soff_max);
