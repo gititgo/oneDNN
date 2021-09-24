@@ -673,6 +673,15 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
         //                  default: assert(!"unreachable");
         //              }
         //          };
+        auto load_input_bytes
+                = [=](const VReg &xmm, const XReg &addr, int32_t offset, int size, int imm) {
+                      switch (size) {
+                          case 4: { uni_ld_w(X_TMP_0, addr, offset); vinsgr2vr_w(xmm, X_TMP_0, imm); break; }
+                          case 2: { uni_ld_h(X_TMP_0, addr, offset); vinsgr2vr_h(xmm, X_TMP_0, imm); break; }
+                          case 1: { uni_ld_b(X_TMP_0, addr, offset); vinsgr2vr_b(xmm, X_TMP_0, imm); break; }
+                          default: assert(!"unreachable");
+                      }
+                  };
 
         //auto store = [=](const Address &addr, const Xmm &xmm, int size) {
         //    switch (size) {
@@ -715,8 +724,7 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
                 for (int r = 0; r < load_tail_step; ++r) {
                     if (ip_padding[ur + r] == 0) {
                         //load_bytes(Xmm(ur), i_addr(i_off[ur + r]), itype_sz, r);
-                        uni_ld_w(X_TMP_0, X_TMP_1, i_addr(i_off[ur + r]));
-                        xvinsgr2vr_w(XVReg(ur), X_TMP_0, r);
+                        load_input_bytes(VReg(ur), X_TMP_1, i_addr(i_off[ur + r]), itype_sz, r);
                     }
                 }
             }
@@ -728,8 +736,7 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
                 for (int ur = 0; ur < reg_unroll; ur += ur_step) {
                     for (int r = 0; r < ur_step; ++r) {
                         //load_bytes(Xmm(ur), i_addr(i_off[ur + r]), itype_sz, r);
-                        uni_ld_w(X_TMP_0, X_TMP_1, i_addr(i_off[ur + r]));
-                        xvinsgr2vr_w(XVReg(ur), X_TMP_0, r);
+                        load_input_bytes(VReg(ur), X_TMP_1, i_addr(i_off[ur + r]), itype_sz, r);
                     }
                 }
             } else {
