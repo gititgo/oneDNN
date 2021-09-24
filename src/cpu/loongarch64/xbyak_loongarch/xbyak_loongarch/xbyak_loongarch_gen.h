@@ -146,8 +146,8 @@ class CodeGenerator : public CodeArray {
   void LasxFormatI5Mode(uint32_t op, uint32_t imm5, uint32_t mode, const T &rd );
   template <typename T> 
   void LasxFormatCFR(uint32_t op, uint32_t df, const T &rj, uint32_t cd);
-  template <typename T> 
-  void LasxFormatELM(uint32_t op, uint32_t df, uint32_t idx, const T &rj, const T &rd );
+  template <typename T, typename R> 
+  void LasxFormatELM(uint32_t op, uint32_t df, uint32_t idx, const T &rj, const R &rd );
   template <typename T, typename R> 
   void LasxFormatELM_1(uint32_t op, uint32_t df, uint32_t idx, const T &rj, const R &rd );
   template <typename T> 
@@ -187,9 +187,9 @@ public:
   const XReg f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25;
   const XReg f26, f27, f28, f29, f30, f31;
 
-  const VReg w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12;
-  const VReg w13, w14, w15, w16, w17, w18, w19, w20, w21, w22, w23;
-  const VReg w24, w25, w26, w27, w28, w29, w30, w31;
+  const VReg vr0, vr1, vr2, vr3, vr4, vr5, vr6, vr7, vr8, vr9, vr10, vr11, vr12;
+  const VReg vr13, vr14, vr15, vr16, vr17, vr18, vr19, vr20, vr21, vr22, vr23;
+  const VReg vr24, vr25, vr26, vr27, vr28, vr29, vr30, vr31;
 
   const XVReg xr0, xr1, xr2, xr3, xr4, xr5, xr6, xr7, xr8, xr9, xr10, xr11, xr12;
   const XVReg xr13, xr14, xr15, xr16, xr17, xr18, xr19, xr20, xr21, xr22, xr23;
@@ -208,7 +208,7 @@ public:
         f0(0), f1(1), f2(2), f3(3), f4(4), f5(5), f6(6), f7(7), f8(8), f9(9), f10(10), f11(11), f12(12), f13(13), f14(14), f15(15), f16(16), f17(17), f18(18), f19(19), f20(20), f21(21), f22(22), f23(23), f24(24), f25(25), f26(26), f27(27), f28(28), f29(29), f30(30), f31(31)
 
         ,
-        w0(0), w1(1), w2(2), w3(3), w4(4), w5(5), w6(6), w7(7), w8(8), w9(9), w10(10), w11(11), w12(12), w13(13), w14(14), w15(15), w16(16), w17(17), w18(18), w19(19), w20(20), w21(21), w22(22), w23(23), w24(24), w25(25), w26(26), w27(27), w28(28), w29(29), w30(30), w31(31) 
+        vr0(0), vr1(1), vr2(2), vr3(3), vr4(4), vr5(5), vr6(6), vr7(7), vr8(8), vr9(9), vr10(10), vr11(11), vr12(12), vr13(13), vr14(14), vr15(15), vr16(16), vr17(17), vr18(18), vr19(19), vr20(20), vr21(21), vr22(22), vr23(23), vr24(24), vr25(25), vr26(26), vr27(27), vr28(28), vr29(29), vr30(30), vr31(31) 
 
         ,
         xr0(0), xr1(1), xr2(2), xr3(3), xr4(4), xr5(5), xr6(6), xr7(7), xr8(8), xr9(9), xr10(10), xr11(11), xr12(12), xr13(13), xr14(14), xr15(15), xr16(16), xr17(17), xr18(18), xr19(19), xr20(20), xr21(21), xr22(22), xr23(23), xr24(24), xr25(25), xr26(26), xr27(27), xr28(28), xr29(29), xr30(30), xr31(31) 

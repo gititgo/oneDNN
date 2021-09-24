@@ -821,14 +821,33 @@ void CodeGenerator::xvsrari_h(const XVReg &xd, const XVReg &xj, uint32_t imm) { 
 void CodeGenerator::xvsrari_w(const XVReg &xd, const XVReg &xj, uint32_t imm) { LasxFormatBIT(0b01110110101010, TYPE_W, imm, xj, xd); }
 void CodeGenerator::xvsrari_d(const XVReg &xd, const XVReg &xj, uint32_t imm) { LasxFormatBIT(0b01110110101010, TYPE_D, imm, xj, xd); }
 
+void CodeGenerator::vinsgr2vr_b(const VReg &vd, const XReg &rj, uint32_t ui4) { LasxFormatELM(0b01110010111010, TYPE_B, ui4, rj, vd); }
+void CodeGenerator::vinsgr2vr_h(const VReg &vd, const XReg &rj, uint32_t ui3) { LasxFormatELM(0b01110010111010, TYPE_H, ui3, rj, vd); }
+void CodeGenerator::vinsgr2vr_w(const VReg &vd, const XReg &rj, uint32_t ui2) { LasxFormatELM(0b01110010111010, TYPE_W, ui2, rj, vd); }
+void CodeGenerator::vinsgr2vr_d(const VReg &vd, const XReg &rj, uint32_t ui1) { LasxFormatELM(0b01110010111010, TYPE_D, ui1, rj, vd); }
+
 void CodeGenerator::xvinsgr2vr_w(const XVReg &xd, const XReg &rj, uint32_t imm) { LasxFormatELM_1(0b01110110111010, TYPE_W, imm, rj, xd); }
 void CodeGenerator::xvinsgr2vr_d(const XVReg &xd, const XReg &rj, uint32_t imm) { LasxFormatELM_1(0b01110110111010, TYPE_D, imm, rj, xd); }
+
+void CodeGenerator::vpickve2gr_b(const XReg &rd, const VReg &vj, uint32_t ui4) { LasxFormatELM(0b01110010111011, TYPE_B, ui4, vj, rd); }
+void CodeGenerator::vpickve2gr_h(const XReg &rd, const VReg &vj, uint32_t ui3) { LasxFormatELM(0b01110010111011, TYPE_H, ui3, vj, rd); }
+void CodeGenerator::vpickve2gr_w(const XReg &rd, const VReg &vj, uint32_t ui2) { LasxFormatELM(0b01110010111011, TYPE_W, ui2, vj, rd); }
+void CodeGenerator::vpickve2gr_d(const XReg &rd, const VReg &vj, uint32_t ui1) { LasxFormatELM(0b01110010111011, TYPE_D, ui1, vj, rd); }
+void CodeGenerator::vpickve2gr_bu(const XReg &rd, const VReg &vj, uint32_t ui4) { LasxFormatELM(0b01110010111100, TYPE_B, ui4, vj, rd); }
+void CodeGenerator::vpickve2gr_hu(const XReg &rd, const VReg &vj, uint32_t ui3) { LasxFormatELM(0b01110010111100, TYPE_H, ui3, vj, rd); }
+void CodeGenerator::vpickve2gr_wu(const XReg &rd, const VReg &vj, uint32_t ui2) { LasxFormatELM(0b01110010111100, TYPE_W, ui2, vj, rd); }
+void CodeGenerator::vpickve2gr_du(const XReg &rd, const VReg &vj, uint32_t ui1) { LasxFormatELM(0b01110010111100, TYPE_D, ui1, vj, rd); }
 
 void CodeGenerator::xvpickve2gr_w(const XReg &rd, const XVReg &xj, uint32_t imm) { LasxFormatELM_1(0b01110110111011, TYPE_W, imm, xj, rd); }
 void CodeGenerator::xvpickve2gr_d(const XReg &rd, const XVReg &xj, uint32_t imm) { LasxFormatELM_1(0b01110110111011, TYPE_D, imm, xj, rd); }
 
 void CodeGenerator::xvpickve2gr_wu(const XReg &rd, const XVReg &xj, uint32_t imm) { LasxFormatELM_1(0b01110110111100, TYPE_W, imm, xj, rd); }
 void CodeGenerator::xvpickve2gr_du(const XReg &rd, const XVReg &xj, uint32_t imm) { LasxFormatELM_1(0b01110110111100, TYPE_D, imm, xj, rd); }
+
+void CodeGenerator::vreplvei_b(const VReg &vd, const VReg &vj, uint32_t ui4) { LasxFormatELM(0b01110010111101, TYPE_B, ui4, vj, vd); }
+void CodeGenerator::vreplvei_h(const VReg &vd, const VReg &vj, uint32_t ui3) { LasxFormatELM(0b01110010111101, TYPE_H, ui3, vj, vd); }
+void CodeGenerator::vreplvei_w(const VReg &vd, const VReg &vj, uint32_t ui2) { LasxFormatELM(0b01110010111101, TYPE_W, ui2, vj, vd); }
+void CodeGenerator::vreplvei_d(const VReg &vd, const VReg &vj, uint32_t ui1) { LasxFormatELM(0b01110010111101, TYPE_D, ui1, vj, vd); }
 
 void CodeGenerator::xvrepl128vei_b(const XVReg &xd, const XVReg &xj, uint32_t imm) { LasxFormatELM(0b01110110111101, TYPE_B, imm, xj, xd); }
 void CodeGenerator::xvrepl128vei_h(const XVReg &xd, const XVReg &xj, uint32_t imm) { LasxFormatELM(0b01110110111101, TYPE_H, imm, xj, xd); }

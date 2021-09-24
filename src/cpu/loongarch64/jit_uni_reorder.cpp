@@ -708,13 +708,13 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
                 = (utils::one_of(prb_.otype, u8, s8, s32) && interim_f32);
 
         if (h_padded) {
+            add_d(X_TMP_1, reg_ptr_in, reg_off_in);
             for (int ur = 0; ur < reg_unroll; ur += load_tail_step) {
                 //uni_vpxor(Xmm(ur), Xmm(ur), Xmm(ur));
                 uni_vpxor(XVReg(ur), XVReg(ur), XVReg(ur));
                 for (int r = 0; r < load_tail_step; ++r) {
                     if (ip_padding[ur + r] == 0) {
                         //load_bytes(Xmm(ur), i_addr(i_off[ur + r]), itype_sz, r);
-                        add_d(X_TMP_1, reg_ptr_in, reg_off_in);
                         uni_ld_w(X_TMP_0, X_TMP_1, i_addr(i_off[ur + r]));
                         xvinsgr2vr_w(XVReg(ur), X_TMP_0, r);
                     }
@@ -724,10 +724,10 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
             if (!can_load_xmm && can_store_xmm) {
                 assert(ur_step == xmm_vlen);
                 /* load with stride */
+                add_d(X_TMP_1, reg_ptr_in, reg_off_in);
                 for (int ur = 0; ur < reg_unroll; ur += ur_step) {
                     for (int r = 0; r < ur_step; ++r) {
                         //load_bytes(Xmm(ur), i_addr(i_off[ur + r]), itype_sz, r);
-                        add_d(X_TMP_1, reg_ptr_in, reg_off_in);
                         uni_ld_w(X_TMP_0, X_TMP_1, i_addr(i_off[ur + r]));
                         xvinsgr2vr_w(XVReg(ur), X_TMP_0, r);
                     }
@@ -770,21 +770,19 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
                                 interim_f32 ? f32 : prb_.itype);
                     }
                 }
+                add_d(X_TMP_1, reg_ptr_out, reg_off_out);
                 for (int ur = 0; ur < reg_unroll; ur += load_step) {
                     for (int r = 0; r < load_step; ++r) {
                         if (otype_sz == 4) {
                             //uni_vpextrd(o_addr(o_off[ur + r]), Xmm(ur), r);
-                            add_d(X_TMP_1, reg_ptr_out, reg_off_out);
                             uni_xvstelm_w(XVReg(ur), X_TMP_1, o_addr(o_off[ur + r]), r);
                         }
                         else if (otype_sz == 2) {
                             //uni_vpextrw(o_addr(o_off[ur + r]), Xmm(ur), r);
-                            add_d(X_TMP_1, reg_ptr_out, reg_off_out);
                             uni_xvstelm_h(XVReg(ur), X_TMP_1, o_addr(o_off[ur + r]), r);
                         }
                         else {
                             //uni_vpextrb(o_addr(o_off[ur + r]), Xmm(ur), r);
-                            add_d(X_TMP_1, reg_ptr_out, reg_off_out);
                             uni_xvstelm_b(XVReg(ur), X_TMP_1, o_addr(o_off[ur + r]), r);
                         }
                     }

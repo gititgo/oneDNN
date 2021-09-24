@@ -782,14 +782,33 @@ void xvsrari_h(const XVReg &xd, const XVReg &xj, uint32_t imm);
 void xvsrari_w(const XVReg &xd, const XVReg &xj, uint32_t imm);
 void xvsrari_d(const XVReg &xd, const XVReg &xj, uint32_t imm);
 
+void vinsgr2vr_b(const VReg &vd, const XReg &rj, uint32_t ui4);
+void vinsgr2vr_h(const VReg &vd, const XReg &rj, uint32_t ui3);
+void vinsgr2vr_w(const VReg &vd, const XReg &rj, uint32_t ui2);
+void vinsgr2vr_d(const VReg &vd, const XReg &rj, uint32_t ui1);
+
 void xvinsgr2vr_w(const XVReg &xd, const XReg &rj, uint32_t imm);
 void xvinsgr2vr_d(const XVReg &xd, const XReg &rj, uint32_t imm);
+
+void vpickve2gr_b(const XReg &rd, const VReg &vj, uint32_t ui4);
+void vpickve2gr_h(const XReg &rd, const VReg &vj, uint32_t ui3);
+void vpickve2gr_w(const XReg &rd, const VReg &vj, uint32_t ui2);
+void vpickve2gr_d(const XReg &rd, const VReg &vj, uint32_t ui1);
+void vpickve2gr_bu(const XReg &rd, const VReg &vj, uint32_t ui4);
+void vpickve2gr_hu(const XReg &rd, const VReg &vj, uint32_t ui3);
+void vpickve2gr_wu(const XReg &rd, const VReg &vj, uint32_t ui2);
+void vpickve2gr_du(const XReg &rd, const VReg &vj, uint32_t ui1);
 
 void xvpickve2gr_w(const XReg &rd, const XVReg &xj, uint32_t imm);
 void xvpickve2gr_d(const XReg &rd, const XVReg &xj, uint32_t imm);
 
 void xvpickve2gr_wu(const XReg &rd, const XVReg &xj, uint32_t imm);
 void xvpickve2gr_du(const XReg &rd, const XVReg &xj, uint32_t imm);
+
+void vreplvei_b(const VReg &vd, const VReg &vj, uint32_t ui4);
+void vreplvei_h(const VReg &vd, const VReg &vj, uint32_t ui3);
+void vreplvei_w(const VReg &vd, const VReg &vj, uint32_t ui2);
+void vreplvei_d(const VReg &vd, const VReg &vj, uint32_t ui1);
 
 void xvrepl128vei_b(const XVReg &xd, const XVReg &xj, uint32_t imm);
 void xvrepl128vei_h(const XVReg &xd, const XVReg &xj, uint32_t imm);

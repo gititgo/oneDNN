@@ -873,6 +873,9 @@ public:
             case 2:
             case 3:
             case 4:
+                xvpickve2gr_w(X_TMP_3, xvreg, 0);
+                st_w(X_TMP_3, X_TMP_2, 0);
+                break;
             case 5:
             case 6:
             case 7:

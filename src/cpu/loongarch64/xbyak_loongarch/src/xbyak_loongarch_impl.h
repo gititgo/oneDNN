@@ -498,8 +498,8 @@ void CodeGenerator::LasxFormatBIT(uint32_t op, uint32_t df, uint32_t m, const T 
   dd(code);
 }
 
-template <typename T> 
-void CodeGenerator::LasxFormatELM(uint32_t op, uint32_t df, uint32_t idx, const T &rj, const T &rd ) {
+template <typename T, typename R> 
+void CodeGenerator::LasxFormatELM(uint32_t op, uint32_t df, uint32_t idx, const T &rj, const R &rd ) {
   uint32_t df_n = 0;
 
   switch(df) {
