@@ -654,116 +654,155 @@ public:
                 && "routine is not supported for the current isa");
 
         auto xvreg = Xbyak_loongarch::XVReg(vmm.getIdx());
+        auto vreg = Xbyak_loongarch::VReg(vmm.getIdx());
+
+        if (load_size > 0)
+            add_imm(X_TMP_4, reg, offset, X_TMP_4);
 
         switch (load_size) {
             case 0: break;
             case 1:
+                ld_b(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_b(vreg, X_TMP_3, 0);
+                break;
             case 2:
+                ld_h(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_h(vreg, X_TMP_3, 0);
+                break;
             case 3:
+                ld_h(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_h(vreg, X_TMP_3, 0);
+                ld_b(X_TMP_3, X_TMP_4, 2);
+                vinsgr2vr_b(vreg, X_TMP_3, 2);
+                break;
             case 4:
+                ld_w(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_w(vreg, X_TMP_3, 0);
+                break;
             case 5:
+                ld_w(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_w(vreg, X_TMP_3, 0);
+                ld_b(X_TMP_3, X_TMP_4, 4);
+                vinsgr2vr_b(vreg, X_TMP_3, 4);
+                break;
             case 6:
+                ld_w(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_w(vreg, X_TMP_3, 0);
+                ld_h(X_TMP_3, X_TMP_4, 4);
+                vinsgr2vr_h(vreg, X_TMP_3, 2);
+                break;
             case 7:
+                ld_w(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_w(vreg, X_TMP_3, 0);
+                ld_h(X_TMP_3, X_TMP_4, 4);
+                vinsgr2vr_h(vreg, X_TMP_3, 2);
+                ld_b(X_TMP_3, X_TMP_4, 6);
+                vinsgr2vr_b(vreg, X_TMP_3, 6);
+                break;
             case 8: 
-                uni_ld_d(X_TMP_3, reg, offset);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 0); 
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0); 
                 break;
             case 9:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_b(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_b(vreg, X_TMP_3, 8);
+                break;
             case 10:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_h(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_h(vreg, X_TMP_3, 4);
+                break;
             case 11:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_h(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_h(vreg, X_TMP_3, 4);
+                ld_b(X_TMP_3, X_TMP_4, 10);
+                vinsgr2vr_b(vreg, X_TMP_3, 10);
+                break;
             case 12:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_w(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_w(vreg, X_TMP_3, 2);
+                break;
             case 13:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_w(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_w(vreg, X_TMP_3, 2);
+                ld_b(X_TMP_3, X_TMP_4, 12);
+                vinsgr2vr_b(vreg, X_TMP_3, 12);
+                break;
             case 14:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_w(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_w(vreg, X_TMP_3, 2);
+                ld_h(X_TMP_3, X_TMP_4, 12);
+                vinsgr2vr_h(vreg, X_TMP_3, 6);
+                break;
             case 15:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_w(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_w(vreg, X_TMP_3, 2);
+                ld_h(X_TMP_3, X_TMP_4, 12);
+                vinsgr2vr_h(vreg, X_TMP_3, 6);
+                ld_b(X_TMP_3, X_TMP_4, 14);
+                vinsgr2vr_b(vreg, X_TMP_3, 14);
+                break;
             case 16:
-                uni_ld_d(X_TMP_3, reg, offset);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 0);
-                uni_ld_d(X_TMP_3, reg, offset + 8);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 1);
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_d(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_d(vreg, X_TMP_3, 1);
                 break;
             case 17:
             case 18:
             case 19:
             case 20:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_d(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_d(vreg, X_TMP_3, 1);
+                ld_w(X_TMP_3, X_TMP_4, 16);
+                xvinsgr2vr_w(xvreg, X_TMP_3, 4);
+                break;
             case 21:
             case 22:
             case 23:
             case 24:
-                uni_ld_d(X_TMP_3, reg, offset);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 0);
-                uni_ld_d(X_TMP_3, reg, offset + 8);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 1);
-                uni_ld_d(X_TMP_3, reg, offset + 16);
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_d(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_d(vreg, X_TMP_3, 1);
+                ld_d(X_TMP_3, X_TMP_4, 16);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 2);
                 break;
-            case 32:
-            default:
-                uni_xvld(xvreg, reg, offset);
-                break;
-        }
-    }
-
-    template <typename Vmm>
-    void load_bytes(const Vmm &vmm, const Xbyak_loongarch::XReg &reg, 
-        const Xbyak_loongarch::XReg &reg_off, int64_t offset, int load_size) {
-
-        // Ensure offset is at most 4 bytes to be encoded in the instruction
-        assert(offset >= INT_MIN && offset <= INT_MAX);
-
-        // Ensure data fits completely inside the Xmm/Ymm register
-        assert(load_size >= 0 && load_size <= 32);
-
-        assert(is_valid_isa(lasx)
-                && "routine is not supported for the current isa");
-
-        auto xvreg = Xbyak_loongarch::XVReg(vmm.getIdx());
-        add_d(X_TMP_2, reg, reg_off);
-        add_imm(X_TMP_2, X_TMP_2, offset, X_TMP_3);
-
-        switch (load_size) {
-            case 0: break;
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-            case 8: 
-                ld_d(X_TMP_3, X_TMP_2, 0);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 0); 
-                break;
-            case 9:
-            case 10:
-            case 11:
-            case 12:
-            case 13:
-            case 14:
-            case 15:
-            case 16:
-                ld_d(X_TMP_3, X_TMP_2, 0);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 0);
-                ld_d(X_TMP_3, X_TMP_2, 8);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 1);
-                break;
-            case 17:
-            case 18:
-            case 19:
-            case 20:
-            case 21:
-            case 22:
-            case 23:
-            case 24:
-                ld_d(X_TMP_3, X_TMP_2, 0);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 0);
-                ld_d(X_TMP_3, X_TMP_2, 8);
-                xvinsgr2vr_d(xvreg, X_TMP_3, 1);
-                ld_d(X_TMP_3, X_TMP_2, 16);
+            case 25:
+            case 26:
+            case 27:
+            case 28:
+                ld_d(X_TMP_3, X_TMP_4, 0);
+                vinsgr2vr_d(vreg, X_TMP_3, 0);
+                ld_d(X_TMP_3, X_TMP_4, 8);
+                vinsgr2vr_d(vreg, X_TMP_3, 1);
+                ld_d(X_TMP_3, X_TMP_4, 16);
                 xvinsgr2vr_d(xvreg, X_TMP_3, 2);
+                ld_w(X_TMP_3, X_TMP_4, 24);
+                xvinsgr2vr_w(xvreg, X_TMP_3, 6);
                 break;
+            case 29:
+            case 30:
+            case 31:
             case 32:
+                xvld(xvreg, X_TMP_4, 0);
+                break;
             default:
-                xvld(xvreg, X_TMP_2, 0);
                 break;
         }
     }
@@ -801,119 +840,154 @@ public:
                 && "routine is not supported for the current isa");
 
         auto xvreg = Xbyak_loongarch::XVReg(vmm.getIdx());
+        auto vreg = Xbyak_loongarch::VReg(vmm.getIdx());
+        if (store_size > 0)
+            add_imm(X_TMP_4, reg, offset, X_TMP_4);
 
         switch (store_size) {
             case 0: break;
             case 1:
+                vpickve2gr_b(X_TMP_3, vreg, 0);
+                st_b(X_TMP_3, X_TMP_4, 0);
+                break;
             case 2:
+                vpickve2gr_h(X_TMP_3, vreg, 0);
+                st_h(X_TMP_3, X_TMP_4, 0);
+                break;
             case 3:
+                vpickve2gr_h(X_TMP_3, vreg, 0);
+                st_h(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_b(X_TMP_3, vreg, 2);
+                st_b(X_TMP_3, X_TMP_4, 2);
+                break;
             case 4:
+                vpickve2gr_w(X_TMP_3, vreg, 0);
+                st_w(X_TMP_3, X_TMP_4, 0);
+                break;
             case 5:
+                vpickve2gr_w(X_TMP_3, vreg, 0);
+                st_w(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_b(X_TMP_3, vreg, 4);
+                st_b(X_TMP_3, X_TMP_4, 4);
+                break;
             case 6:
+                vpickve2gr_w(X_TMP_3, vreg, 0);
+                st_w(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_h(X_TMP_3, vreg, 2);
+                st_h(X_TMP_3, X_TMP_4, 4);
+                break;
             case 7:
+                vpickve2gr_w(X_TMP_3, vreg, 0);
+                st_w(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_h(X_TMP_3, vreg, 2);
+                st_h(X_TMP_3, X_TMP_4, 4);
+                vpickve2gr_b(X_TMP_3, vreg, 6);
+                st_b(X_TMP_3, X_TMP_4, 6);
+                break;
             case 8:
-                xvpickve2gr_d(X_TMP_3, xvreg, 0);
-                uni_st_d(X_TMP_3, reg, offset);
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
                 break;
             case 9:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_b(X_TMP_3, vreg, 8);
+                st_b(X_TMP_3, X_TMP_4, 8);
+                break;
             case 10:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_h(X_TMP_3, vreg, 4);
+                st_h(X_TMP_3, X_TMP_4, 8);
+                break;
             case 11:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_h(X_TMP_3, vreg, 4);
+                st_h(X_TMP_3, X_TMP_4, 8);
+                vpickve2gr_b(X_TMP_3, vreg, 10);
+                st_b(X_TMP_3, X_TMP_4, 10);
+                break;
             case 12:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_w(X_TMP_3, vreg, 2);
+                st_w(X_TMP_3, X_TMP_4, 8);
+                break;
             case 13:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_w(X_TMP_3, vreg, 2);
+                st_h(X_TMP_3, X_TMP_4, 8);
+                vpickve2gr_b(X_TMP_3, vreg, 12);
+                st_b(X_TMP_3, X_TMP_4, 12);
+                break;
             case 14:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_w(X_TMP_3, vreg, 2);
+                st_h(X_TMP_3, X_TMP_4, 8);
+                vpickve2gr_h(X_TMP_3, vreg, 6);
+                st_h(X_TMP_3, X_TMP_4, 12);
+                break;
             case 15:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_w(X_TMP_3, vreg, 2);
+                st_h(X_TMP_3, X_TMP_4, 8);
+                vpickve2gr_h(X_TMP_3, vreg, 6);
+                st_h(X_TMP_3, X_TMP_4, 12);
+                vpickve2gr_b(X_TMP_3, vreg, 14);
+                st_b(X_TMP_3, X_TMP_4, 14);
+                break;
             case 16:
-                xvpickve2gr_d(X_TMP_3, xvreg, 0);
-                uni_st_d(X_TMP_3, reg, offset);
-                xvpickve2gr_d(X_TMP_3, xvreg, 1);
-                uni_st_d(X_TMP_3, reg, offset + 8);
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_d(X_TMP_3, vreg, 1);
+                st_d(X_TMP_3, X_TMP_4, 8);
                 break;
             case 17:
             case 18:
             case 19:
             case 20:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_d(X_TMP_3, vreg, 1);
+                st_d(X_TMP_3, X_TMP_4, 8);
+                xvpickve2gr_w(X_TMP_3, xvreg, 4);
+                st_w(X_TMP_3, X_TMP_4, 16);
+                break;
             case 21:
             case 22:
             case 23:
             case 24:
-                xvpickve2gr_d(X_TMP_3, xvreg, 0);
-                uni_st_d(X_TMP_3, reg, offset);
-                xvpickve2gr_d(X_TMP_3, xvreg, 1);
-                uni_st_d(X_TMP_3, reg, offset + 8);
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_d(X_TMP_3, vreg, 1);
+                st_d(X_TMP_3, X_TMP_4, 8);
                 xvpickve2gr_d(X_TMP_3, xvreg, 2);
-                uni_st_d(X_TMP_3, reg, offset + 16);
+                st_d(X_TMP_3, X_TMP_4, 16);
                 break;
-            case 32:
-            default:
-                uni_xvst(xvreg, reg, offset);
-                break;
-        }
-    }
-
-    template <typename Vmm>
-    void store_bytes(const Vmm &vmm, const Xbyak_loongarch::XReg &reg, 
-            const Xbyak_loongarch::XReg &reg_off, int64_t offset, int store_size) {
-
-        // Ensure offset is at most 4 bytes to be encoded in the instruction
-        assert(offset >= INT_MIN && offset <= INT_MAX);
-
-        // Ensure data fits completely inside the Xmm/Ymm register
-        assert(store_size >= 0 && store_size <= 32);
-
-        assert(is_valid_isa(lasx)
-                && "routine is not supported for the current isa");
-
-        auto xvreg = Xbyak_loongarch::XVReg(vmm.getIdx());
-        add_d(X_TMP_2, reg, reg_off);
-        add_imm(X_TMP_2, X_TMP_2, offset, X_TMP_3);
-
-        switch (store_size) {
-            case 0: break;
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-                xvpickve2gr_w(X_TMP_3, xvreg, 0);
-                st_w(X_TMP_3, X_TMP_2, 0);
-                break;
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-                xvpickve2gr_d(X_TMP_3, xvreg, 0);
-                st_d(X_TMP_3, X_TMP_2, 0);
-                break;
-            case 9:
-            case 10:
-            case 11:
-            case 12:
-            case 13:
-            case 14:
-            case 15:
-            case 16:
-                xvpickve2gr_d(X_TMP_3, xvreg, 0);
-                st_d(X_TMP_3, X_TMP_2, 0);
-                xvpickve2gr_d(X_TMP_3, xvreg, 1);
-                st_d(X_TMP_3, X_TMP_2, 8);
-                break;
-            case 17:
-            case 18:
-            case 19:
-            case 20:
-            case 21:
-            case 22:
-            case 23:
-            case 24:
-                xvpickve2gr_d(X_TMP_3, xvreg, 0);
-                st_d(X_TMP_3, X_TMP_2, 0);
-                xvpickve2gr_d(X_TMP_3, xvreg, 1);
-                st_d(X_TMP_3, X_TMP_2, 8);
+            case 25:
+            case 26:
+            case 27:
+            case 28:
+                vpickve2gr_d(X_TMP_3, vreg, 0);
+                st_d(X_TMP_3, X_TMP_4, 0);
+                vpickve2gr_d(X_TMP_3, vreg, 1);
+                st_d(X_TMP_3, X_TMP_4, 8);
                 xvpickve2gr_d(X_TMP_3, xvreg, 2);
-                st_d(X_TMP_3, X_TMP_2, 16);
+                st_d(X_TMP_3, X_TMP_4, 16);
+                xvpickve2gr_w(X_TMP_3, xvreg, 6);
+                st_w(X_TMP_3, X_TMP_4, 24);
                 break;
+            case 29:
+            case 30:
+            case 31:
             case 32:
+                xvst(xvreg, X_TMP_4, 0);
+                break;
             default:
-                xvst(xvreg, X_TMP_2, 0);
                 break;
         }
     }
