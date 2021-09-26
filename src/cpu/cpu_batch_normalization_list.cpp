@@ -35,6 +35,7 @@ using namespace dnnl::impl::cpu::aarch64;
 #endif
 
 #if DNNL_LOONGARCH64
+#include "cpu/loongarch64/jit_uni_batch_normalization.hpp"
 #include "cpu/loongarch64/jit_uni_batch_normalization_s8.hpp"
 using namespace dnnl::impl::cpu::loongarch64;
 #endif
@@ -65,6 +66,8 @@ const impl_list_item_t impl_list[] = {
         CPU_INSTANCE_AARCH64(jit_uni_batch_normalization_bwd_t<sve_512>)
         CPU_INSTANCE_AARCH64(jit_uni_batch_normalization_fwd_t<asimd>)
         CPU_INSTANCE_AARCH64(jit_uni_batch_normalization_bwd_t<asimd>)
+        CPU_INSTANCE_LOONGARCH64(jit_uni_batch_normalization_fwd_t<lasx>)
+        CPU_INSTANCE_LOONGARCH64(jit_uni_batch_normalization_bwd_t<lasx>)
         CPU_INSTANCE(ncsp_batch_normalization_fwd_t<f32>)
         CPU_INSTANCE(ncsp_batch_normalization_bwd_t<f32>)
         CPU_INSTANCE(ncsp_batch_normalization_fwd_t<bf16>)

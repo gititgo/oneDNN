@@ -389,12 +389,16 @@ struct jit_bnorm_t : public jit_generator {
 
         //const int tail = bdesc_->C() % (int)(vlen / sizeof(float));
         tail_ = bdesc_->C() % (int)(vlen / sizeof(float));
-        //static const uint32_t mask[16] = {0xffffffff, 0xffffffff, 0xffffffff,
-          //      0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0,
-            //    0, 0, 0, 0, 0, 0, 0};
+        static const uint32_t mask[16] = {0xffffffff, 0xffffffff, 0xffffffff,
+                0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0,
+                0, 0, 0, 0, 0, 0, 0};
+
+        //std::cout << "tail: " << tail_ << std::endl;  //for DEBUG
 
         //mov(reg_tmp, reinterpret_cast<size_t>(&mask[8 - tail]));
         //vmovups(vtail_mask, ptr[reg_tmp]);
+        mov_imm(reg_tmp, reinterpret_cast<size_t>(&mask[8 - tail_]));
+        xvld(vtail_mask, reg_tmp, 0);
     }
 
     void prepare_relu() {
@@ -539,7 +543,7 @@ struct jit_bnorm_t : public jit_generator {
         add_d(X_TMP_0, r1, r2);
 
         if(ldFlag == FLAG_XVLD) {
-            switch(tail_) {
+            /*switch(tail_) {
                 case 1: xvldrepl_w(xvreg, X_TMP_0, 0); break;
                 case 2: xvldrepl_d(xvreg, X_TMP_0, 0); break;
                 case 3: xvldrepl_d(xvreg, X_TMP_0, 0); 
@@ -571,7 +575,9 @@ struct jit_bnorm_t : public jit_generator {
                         xvinsgr2vr_w(xvreg, X_TMP_1, 6);
                         break;
                 default: break; 
-            }
+            }*/
+            xvld(xvreg, X_TMP_0, 0);  //load directly, as x64 load high mem to high xvreg directly using mask
+            xvand_v(xvreg, xvreg, vtail_mask);
         } else {
             switch(tail_) {
                 case 1: xvstelm_w(xvreg, X_TMP_0, 0, 0); break;
