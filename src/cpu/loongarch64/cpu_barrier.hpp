@@ -34,7 +34,8 @@ namespace simple_barrier {
 
 STRUCT_ALIGN(
         CTX_ALIGNMENT, struct ctx_t {
-            enum { CACHE_LINE_SIZE = 256 };
+            //enum { CACHE_LINE_SIZE = 256 };
+            enum { CACHE_LINE_SIZE = 64 };
             volatile size_t ctr;
             char pad1[CACHE_LINE_SIZE - 1 * sizeof(size_t)];
             volatile size_t sense;
