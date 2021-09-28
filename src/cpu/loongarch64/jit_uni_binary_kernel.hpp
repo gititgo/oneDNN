@@ -14,8 +14,8 @@
 * limitations under the License.
 *******************************************************************************/
 
-#ifndef CPU_X64_UNI_BINARY_KERNEL_HPP
-#define CPU_X64_UNI_BINARY_KERNEL_HPP
+#ifndef CPU_LOONGARCH64_UNI_BINARY_KERNEL_HPP
+#define CPU_LOONGARCH64_UNI_BINARY_KERNEL_HPP
 
 #include <cassert>
 
@@ -23,20 +23,20 @@
 #include "common/type_helpers.hpp"
 #include "common/utils.hpp"
 
-#include "cpu/x64/cpu_isa_traits.hpp"
-#include "cpu/x64/injectors/jit_uni_postops_injector.hpp"
-#include "cpu/x64/jit_generator.hpp"
-#include "cpu/x64/jit_primitive_conf.hpp"
-#include "cpu/x64/utils/jit_io_helper.hpp"
+#include "cpu/loongarch64/cpu_isa_traits.hpp"
+#include "cpu/loongarch64/injectors/jit_uni_postops_injector.hpp"
+#include "cpu/loongarch64/jit_generator.hpp"
+#include "cpu/loongarch64/jit_primitive_conf.hpp"
+#include "cpu/loongarch64/utils/jit_io_helper.hpp"
 
 #include "cpu/cpu_binary_pd.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 
-using namespace Xbyak;
+using namespace Xbyak_loongarch;
 
 struct binary_kernel_t : public jit_generator {
     using op_t = binary_op_t;
@@ -70,6 +70,7 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     DECLARE_CPU_JIT_AUX_FUNCTIONS(jit_uni_binary_kernel_t)
 
     using Vmm = typename cpu_isa_traits<isa>::Vmm;
+    /*
     const AddressFrame &vmmword
             = (isa == sse41) ? xword : ((isa == avx2) ? yword : zword);
 
@@ -80,7 +81,8 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     static constexpr bool is_avx512_common = isa == avx512_common;
     const bool is_avx512_not_mic
             = is_avx512_core || (is_avx512_common && !conf_.is_i8);
-
+    */
+/*
     const Reg64 &reg_param_ = abi_param1;
     const Reg64 &reg_src0_ = r8;
     const Reg64 &reg_src1_ = r9;
@@ -98,9 +100,31 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     const Reg64 &reg_scales_src0_ = rbx;
     const Reg64 &reg_scales_src1_ = rbp;
     const Reg64 &reg_offt_dst_ = rdx;
-    const Opmask &tail_opmask_ = k2;
-    const Opmask &cmp_mask = k3;
-    const Opmask &full_mask_ = k4;
+*/
+    using Reg64 = typename Xbyak_loongarch::XReg;
+
+    const Reg64 &reg_param_ = abi_param1;
+    const Reg64 &reg_src0_ = t0;
+    const Reg64 &reg_src1_ = t1;
+    const Reg64 &reg_dst_ = t2;
+    const Reg64 &reg_offt_src0_ = t3;
+    const Reg64 &reg_outer_dims_range_ = t4;
+    const Reg64 &reg_offt_src1_ = rax;
+    const Reg64 &reg_src1_stride_range_ = t7;
+    const Reg64 &reg_reverse_src1_stride_range_ = a1;
+    const Reg64 &reg_reverse_spat_offt_ = t5;
+    const Reg64 &reg_tmp_ = t6;
+    const Reg64 &reg_tmp1_ = abi_not_param1;
+    const Reg64 &reg_elt_inj_table_ = t7;
+    const Reg64 &reg_off_rhs_postops_ = a2;
+    const Reg64 &reg_scales_src0_ = a3;
+    const Reg64 &reg_scales_src1_ = a4;
+    const Reg64 &reg_offt_dst_ = a2;
+
+    //const Opmask &tail_opmask_ = k2;
+    //const Opmask &cmp_mask = k3;
+    //const Opmask &full_mask_ = k4;
+/*
     const Vmm vmm_tail_vmask_ = Vmm(0);
     const Vmm vreg_sum_scale_ = Vmm(is_avx512 ? 17 : 9);
     const Xmm xreg_sum_scale_ = Xmm(9);
@@ -111,39 +135,63 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     const Xmm xreg_bcast_src1_ = Xmm(13);
     const Vmm vreg_scales_src0_ = Vmm(is_avx512 ? 22 : 14);
     const Vmm vreg_scales_src1_ = Vmm(is_avx512 ? 23 : 15);
+*/
+    const Vmm vmm_tail_vmask_ = Vmm(0);
+    const Vmm vreg_sum_scale_ = Vmm(9);
+    //const Xmm xreg_sum_scale_ = Xmm(9);
+    const Vmm vreg_zero_ = Vmm(10);
+    const Vmm vreg_one_ = Vmm(11);
+    const Vmm vreg_saturation_ubound_ = Vmm(12);
+    const Vmm vreg_bcast_src1_ = Vmm(13);
+    //const Xmm xreg_bcast_src1_ = Xmm(13);
+    const Vmm vreg_scales_src0_ = Vmm(14);
+    const Vmm vreg_scales_src1_ = Vmm(15);
 
+/*
     const Zmm vreg_bf16_emu_1_ = Zmm(26);
     const Zmm vreg_bf16_emu_2_ = Zmm(27);
     const Zmm vreg_bf16_emu_3_ = Zmm(28);
     const Zmm vreg_bf16_emu_4_ = Zmm(29);
-
+*/
+/*
     const Vmm vmm_full_mask_ = Vmm(is_avx512_not_mic ? 24 : 5);
     const Vmm vmm_tmp_gather_ = Vmm(is_avx512_not_mic ? 25 : 6);
     const Vmm vmm_indices_ = Vmm(is_avx512_not_mic ? 30 : 7);
     const Vmm vmm_gathered_src_ = Vmm(is_avx512_not_mic ? 31 : 8);
+*/
+    const Vmm vmm_full_mask_ = Vmm(5);
+    const Vmm vmm_tmp_gather_ = Vmm(6);
+    const Vmm vmm_indices_ = Vmm(7);
+    const Vmm vmm_gathered_src_ = Vmm(8);
 
-    const size_t unroll_regs_ = is_avx512
-                    && IMPLICATION(
-                            conf_.is_src_different_layouts, is_avx512_not_mic)
-            ? 8
-            : 4;
+    //const size_t unroll_regs_ = is_avx512
+      //              && IMPLICATION(
+        //                    conf_.is_src_different_layouts, is_avx512_not_mic)
+          //  ? 8
+            //: 4;
+    const size_t unroll_regs_ = 4;
     const size_t offt_src0_;
     const size_t offt_src1_;
 
-    static constexpr cpu_isa_t inject_isa
-            = isa == avx512_core_bf16 ? avx512_core : isa;
+    //static constexpr cpu_isa_t inject_isa
+      //      = isa == avx512_core_bf16 ? avx512_core : isa;
+    static constexpr cpu_isa_t inject_isa = isa;
     io::jit_io_multi_dt_helper_t<Vmm> io_;
     std::unique_ptr<injector::jit_uni_postops_injector_t<inject_isa>>
             postops_injector_;
-    const Opmask &elt_inj_opmask_ = k1;
+    //const Opmask &elt_inj_opmask_ = k1;
+    const Vmm &elt_inj_opmask_ = Vmm(16);  //TODO
 
     void init();
     void init_post_ops_injector();
     void apply_postops(int unroll, bool tail);
     void load_kernel_params();
-    Address src0_ptr(size_t offt = 0);
-    Address src1_ptr(size_t offt = 0);
-    Address dst_ptr(size_t offt = 0);
+    //Address src0_ptr(size_t offt = 0);
+    //Address src1_ptr(size_t offt = 0);
+    //Address dst_ptr(size_t offt = 0);
+    XReg src0_ptr(size_t offt = 0);
+    XReg src1_ptr(size_t offt = 0);
+    XReg dst_ptr(size_t offt = 0);
     unsigned int cmp_predicate(alg_kind_t alg);
     void perform_op(
             const Vmm &v0, const Vmm &v1, const Vmm &s_src0, const Vmm &s_src1);
@@ -163,7 +211,7 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     create_saturation_vmm_map() const;
 };
 
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

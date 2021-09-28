@@ -17,12 +17,12 @@
 #include <functional>
 
 #include "cpu/cpu_primitive.hpp"
-#include "cpu/x64/jit_uni_binary.hpp"
+#include "cpu/loongarch64/jit_uni_binary.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 
 static bcast_set_t get_supported_bcast_strategies() {
     return {broadcasting_strategy_t::scalar, broadcasting_strategy_t::per_oc,
@@ -867,7 +867,7 @@ status_t jit_uni_binary_t::execute(const exec_ctx_t &ctx) const {
     return status::success;
 }
 
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

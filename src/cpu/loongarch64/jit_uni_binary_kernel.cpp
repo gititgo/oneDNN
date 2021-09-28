@@ -16,13 +16,13 @@
 #ifdef BUILD_IN
 #include "common/dnnl_thread.hpp"
 
-#include "cpu/x64/jit_avx512_core_bf16cvt.hpp"
-#include "cpu/x64/jit_uni_binary_kernel.hpp"
+#include "cpu/loongarch64/jit_avx512_core_bf16cvt.hpp"
+#include "cpu/loongarch64/jit_uni_binary_kernel.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 
 #define PARAM_OFF(x) offsetof(jit_binary_call_s, x)
 
@@ -558,7 +558,7 @@ template struct jit_uni_binary_kernel_t<avx512_common>;
 template struct jit_uni_binary_kernel_t<avx2>;
 template struct jit_uni_binary_kernel_t<sse41>;
 
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl

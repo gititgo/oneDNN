@@ -14,18 +14,18 @@
 * limitations under the License.
 *******************************************************************************/
 
-#ifndef CPU_X64_JIT_UNI_BINARY_HPP
-#define CPU_X64_JIT_UNI_BINARY_HPP
+#ifndef CPU_LOONGARCH64_JIT_UNI_BINARY_HPP
+#define CPU_LOONGARCH64_JIT_UNI_BINARY_HPP
 
 #include "common/primitive.hpp"
 
 #include "cpu/cpu_eltwise_pd.hpp"
-#include "cpu/x64/jit_uni_binary_kernel.hpp"
+#include "cpu/loongarch64/jit_uni_binary_kernel.hpp"
 
 namespace dnnl {
 namespace impl {
 namespace cpu {
-namespace x64 {
+namespace loongarch64 {
 
 struct binary_kernel_t;
 
@@ -98,7 +98,7 @@ private:
     std::unique_ptr<binary_kernel_t> kernel_tail_;
 };
 
-} // namespace x64
+} // namespace loongarch64
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
