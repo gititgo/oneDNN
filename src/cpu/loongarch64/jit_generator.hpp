@@ -542,34 +542,34 @@ public:
     // we use the real offset(but the xvstelm.h use si8 << 1)
     void uni_xvstelm_h(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
-        if ((simm >> 1) > IMM8_MAX_VALUE || (simm >> 1) < IMM8_MIN_VALUE) {
+        if (simm > IMM9_MAX_VALUE || simm < IMM9_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             xvstelm_h(xd, X_TMP_2, 0, idx);
             return;
         }
-        xvstelm_h(xd, rj, simm >> 1, idx);
+        xvstelm_h(xd, rj, simm, idx);
     }
 
     // we use the real offset(but the xvstelm.w use si8 << 2)
     void uni_xvstelm_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
-        if ((simm >> 2) > IMM8_MAX_VALUE || (simm >> 2) < IMM8_MIN_VALUE) {
+        if (simm > IMM10_MAX_VALUE || simm < IMM10_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             xvstelm_w(xd, X_TMP_2, 0, idx);
             return;
         }
-        xvstelm_w(xd, rj, simm >> 2, idx);
+        xvstelm_w(xd, rj, simm, idx);
     }
 
     // we use the real offset(but the xvstelm.d use si8 << 3)
     void uni_xvstelm_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
-        if ((simm >> 3) > IMM8_MAX_VALUE || (simm >> 3) < IMM8_MIN_VALUE) {
+        if (simm > IMM11_MAX_VALUE || simm < IMM11_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             xvstelm_d(xd, X_TMP_2, 0, idx);
             return;
         }
-        xvstelm_d(xd, rj, simm >> 3, idx);
+        xvstelm_d(xd, rj, simm, idx);
     }
 
     /*
