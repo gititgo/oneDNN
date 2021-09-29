@@ -36,6 +36,7 @@
 #include "cpu/aarch64/jit_uni_reorder.hpp"
 #elif DNNL_LOONGARCH64
 #include "cpu/loongarch64/jit_uni_reorder.hpp"
+#include "cpu/loongarch64/wino_reorder.hpp"
 #endif
 
 #include "cpu/rnn/rnn_reorders.hpp"
