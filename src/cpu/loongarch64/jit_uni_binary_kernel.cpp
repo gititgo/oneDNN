@@ -16,7 +16,7 @@
 #ifdef BUILD_IN
 #include "common/dnnl_thread.hpp"
 
-#include "cpu/loongarch64/jit_avx512_core_bf16cvt.hpp"
+//#include "cpu/loongarch64/jit_avx512_core_bf16cvt.hpp"
 #include "cpu/loongarch64/jit_uni_binary_kernel.hpp"
 
 namespace dnnl {
@@ -83,7 +83,7 @@ jit_uni_binary_kernel_t<isa>::jit_uni_binary_kernel_t(
               {false},
               io::io_tail_conf_t {simd_w_, tail_size_, tail_opmask_,
                       vmm_tail_vmask_.getIdx(), reg_tmp_},
-              io::io_emu_bf16_conf_t {vreg_bf16_emu_1_, vreg_bf16_emu_2_,
+              io::io_emu_bf16_conf_t {vreg_bf16_emu_1_, vreg_bf16_emu_2_,  //TODO
                       vreg_bf16_emu_3_, reg_tmp_, vreg_bf16_emu_4_},
               create_saturation_vmm_map(),
               io::io_gather_conf_t {simd_w_, full_mask_,
@@ -137,7 +137,7 @@ void jit_uni_binary_kernel_t<isa>::apply_postops(int unroll, bool tail) {
     for (int vmm_idx = 1; vmm_idx < unroll + vmm_start_idx_; vmm_idx++) {
         if (utils::one_of(conf_.op_type, op_t::c_blocked, op_t::n_c_spatial)) {
             rhs_arg_params.vmm_idx_to_oc_elem_off_addr.emplace(
-                    vmm_idx, ptr[param1 + PARAM_OFF(oc_l_off)]);
+                    vmm_idx, ptr[param1 + PARAM_OFF(oc_l_off)]);  //TODO
         } else if (conf_.op_type == op_t::n_spatial_c) {
             rhs_arg_params.vmm_idx_to_oc_off_oprnd.emplace(
                     vmm_idx, reg_off_rhs_postops_);
@@ -152,32 +152,47 @@ void jit_uni_binary_kernel_t<isa>::apply_postops(int unroll, bool tail) {
 
 template <cpu_isa_t isa>
 void jit_uni_binary_kernel_t<isa>::load_kernel_params() {
-    mov(reg_tmp_, float2int(conf_.sum_scale));
-    uni_vmovq(xreg_sum_scale_, reg_tmp_);
-    uni_vbroadcastss(vreg_sum_scale_, xreg_sum_scale_);
+    //mov(reg_tmp_, float2int(conf_.sum_scale));
+    //uni_vmovq(xreg_sum_scale_, reg_tmp_);
+    //uni_vbroadcastss(vreg_sum_scale_, xreg_sum_scale_);
+    mov_imm(reg_tmp_, float2int(conf_.sum_scale));
+    xvreplgr2vr_w(vreg_sum_scale_, reg_tmp_);
     if (is_src1_outer_dims_tail_)
-        mov(reg_outer_dims_range_,
-                ptr[reg_param_ + PARAM_OFF(spat_offt_count)]);
+        //mov(reg_outer_dims_range_,
+          //      ptr[reg_param_ + PARAM_OFF(spat_offt_count)]);
+        ld_d(reg_outer_dims_range_,
+                reg_param_, PARAM_OFF(spat_offt_count));
     else
-        mov(reg_reverse_spat_offt_,
-                ptr[reg_param_ + PARAM_OFF(spat_offt_count)]);
-    mov(reg_src0_, ptr[reg_param_ + PARAM_OFF(src0)]);
-    mov(reg_src1_, ptr[reg_param_ + PARAM_OFF(src1)]);
-    mov(reg_dst_, ptr[reg_param_ + PARAM_OFF(dst)]);
+        //mov(reg_reverse_spat_offt_,
+          //      ptr[reg_param_ + PARAM_OFF(spat_offt_count)]);
+        ld_d(reg_reverse_spat_offt_,
+                reg_param_, PARAM_OFF(spat_offt_count));
+    //mov(reg_src0_, ptr[reg_param_ + PARAM_OFF(src0)]);
+    //mov(reg_src1_, ptr[reg_param_ + PARAM_OFF(src1)]);
+    //mov(reg_dst_, ptr[reg_param_ + PARAM_OFF(dst)]);
+    ld_d(reg_src0_, reg_param_, PARAM_OFF(src0));
+    ld_d(reg_src1_, reg_param_, PARAM_OFF(src1));
+    ld_d(reg_dst_, reg_param_, PARAM_OFF(dst));
     if (conf_.is_src_different_layouts) {
-        mov(reg_tmp_, ptr[reg_param_ + PARAM_OFF(indices)]);
-        uni_vmovdqu(vmm_indices_, ptr[reg_tmp_]);
+        //mov(reg_tmp_, ptr[reg_param_ + PARAM_OFF(indices)]);
+        ld_d(reg_tmp_, reg_param_, PARAM_OFF(indices));
+        //uni_vmovdqu(vmm_indices_, ptr[reg_tmp_]);
+        xvld(vmm_indices_, reg_tmp_, 0);
 
-        mov(reg_src1_stride_range_,
-                ptr[reg_param_ + PARAM_OFF(src1_stride_range)]);
-        mov(reg_reverse_src1_stride_range_, reg_src1_stride_range_);
+        //mov(reg_src1_stride_range_,
+          //      ptr[reg_param_ + PARAM_OFF(src1_stride_range)]);
+        ld_d(reg_src1_stride_range_,
+                reg_param_, PARAM_OFF(src1_stride_range));
+        add_d(reg_reverse_src1_stride_range_, reg_src1_stride_range_, zero);
     }
     if (conf_.do_scale_src0)
-        mov(reg_scales_src0_, ptr[reg_param_ + PARAM_OFF(scales_src0)]);
+        //mov(reg_scales_src0_, ptr[reg_param_ + PARAM_OFF(scales_src0)]);
+        ld_d(reg_scales_src0_, reg_param_, PARAM_OFF(scales_src0));
     if (conf_.do_scale_src1)
-        mov(reg_scales_src1_, ptr[reg_param_ + PARAM_OFF(scales_src1)]);
+        //mov(reg_scales_src1_, ptr[reg_param_ + PARAM_OFF(scales_src1)]);
+        ld_d(reg_scales_src1_, reg_param_, PARAM_OFF(scales_src1));
 }
-
+/*
 template <cpu_isa_t isa>
 Address jit_uni_binary_kernel_t<isa>::src0_ptr(size_t offt) {
     return vmmword[reg_src0_ + reg_offt_src0_ + offt];
@@ -192,6 +207,39 @@ template <cpu_isa_t isa>
 Address jit_uni_binary_kernel_t<isa>::dst_ptr(size_t offt) {
     const Reg64 &reg_offt_dst = conf_.is_i8 ? reg_offt_dst_ : reg_offt_src0_;
     return vmmword[reg_dst_ + reg_offt_dst + offt];
+}
+*/
+XReg xreg_addr(const XReg &base, const XReg &off = XReg(DUMMY_IDX),
+        const int disp = 0) {
+    XReg x_addr = base;
+    uint32_t offIdx = off.getIdx();
+
+    if (offIdx <= 31) {
+        add_d(X_DEFAULT_ADDR, base, off);
+        x_addr = X_DEFAULT_ADDR;
+    }
+    if (disp) {
+        add_imm(X_DEFAULT_ADDR, x_addr, disp, X_TMP_0);
+        x_addr = X_DEFAULT_ADDR;
+    }
+
+    return x_addr;
+}
+
+template <cpu_isa_t isa>
+XReg jit_uni_binary_kernel_t<isa>::src0_ptr(size_t offt) {
+    return xreg_addr(reg_src0_, reg_offt_src0_, offt);
+}
+
+template <cpu_isa_t isa>
+XReg jit_uni_binary_kernel_t<isa>::src1_ptr(size_t offt) {
+    return xreg_addr(reg_src1_, reg_offt_src1_, offt);
+}
+
+template <cpu_isa_t isa>
+XReg jit_uni_binary_kernel_t<isa>::dst_ptr(size_t offt) {
+    const Reg64 &reg_offt_dst = conf_.is_i8 ? reg_offt_dst_ : reg_offt_src0_;
+    return xreg_addr(reg_dst_, reg_offt_dst, offt);
 }
 
 template <cpu_isa_t isa>
@@ -208,6 +256,33 @@ unsigned int jit_uni_binary_kernel_t<isa>::cmp_predicate(alg_kind_t alg) {
     }
 }
 
+void compute_cmp_mask(const Vmm &p_mask,
+                      const Vmm &vmm_src, 
+                      const Vmm &compare_operand, 
+                      int cmp_predicate) {
+    switch (cmp_predicate) {
+        case _cmp_eq_oq:
+            h->xvfcmp_ceq_s(p_mask, vmm_src, compare_operand);
+            break;
+        case _cmp_lt_os:
+            h->xvfcmp_clt_s(p_mask, vmm_src, compare_operand);
+            break;
+        case _cmp_le_os:
+            h->xvfcmp_cle_s(p_mask, vmm_src, compare_operand);
+            break;
+        case _cmp_neq_uq:
+            h->xvfcmp_cne_s(p_mask, vmm_src, compare_operand);
+            break;
+        case _cmp_nlt_us:
+            h->xvfcmp_cle_s(p_mask, compare_operand, vmm_src);
+            break;
+        case _cmp_nle_us:
+            h->xvfcmp_clt_s(p_mask, compare_operand, vmm_src);
+            break;
+        default: assert(!"Unsupported compare mode"); break;
+    }
+}
+
 template <cpu_isa_t isa>
 void jit_uni_binary_kernel_t<isa>::perform_op(
         const Vmm &v0, const Vmm &v1, const Vmm &s_src0, const Vmm &s_src1) {
@@ -216,32 +291,38 @@ void jit_uni_binary_kernel_t<isa>::perform_op(
     const bool cmp_op = utils::one_of(alg, alg_kind::binary_ge,
             alg_kind::binary_gt, alg_kind::binary_le, alg_kind::binary_lt,
             alg_kind::binary_eq, alg_kind::binary_ne);
-    if (conf_.do_scale_src0) uni_vmulps(v0, v0, s_src0);
+    //if (conf_.do_scale_src0) uni_vmulps(v0, v0, s_src0);
+    if (conf_.do_scale_src0) xvfmul_s(v0, v0, s_src0);
     if (conf_.do_scale_src1
             && (conf_.is_i8
                     || (offt_src1_ != 0 && !conf_.broadcast_src1_value)))
-        uni_vmulps(v1, v1, s_src1);
+        //uni_vmulps(v1, v1, s_src1);
+        xvfmul_s(v1, v1, s_src1);
 
     if (alg == binary_add)
-        uni_vaddps(v0, v0, v1);
+        //uni_vaddps(v0, v0, v1);
+        xvfadd_s(v0, v0, v1);
     else if (alg == binary_mul)
-        uni_vmulps(v0, v0, v1);
+        //uni_vmulps(v0, v0, v1);
+        xvfmul_s(v0, v0, v1);
     else if (alg == binary_max)
-        uni_vmaxps(v0, v0, v1);
+        xvfmax_s(v0, v0, v1);
     else if (alg == binary_min)
-        uni_vminps(v0, v0, v1);
+        xvfmin_s(v0, v0, v1);
     else if (alg == binary_div)
-        uni_vdivps(v0, v0, v1);
+        xvfdiv_s(v0, v0, v1);
     else if (alg == binary_sub)
-        uni_vsubps(v0, v0, v1);
+        xvfsub_s(v0, v0, v1);
     else if (cmp_op) {
         const unsigned int predicate = cmp_predicate(alg);
-        if (is_avx512) {
+        /*if (is_avx512) {
             vcmpps(cmp_mask, v0, v1, predicate);
             vmovups(v0 | cmp_mask | T_z, vreg_one_);
-        } else {
-            uni_vcmpps(v0, v0, v1, predicate);
-            uni_vminps(v0, v0, vreg_one_);
+        } else */{
+            //uni_vcmpps(v0, v0, v1, predicate);
+            //uni_vminps(v0, v0, vreg_one_);
+            compute_cmp_mask(v0, v0, v1, predicate);
+            xvfmin_s(v0, v0, vreg_one_);  //TODO
         }
     } else
         assert(!"not supported operation!");
@@ -249,19 +330,20 @@ void jit_uni_binary_kernel_t<isa>::perform_op(
 
 template <cpu_isa_t isa>
 void jit_uni_binary_kernel_t<isa>::prepare_isa_kernel() {
-    if (conf_.is_bf16) io_.init_bf16();
+    //if (conf_.is_bf16) io_.init_bf16();
     if (tail_size_ > 0) io_.prepare_tail_mask();
-    if (conf_.is_src_different_layouts && is_superset(isa, avx2)) {
+    /*if (conf_.is_src_different_layouts && is_superset(isa, avx2)) {
         io_.init_full_mask();
         io_.prepare_full_mask();
-    }
+    }*/
 }
 
 template <cpu_isa_t isa>
 void jit_uni_binary_kernel_t<isa>::compute_bcast(bool tail) {
     if (conf_.broadcast_src1_value) {
         if (conf_.is_i8)
-            uni_vpxor(xreg_bcast_src1_, xreg_bcast_src1_, xreg_bcast_src1_);
+            //uni_vpxor(xreg_bcast_src1_, xreg_bcast_src1_, xreg_bcast_src1_);
+            xvxor_v(xreg_bcast_src1_, xreg_bcast_src1_, xreg_bcast_src1_);
         io_.at(conf_.src1_type)->broadcast(src1_ptr(), vreg_bcast_src1_);
     } else if (!conf_.is_i8 && offt_src1_ == 0) {
         io_.at(conf_.src1_type)->load(src1_ptr(), vreg_bcast_src1_, tail);
@@ -280,22 +362,33 @@ void jit_uni_binary_kernel_t<isa>::load_src1(
         // gather is using register instead of operand to read address
         // use reg_src1_ directly, without offset stored in second
         // register
-        add(reg_src1_,
-                types::data_type_size(conf_.src1_type) * conf_.src1_stride
-                        * simd_w_);
-        sub(reg_reverse_src1_stride_range_,
-                types::data_type_size(conf_.src1_type) * conf_.src1_stride
-                        * simd_w_);
+        //add(reg_src1_,
+          //      types::data_type_size(conf_.src1_type) * conf_.src1_stride
+            //            * simd_w_);
+        add_imm(reg_src1_, reg_src1_
+                types::data_type_size(conf_.src1_type) * conf_.src1_stride * simd_w_,
+                X_TMP_0);
+        //sub(reg_reverse_src1_stride_range_,
+          //      types::data_type_size(conf_.src1_type) * conf_.src1_stride
+            //            * simd_w_);
+        sub_imm(reg_reverse_src1_stride_range_, reg_reverse_src1_stride_range_
+                types::data_type_size(conf_.src1_type) * conf_.src1_stride * simd_w_,
+                X_TMP_0);
 
         Label src1_stride_range_not_exceed, src1_C_tail_end;
 
-        cmp(reg_reverse_src1_stride_range_, 0);
-        jg(src1_stride_range_not_exceed, T_NEAR);
+        //cmp(reg_reverse_src1_stride_range_, 0);
+        //jg(src1_stride_range_not_exceed, T_NEAR);
+        blt(zero, reg_reverse_src1_stride_range_, src1_stride_range_not_exceed);
         {
-            pop(reg_src1_);
-            add(reg_src1_, types::data_type_size(conf_.src1_type));
-            push(reg_src1_);
-            mov(reg_reverse_src1_stride_range_, reg_src1_stride_range_);
+            //pop(reg_src1_);
+            ld_d(reg_src1_, sp, 0);
+            //add(reg_src1_, types::data_type_size(conf_.src1_type));
+            add_imm(reg_src1_, reg_src1_, types::data_type_size(conf_.src1_type), X_TMP_0);
+            //push(reg_src1_);
+            st_d(reg_src1_, sp, 0);
+            //mov(reg_reverse_src1_stride_range_, reg_src1_stride_range_);
+            add_d(reg_reverse_src1_stride_range_, reg_src1_stride_range_, zero);
         }
         L(src1_stride_range_not_exceed);
     } else
@@ -321,7 +414,8 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
         // avoid multiple multiplication on input scale for broadcasted vreg
         // not needed for different layouts
         if (!conf_.is_src_different_layouts)
-            uni_vmovups(vreg_tmp, vreg_tmp_src1);
+            //uni_vmovups(vreg_tmp, vreg_tmp_src1);
+            xvor_v(vreg_tmp, vreg_tmp_src1, vreg_tmp_src1);
         perform_op(
                 vreg_tmp_src0, vreg_tmp, vreg_scales_src0_, vreg_scales_src1_);
         if (conf_.do_sum) {
@@ -329,7 +423,8 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
                     ->load(dst_ptr(offt
                                    * types::data_type_size(conf_.dst_type)),
                             vreg_tmp, tail);
-            uni_vfmadd231ps(vreg_tmp_src0, vreg_tmp, vreg_sum_scale_);
+            //uni_vfmadd231ps(vreg_tmp_src0, vreg_tmp, vreg_sum_scale_);
+            xvfmadd_s(vreg_tmp_src0, vreg_tmp, vreg_sum_scale_, vreg_tmp_src0);
         }
     }
 
@@ -347,16 +442,20 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
             auto zero_pad_left = padding_tail_size_;
 
             // inplace data is assumed to be zero-padded
-            cmp(reg_src0_, reg_dst_);
-            je(end, T_NEAR);
+            //cmp(reg_src0_, reg_dst_);
+            //je(end, T_NEAR);
+            beq(reg_src0_, reg_dst_, end);
 
             if (zero_pad_left >= simd_w_ - tail_size_) {
-                vxorps(vreg_zero_, vreg_zero_, vreg_zero_);
-                if (is_avx512)
+                //vxorps(vreg_zero_, vreg_zero_, vreg_zero_);
+                xvxor_v(vreg_zero_, vreg_zero_, vreg_zero_);
+                /*if (is_avx512)
                     uni_vmovups(vreg_zero_ | tail_opmask_, vreg_tmp_src0);
-                else
-                    uni_vblendvps(vreg_zero_, vreg_zero_, vreg_tmp_src0,
-                            vmm_tail_vmask_);
+                else*/
+                    //uni_vblendvps(vreg_zero_, vreg_zero_, vreg_tmp_src0,
+                      //      vmm_tail_vmask_);
+                    xvbitsel_v(vreg_zero_, vreg_zero_, vreg_tmp_src0,
+                            vmm_tail_vmask_);  //TODO
                 io_.at(conf_.dst_type)
                         ->store(vreg_zero_, dst_ptr(offt * dt_size), false);
                 off_base = simd_w_ * dt_size;
@@ -368,20 +467,30 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
             }
 
             if (zero_pad_left) {
-                push(abi_param1);
-                const Reg32 &reg_zero = eax;
-                const Reg64 &reg_ptr = rdi;
+                //push(abi_param1);
+                /*st_d(abi_param1, sp, 8);*/   //no need as we do not operate a0
+                //const Reg32 &reg_zero = eax;
+                //const Reg64 &reg_ptr = rdi;
+                //const Reg64 &reg_counter = rcx;
+                const Reg64 &reg_zero = X_TMP_1;
+                const Reg64 &reg_ptr = X_TMP_2;
                 const Reg64 &reg_counter = rcx;
                 const auto off_start = off_base;
                 const auto off_end = off_start + zero_pad_left * dt_size;
-                xor_(reg_zero, reg_zero);
-                lea(reg_ptr,
-                        ptr[dst_ptr(offt * dt_size).getRegExp()
-                                + RegExp(off_start)]);
-                mov(reg_counter, off_end - off_start);
-                rep();
-                stosb();
-                pop(abi_param1);
+                //xor_(reg_zero, reg_zero);
+                xor_(reg_zero, reg_zero, reg_zero);
+                //lea(reg_ptr,
+                  //      ptr[dst_ptr(offt * dt_size).getRegExp()
+                    //            + RegExp(off_start)]);
+                add_imm(reg_ptr, dst_ptr(offt * dt_size), off_start, X_TMP_0);
+                //mov(reg_counter, off_end - off_start);
+                //rep();
+                //stosb();
+                for(int j=0; j++; j<off_end-off_start) {
+                   st_b(reg_zero, reg_ptr, j);
+                }
+                //pop(abi_param1);
+                /*ld_d(abi_param1, sp, 8);*/
             }
             L(end);
         } else
@@ -398,7 +507,11 @@ void jit_uni_binary_kernel_t<isa>::forward() {
     const auto src1_type_size = types::data_type_size(conf_.src1_type);
     const auto dst_type_size = types::data_type_size(conf_.dst_type);
 
-    if (conf_.is_src_different_layouts) push(reg_src1_);
+    //if (conf_.is_src_different_layouts) push(reg_src1_);
+    if (conf_.is_src_different_layouts) {
+       sub_imm(sp, sp, 8, X_TMP_0);
+       st_d(reg_src1_, sp, 0);
+    }
 
     // if outer dims tail, do it outside outer dims loop
     if (!is_src1_outer_dims_tail_) {
@@ -503,7 +616,11 @@ void jit_uni_binary_kernel_t<isa>::forward() {
     }
 
     L(end);
-    if (conf_.is_src_different_layouts) pop(reg_src1_);
+    //if (conf_.is_src_different_layouts) pop(reg_src1_);
+    if (conf_.is_src_different_layouts) {
+        ld_d(reg_src, sp, 0);
+        add_imm(sp, sp, 8, X_TMP_0);
+    }
 }
 
 template <cpu_isa_t isa>
