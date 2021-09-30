@@ -105,8 +105,6 @@ void mov_imm_general(const XReg &dst, uint64_t imm) {
   //64bit = 12bit_4 + 20bit_3 + 20bit_2 + 12bit_1
   uint32_t imm_12bit_1 = imm & 0xfff;
   uint32_t imm_20bit_2 = (imm>>12) & 0xfffff;
-  uint32_t imm_20bit_3 = (imm>>32) & 0xfffff;
-  uint32_t imm_12bit_4 = (imm>>52) & 0xfff;
   uint32_t signBit12 = 0x800;
   uint32_t signBit20 = 0x80000;
  
@@ -114,19 +112,23 @@ void mov_imm_general(const XReg &dst, uint64_t imm) {
     imm_20bit_2 |= 0xfff00000;  //sign extend
   }
 
-  if( 0 != (imm_20bit_3 & signBit20) ) {
-    imm_20bit_3 |= 0xfff00000;  //sign extend
-  }
-
-  if( 0 != (imm_12bit_4 & signBit12) ) {
-    imm_12bit_4 |= 0xfffff000;  //sign extend
-  }
-
   lu12i_w(dst, imm_20bit_2);
   ori(dst, dst, imm_12bit_1);
 
-  lu32i_d(dst, imm_20bit_3);
-  lu52i_d(dst, dst, imm_12bit_4);
+  // if high 32bit not 0
+  if (imm & 0xffffffff00000000) {
+    uint32_t imm_20bit_3 = (imm>>32) & 0xfffff;
+    if( 0 != (imm_20bit_3 & signBit20) ) {
+      imm_20bit_3 |= 0xfff00000;  //sign extend
+    }
+    lu32i_d(dst, imm_20bit_3);
+
+    uint32_t imm_12bit_4 = (imm>>52) & 0xfff;
+    if( 0 != (imm_12bit_4 & signBit12) ) {
+      imm_12bit_4 |= 0xfffff000;  //sign extend
+    }
+    lu52i_d(dst, dst, imm_12bit_4);
+  }
 
   return;
 }
