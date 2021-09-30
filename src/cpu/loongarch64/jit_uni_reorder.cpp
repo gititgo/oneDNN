@@ -1308,17 +1308,17 @@ struct jit_single_blk_kernel_t : public jit_generator {
         Label tail_processing;
 
         preamble();
-        //cmp(reg_ptr_tail, true);
-        addi_d(X_TMP_1, reg_ptr_tail, -1);
-        //je(tail_processing, T_NEAR);
-        beqz(X_TMP_1, tail_processing);
-
         static const uint32_t xd_shuf1[8] = {0x00000000, 0x00000001, 0x00000004,
                 0x00000005, 0x00000000, 0x00000001, 0x00000004, 0x00000005};
         static const uint32_t xd_shuf2[8] = {0x00000002, 0x00000003, 0x00000006,
                 0x00000007, 0x00000002, 0x00000003, 0x00000006, 0x00000007};
         mov_imm(reg_shuf_ptr1, reinterpret_cast<size_t>(xd_shuf1));
         mov_imm(reg_shuf_ptr2, reinterpret_cast<size_t>(xd_shuf2));
+        //cmp(reg_ptr_tail, true);
+        addi_d(X_TMP_1, reg_ptr_tail, -1);
+        //je(tail_processing, T_NEAR);
+        beqz(X_TMP_1, tail_processing);
+
         if (block_sz == 8) {
             gen_ker8x8(0, 0, input_stride, output_stride, 8, 8);
             block_sz = 8;
@@ -1333,8 +1333,6 @@ struct jit_single_blk_kernel_t : public jit_generator {
 
         L(tail_processing);
 
-        mov_imm(reg_shuf_ptr1, reinterpret_cast<size_t>(xd_shuf1));
-        mov_imm(reg_shuf_ptr2, reinterpret_cast<size_t>(xd_shuf2));
         if (block_sz == 8) {
             auto i_tail = input_stride % 8 != 0 ? input_stride % 8 : 8;
             auto o_tail = output_stride % 8 != 0 ? output_stride % 8 : 8;
