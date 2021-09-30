@@ -516,28 +516,35 @@ void jit_uni_binary_kernel_t<isa>::forward() {
     // if outer dims tail, do it outside outer dims loop
     if (!is_src1_outer_dims_tail_) {
         if (conf_.is_i8) {
-            uni_vpxor(vreg_zero_, vreg_zero_, vreg_zero_);
+            //uni_vpxor(vreg_zero_, vreg_zero_, vreg_zero_);
+            xvxor_v(vreg_zero_, vreg_zero_, vreg_zero_);
             io_.init_saturate_f32({conf_.dst_type});
-            xor_(reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
+            //xor_(reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
+            xor_(reg_offt_dst_, reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
         }
 
-        xor_(reg_offt_src0_,
-                reg_offt_src0_); // offt_src0 to get addr of src0/dst
+        //xor_(reg_offt_src0_,
+          //      reg_offt_src0_); // offt_src0 to get addr of src0/dst
+        xor_(reg_offt_src0_, reg_offt_src0_, reg_offt_src0_);
         if (!conf_.is_src_different_layouts)
-            xor_(reg_offt_src1_,
-                    reg_offt_src1_); // offt_src1 to get addr of src1
+            //xor_(reg_offt_src1_,
+              //      reg_offt_src1_); // offt_src1 to get addr of src1
+            xor_(reg_offt_src1_, reg_offt_src1_, reg_offt_src1_);
         if (conf_.use_stride_rhs_postops && !conf_.is_i8)
-            xor_(reg_off_rhs_postops_, reg_off_rhs_postops_);
+            //xor_(reg_off_rhs_postops_, reg_off_rhs_postops_);
+            xor_(reg_off_rhs_postops_, reg_off_rhs_postops_, reg_off_rhs_postops_);
     }
     const auto alg = pd_->desc()->alg_kind;
 
     if (utils::one_of(alg, alg_kind::binary_ge, alg_kind::binary_gt,
                 alg_kind::binary_le, alg_kind::binary_lt, alg_kind::binary_eq,
                 alg_kind::binary_ne)) {
-        Xmm xreg_one = Xmm(vreg_one_.getIdx());
-        mov(reg_tmp_, float2int(1));
-        uni_vmovq(xreg_one, reg_tmp_);
-        uni_vbroadcastss(vreg_one_, xreg_one);
+        //Xmm xreg_one = Xmm(vreg_one_.getIdx());
+        //mov(reg_tmp_, float2int(1));
+        //uni_vmovq(xreg_one, reg_tmp_);
+        //uni_vbroadcastss(vreg_one_, xreg_one);
+        mov_imm(reg_tmp_, float2int(1));
+        xvreplgr2vr_w(vreg_one_, reg_tmp_);
     }
 
     compute_bcast(false); // bcast/load vreg just one time per a kernel call
@@ -547,70 +554,96 @@ void jit_uni_binary_kernel_t<isa>::forward() {
             = !conf_.is_i8 && is_tail_kernel_ && tail_size_;
 
     if (conf_.do_scale_src0)
-        uni_vbroadcastss(vreg_scales_src0_, dword[reg_scales_src0_]);
+        //uni_vbroadcastss(vreg_scales_src0_, dword[reg_scales_src0_]);
+        xvldrepl_w(vreg_scales_src0_, reg_scales_src0_, 0);
     if (conf_.do_scale_src1) {
-        uni_vbroadcastss(vreg_scales_src1_, dword[reg_scales_src1_]);
+        //uni_vbroadcastss(vreg_scales_src1_, dword[reg_scales_src1_]);
+        xvldrepl_w(vreg_scales_src1_, reg_scales_src1_, 0);
         if (!conf_.is_i8 && (conf_.broadcast_src1_value || offt_src1_ == 0))
-            uni_vmulps(vreg_bcast_src1_, vreg_bcast_src1_, vreg_scales_src1_);
+            //uni_vmulps(vreg_bcast_src1_, vreg_bcast_src1_, vreg_scales_src1_);
+            xvfmul_s(vreg_bcast_src1_, vreg_bcast_src1_, vreg_scales_src1_);
     }
 
     L(unroll_loop);
     {
         const size_t offt = unroll_regs_ * simd_w_;
-        cmp(reg_reverse_spat_offt_, offt * dst_type_size);
-        jl(unroll_loop_tail, T_NEAR);
+        //cmp(reg_reverse_spat_offt_, offt * dst_type_size);
+        //jl(unroll_loop_tail, T_NEAR);
+        sub_imm(X_TMP_0, reg_reverse_spat_offt_, offt * dst_type_size, X_TMP_1);
+        blt(X_TMP_0, zero, unroll_loop_tail);
 
         compute_dst(unroll_regs_, treat_each_compute_step_as_tail);
-        sub(reg_reverse_spat_offt_, offt * dst_type_size);
-        add(reg_offt_src0_, offt * src0_type_size);
+        //sub(reg_reverse_spat_offt_, offt * dst_type_size);
+        //add(reg_offt_src0_, offt * src0_type_size);
+        sub_imm(reg_reverse_spat_offt_, reg_reverse_spat_offt_, offt * dst_type_size, X_TMP_0);
+        add_imm(reg_offt_src0_, reg_offt_src0_, offt * src0_type_size, X_TMP_0);
         if (conf_.is_i8) {
             if (!conf_.broadcast_src1_value && !conf_.is_src_different_layouts)
-                add(reg_offt_src1_, offt * src1_type_size);
-            add(reg_offt_dst_, offt);
+                //add(reg_offt_src1_, offt * src1_type_size);
+                add_imm(reg_offt_src1_, reg_offt_src1_, offt * src1_type_size, X_TMP_0);
+            //add(reg_offt_dst_, offt);
+            add_imm(reg_offt_dst_, reg_offt_dst_, offt, X_TMP_0);
         } else {
             if (conf_.use_stride_src1 && !conf_.is_src_different_layouts)
-                add(reg_offt_src1_, offt * src1_type_size);
-            if (conf_.use_stride_rhs_postops) add(reg_off_rhs_postops_, offt);
+                //add(reg_offt_src1_, offt * src1_type_size);
+                add_imm(reg_offt_src1_, reg_offt_src1_, offt * src1_type_size, X_TMP_0);
+            //if (conf_.use_stride_rhs_postops) add(reg_off_rhs_postops_, offt);
+            if (conf_.use_stride_rhs_postops) add_imm(reg_off_rhs_postops_, reg_off_rhs_postops_, offt);
         }
-        jmp(unroll_loop);
+        //jmp(unroll_loop);
+        b(unroll_loop);
     }
 
     L(unroll_loop_tail);
     {
-        cmp(reg_reverse_spat_offt_, simd_w_ * dst_type_size);
-        jl(nelems_tail, T_NEAR);
+        //cmp(reg_reverse_spat_offt_, simd_w_ * dst_type_size);
+        //jl(nelems_tail, T_NEAR);
+        sub_imm(X_TMP_0, reg_reverse_spat_offt_, simd_w_ * dst_type_size, X_TMP_1);
+        blt(X_TMP_0, zero, nelems_tail);
 
         compute_dst(1, treat_each_compute_step_as_tail);
-        sub(reg_reverse_spat_offt_, simd_w_ * dst_type_size);
-        add(reg_offt_src0_, simd_w_ * src0_type_size);
+        //sub(reg_reverse_spat_offt_, simd_w_ * dst_type_size);
+        //add(reg_offt_src0_, simd_w_ * src0_type_size);
+        sub_imm(reg_reverse_spat_offt_, reg_reverse_spat_offt_, simd_w_ * dst_type_size, X_TMP_0);
+        add_imm(reg_offt_src0_, reg_offt_src0_, simd_w_ * src0_type_size, X_TMP_0);
         if (conf_.is_i8) {
             if (!conf_.broadcast_src1_value && !conf_.is_src_different_layouts)
-                add(reg_offt_src1_, simd_w_ * src1_type_size);
-            add(reg_offt_dst_, simd_w_);
+                //add(reg_offt_src1_, simd_w_ * src1_type_size);
+                add_imm(reg_offt_src1_, reg_offt_src1_, simd_w_ * src1_type_size, X_TMP_0);
+            //add(reg_offt_dst_, simd_w_);
+            add_imm(reg_offt_dst_, reg_offt_dst_, simd_w_, X_TMP_0);
         } else {
             if (conf_.use_stride_src1 && !conf_.is_src_different_layouts)
-                add(reg_offt_src1_, simd_w_ * src1_type_size);
+                //add(reg_offt_src1_, simd_w_ * src1_type_size);
+                add_imm(reg_offt_src1_, reg_offt_src1_, simd_w_ * src1_type_size, X_TMP_0);
             if (conf_.use_stride_rhs_postops)
-                add(reg_off_rhs_postops_, simd_w_);
+                //add(reg_off_rhs_postops_, simd_w_);
+                add_imm(reg_off_rhs_postops_, reg_off_rhs_postops_, simd_w_, X_TMP_0);
         }
 
-        jmp(unroll_loop_tail);
+        //jmp(unroll_loop_tail);
+        b(unroll_loop_tail);
     }
 
     L(nelems_tail);
     {
-        cmp(reg_reverse_spat_offt_, 1);
-        jl(end, T_NEAR);
+        //cmp(reg_reverse_spat_offt_, 1);
+        //jl(end, T_NEAR);
+        sub_imm(X_TMP_0, reg_reverse_spat_offt_, 1, X_TMP_1);
+        blt(X_TMP_0, zero, end);
 
         compute_dst(1, true);
         // need to increase if forward over outer dims
         if (is_src1_outer_dims_tail_) {
-            add(reg_offt_src0_, tail_size_ * src0_type_size);
+            //add(reg_offt_src0_, tail_size_ * src0_type_size);
+            add_imm(reg_offt_src0_, reg_offt_src0_, tail_size_ * src0_type_size, X_TMP_0);
             if (conf_.is_i8)
-                add(reg_offt_dst_, tail_size_);
+                //add(reg_offt_dst_, tail_size_);
+                add_imm(reg_offt_dst_, reg_offt_dst_, tail_size_, X_TMP_0);
             else {
                 if (conf_.use_stride_rhs_postops)
-                    add(reg_off_rhs_postops_, tail_size_);
+                    //add(reg_off_rhs_postops_, tail_size_);
+                    add_imm(reg_off_rhs_postops_, reg_off_rhs_postops_, tail_size_, X_TMP_0);
             }
         }
     }
@@ -629,24 +662,31 @@ void jit_uni_binary_kernel_t<isa>::forward_over_outer_dims() {
             = conf_.outer_dims * types::data_type_size(conf_.dst_type);
 
     if (conf_.is_i8) {
-        uni_vpxor(vreg_zero_, vreg_zero_, vreg_zero_);
+        //uni_vpxor(vreg_zero_, vreg_zero_, vreg_zero_);
+        xvxor_v(vreg_zero_, vreg_zero_, vreg_zero_);
         io_.init_saturate_f32({conf_.dst_type});
         xor_(reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
+        xor_(reg_offt_dst_, reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
     }
 
-    xor_(reg_offt_src0_,
-            reg_offt_src0_); // offt_src0 to get addr of src0/dst
+    //xor_(reg_offt_src0_,
+      //      reg_offt_src0_); // offt_src0 to get addr of src0/dst
+    xor_(reg_offt_src0_, reg_offt_src0_, reg_offt_src0_); // offt_src0 to get addr of src0/dst
     if (conf_.use_stride_rhs_postops && !conf_.is_i8)
-        xor_(reg_off_rhs_postops_, reg_off_rhs_postops_);
+        //xor_(reg_off_rhs_postops_, reg_off_rhs_postops_);
+        xor_(reg_off_rhs_postops_, reg_off_rhs_postops_, reg_off_rhs_postops_);
 
     Label c_loop;
     L(c_loop);
     {
-        mov(reg_reverse_spat_offt_, outer_dims_size);
+        //mov(reg_reverse_spat_offt_, outer_dims_size);
+        mov_imm(reg_reverse_spat_offt_, outer_dims_size);
         forward();
-        sub(reg_outer_dims_range_, outer_dims_size);
-        cmp(reg_outer_dims_range_, 0);
-        jg(c_loop);
+        //sub(reg_outer_dims_range_, outer_dims_size);
+        //cmp(reg_outer_dims_range_, 0);
+        //jg(c_loop);
+        sub_imm(reg_outer_dims_range_, reg_outer_dims_range_, outer_dims_size, X_TMP_0);
+        blt(zero, reg_outer_dims_range_, c_loop);
     }
 }
 
@@ -668,12 +708,14 @@ void jit_uni_binary_kernel_t<isa>::generate() {
 }
 
 #undef PARAM_OFF
-
+/*
 template struct jit_uni_binary_kernel_t<avx512_core_bf16>;
 template struct jit_uni_binary_kernel_t<avx512_core>;
 template struct jit_uni_binary_kernel_t<avx512_common>;
 template struct jit_uni_binary_kernel_t<avx2>;
 template struct jit_uni_binary_kernel_t<sse41>;
+*/
+template struct jit_uni_binary_kernel_t<lasx>;
 
 } // namespace loongarch64
 } // namespace cpu
