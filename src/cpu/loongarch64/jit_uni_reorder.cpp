@@ -1309,9 +1309,9 @@ struct jit_single_blk_kernel_t : public jit_generator {
 
         preamble();
         //cmp(reg_ptr_tail, true);
-        //addi_d(X_TMP_0, reg_ptr_tail, -1);
+        addi_d(X_TMP_1, reg_ptr_tail, -1);
         //je(tail_processing, T_NEAR);
-        //beqz(X_TMP_0, tail_processing);
+        beqz(X_TMP_1, tail_processing);
 
         static const uint32_t xd_shuf1[8] = {0x00000000, 0x00000001, 0x00000004,
                 0x00000005, 0x00000000, 0x00000001, 0x00000004, 0x00000005};
@@ -1331,31 +1331,33 @@ struct jit_single_blk_kernel_t : public jit_generator {
 
         postamble();
 
-        //L(tail_processing);
+        L(tail_processing);
 
-        //if (block_sz == 8) {
-        //    auto i_tail = input_stride % 8 != 0 ? input_stride % 8 : 8;
-        //    auto o_tail = output_stride % 8 != 0 ? output_stride % 8 : 8;
-        //    if (i_tail != o_tail) {
-        //        auto t_mask = i_tail == 8 ? o_tail : i_tail;
-        //        gen_setmask(t_mask);
-        //        gen_ker8x8(0, 0, input_stride, output_stride, i_tail, o_tail);
-        //    }
-        //} else if (block_sz == 16) {
-        //    auto i_tail = input_stride % 16 != 0 ? input_stride % 16 : 16;
-        //    auto o_tail = output_stride % 16 != 0 ? output_stride % 16 : 16;
-        //    if (i_tail != o_tail) {
-        //        auto t_mask = i_tail == 16 ? o_tail : i_tail;
-        //        t_mask %= 8;
-        //        if (t_mask != 0) gen_setmask(t_mask);
-        //        gen_ker16x16_in_8x8(
-        //                input_stride, output_stride, i_tail, o_tail);
-        //    }
-        //} else {
-        //    assert(!"unimplemented");
-        //}
+        mov_imm(reg_shuf_ptr1, reinterpret_cast<size_t>(xd_shuf1));
+        mov_imm(reg_shuf_ptr2, reinterpret_cast<size_t>(xd_shuf2));
+        if (block_sz == 8) {
+            auto i_tail = input_stride % 8 != 0 ? input_stride % 8 : 8;
+            auto o_tail = output_stride % 8 != 0 ? output_stride % 8 : 8;
+            if (i_tail != o_tail) {
+                //auto t_mask = i_tail == 8 ? o_tail : i_tail;
+                //gen_setmask(t_mask);
+                gen_ker8x8(0, 0, input_stride, output_stride, i_tail, o_tail);
+            }
+        } else if (block_sz == 16) {
+            auto i_tail = input_stride % 16 != 0 ? input_stride % 16 : 16;
+            auto o_tail = output_stride % 16 != 0 ? output_stride % 16 : 16;
+            if (i_tail != o_tail) {
+                //auto t_mask = i_tail == 16 ? o_tail : i_tail;
+                //t_mask %= 8;
+                //if (t_mask != 0) gen_setmask(t_mask);
+                gen_ker16x16_in_8x8(
+                        input_stride, output_stride, i_tail, o_tail);
+            }
+        } else {
+            assert(!"unimplemented");
+        }
 
-        //postamble();
+        postamble();
     }
 
     //void gen_loadu(const XVReg &ymm, const XReg &addr, int size) {
@@ -1414,10 +1416,10 @@ struct jit_single_blk_kernel_t : public jit_generator {
             int j = i % 2 == 0 ? lane + i : i - 1;
             //vshufps(Ymm(lane / 2 + 2 * i), Ymm(j), Ymm(j + 1), lfloat);
             xvld(XVReg(lane / 2 + 2 * i), reg_shuf_ptr1, 0);
-            xvshuf_w(XVReg(lane / 2 + 2 * i), XVReg(j + 1), XVReg(j));
+            xvshuf_w(XVReg(lane / 2 + 2 * i), XVReg(j), XVReg(j + 1));
             //vshufps(Ymm(lane / 2 + 2 * i + 1), Ymm(j), Ymm(j + 1), ufloat);
             xvld(XVReg(lane / 2 + 2 * i + 1), reg_shuf_ptr2, 0);
-            xvshuf_w(XVReg(lane / 2 + 2 * i + 1), XVReg(j + 1), XVReg(j));
+            xvshuf_w(XVReg(lane / 2 + 2 * i + 1), XVReg(j), XVReg(j + 1));
         }
 
         const unsigned int lquad = 0x20;
@@ -1547,7 +1549,7 @@ private:
     //constexpr static int xmm_save_start_from = 6;
     //constexpr static int xmm_width = 16;
 
-    void preamble() {
+    //void preamble() {
     //    if (is_windows) {
     //        sub(rsp, xmm_save_for_windows * xmm_width);
     //        for (int i = 0; i < xmm_save_for_windows; ++i) {
@@ -1555,9 +1557,9 @@ private:
     //                    Xbyak::Xmm(xmm_save_start_from + i));
     //        }
     //    }
-    }
+    //}
 
-    void postamble() {
+    //void postamble() {
     //    if (is_windows) {
     //        for (int i = 0; i < xmm_save_for_windows; ++i)
     //            uni_vmovdqu(Xbyak::Xmm(xmm_save_start_from + i),
@@ -1566,8 +1568,8 @@ private:
     //    }
     //    uni_vzeroupper();
         //ret();
-        jirl(zero, ra, 0);
-    }
+    //    jirl(zero, ra, 0);
+    //}
 
     const prb_t &prb_;
 
@@ -1587,10 +1589,10 @@ private:
     */
     XReg reg_ptr_in = abi_param1;
     XReg reg_ptr_out = abi_param2;
-    // Windows bool is 1-byte in register
-    XReg reg_ptr_tail = a2;
-    XReg reg_shuf_ptr1 = s3;
-    XReg reg_shuf_ptr2 = s4;
+    // loongarch abi third param is a2
+    XReg reg_ptr_tail = abi_param3;
+    XReg reg_shuf_ptr1 = t0;
+    XReg reg_shuf_ptr2 = t1;
 
 
     XVReg ymm_mask = XVReg(12);
