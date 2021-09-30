@@ -95,7 +95,8 @@ status_t jit_uni_binary_t::pd_t::init(engine_t *engine) {
             && IMPLICATION(!conf_.is_i8,
                     utils::everyone_is(
                             conf_.dst_type, conf_.src0_type, conf_.src1_type))
-            && IMPLICATION(conf_.src0_type == bf16, mayiuse(avx512_core))
+            //&& IMPLICATION(conf_.src0_type == bf16, mayiuse(avx512_core))
+            && IMPLICATION(conf_.src0_type == bf16, false)
             && set_default_params() == status::success && !has_zero_dim_memory()
             && IMPLICATION(!conf_.is_i8, src0_md_ == dst_md_) && is_applicable()
             && attr()->has_default_values(sm::post_ops | sm::scales_runtime)
@@ -108,7 +109,8 @@ status_t jit_uni_binary_t::pd_t::init(engine_t *engine) {
             && IMPLICATION((!attr()->scales_.has_default_values()),
                     check_scales_mask())
             && (conf_.is_i8
-                    || IMPLICATION(!mayiuse(avx2),
+                    //|| IMPLICATION(!mayiuse(avx2),
+                    || IMPLICATION(!mayiuse(lasx),
                             src0_md_.consistent_with(src1_md_)
                                     || src0_md_.is_plain()));
 
@@ -325,7 +327,7 @@ bool jit_uni_binary_t::pd_t::is_applicable() {
         // check blocking_desc consistency
         const auto valid_bd = [&](const memory_desc_wrapper &mdw) {
             int blksize = 8;
-            if (mayiuse(avx512_core)) blksize = 16;
+            //if (mayiuse(avx512_core)) blksize = 16;
             const auto &bd = mdw.blocking_desc();
 
             return bd.inner_nblks == 1 && bd.inner_blks[0] == blksize
@@ -362,7 +364,7 @@ bool jit_uni_binary_t::post_ops_ok(const primitive_attr_t *attr,
         return is_binary(idx)
                 && p.entry_[idx].binary.src1_desc.data_type == data_type::bf16;
     };
-    const bool is_avx512_core = mayiuse(avx512_core);
+    //const bool is_avx512_core = mayiuse(avx512_core);
     const bool is_i8 = utils::one_of(dst_d.data_type(), s8, u8);
 
     for (int i = 0; i < p.len(); i++) {
@@ -370,14 +372,16 @@ bool jit_uni_binary_t::post_ops_ok(const primitive_attr_t *attr,
             if (i > 0) return false;
             if (src0_d.data_type() != dst_d.data_type()) return false;
         } else if (!(is_eltwise(i) || is_binary(i))
-                || ((is_i8 || !is_avx512_core) && is_binary_bf16(i)))
+                //|| ((is_i8 || !is_avx512_core) && is_binary_bf16(i)))
+                || ((is_i8 || !false) && is_binary_bf16(i)))
             return false;
     }
 
-    const int vlen = is_avx512_core ? cpu_isa_traits<avx512_core>::vlen
+    /*const int vlen = is_avx512_core ? cpu_isa_traits<avx512_core>::vlen
                                     : is_i8 && mayiuse(avx512_common)
                     ? cpu_isa_traits<avx512_common>::vlen
-                    : cpu_isa_traits<avx2>::vlen;
+                    : cpu_isa_traits<avx2>::vlen;*/
+    const int vlen = cpu_isa_traits<lasx>::vlen;
     const auto supported_strategies = get_supported_bcast_strategies();
     const bool postops_per_oc_broadcast_exists
             = binary_injector::any_binary_postop_rhs_per_oc_broadcast(
@@ -419,7 +423,8 @@ bool jit_uni_binary_t::post_ops_ok(const primitive_attr_t *attr,
                     binary_injector::all_binary_postop_rhs_per_oc_broadcast(p,
                             src0_d, supported_strategies,
                             [&src0_d](const memory_desc_wrapper &rhs_arg_md) {
-                                return IMPLICATION(!mayiuse(avx2),
+                                //return IMPLICATION(!mayiuse(avx2),
+                                return IMPLICATION(!mayiuse(lasx),
                                         src0_d.consistent_with(rhs_arg_md)
                                                 || src0_d.is_plain());
                             }));
@@ -428,7 +433,7 @@ bool jit_uni_binary_t::post_ops_ok(const primitive_attr_t *attr,
 binary_kernel_t *create_binary_kernel(
         const jit_uni_binary_t::pd_t *pd, bool tail_kernel) {
     const auto &conf = pd->get_conf();
-    if (mayiuse(avx512_core_bf16)) {
+    /*if (mayiuse(avx512_core_bf16)) {
         if (conf.is_i8) {
             using kernel_t = jit_uni_binary_kernel_t<avx512_common>;
             return new kernel_t(pd, conf, false);
@@ -447,11 +452,16 @@ binary_kernel_t *create_binary_kernel(
     } else if (mayiuse(avx512_common) && conf.is_i8) {
         using kernel_t = jit_uni_binary_kernel_t<avx512_common>;
         return new kernel_t(pd, conf, false);
-    } else if (mayiuse(avx2)) {
+    } else if (mayiuse(avx2)) { 
         using kernel_t = jit_uni_binary_kernel_t<avx2>;
         return new kernel_t(pd, conf, tail_kernel && !conf.is_i8);
     } else {
         using kernel_t = jit_uni_binary_kernel_t<sse41>;
+        return new kernel_t(pd, conf, tail_kernel && !conf.is_i8);
+    }*/
+
+    if (mayiuse(lsax)) { 
+        using kernel_t = jit_uni_binary_kernel_t<lsax>;
         return new kernel_t(pd, conf, tail_kernel && !conf.is_i8);
     }
 }
