@@ -99,6 +99,8 @@ void CodeGenerator::xvbitsel_v(const XVReg &xd, const XVReg &xj, const XVReg &xk
 
 void CodeGenerator::xvshuf_b(const XVReg &xd, const XVReg &xj, const XVReg &xk, const XVReg &xa) { LasxFormat4R(0b0000110101, 0b10, xa, xk, xj, xd); }
 
+void CodeGenerator::vld(const VReg &vd, const XReg &rj, int32_t si12) { LasxFormatI12(0b0010110000, si12, rj, vd); }
+void CodeGenerator::vst(const VReg &vd, const XReg &rj, int32_t si12) { LasxFormatI12(0b0010110001, si12, rj, vd); }
 void CodeGenerator::xvld(const XVReg &xd, const XReg &rj, int32_t si12) { LasxFormatI12(0b0010110010, si12, rj, xd); }
 void CodeGenerator::xvst(const XVReg &xd, const XReg &rj, int32_t si12) { LasxFormatI12(0b0010110011, si12, rj, xd); }
 
@@ -112,6 +114,8 @@ void CodeGenerator::xvstelm_h(const XVReg &xd, const XReg &rj, int32_t si8, uint
 void CodeGenerator::xvstelm_w(const XVReg &xd, const XReg &rj, int32_t si8, uint32_t idx) { LasxFormatI8ELM(0b00110011, TYPE_W, idx, si8, rj, xd); }
 void CodeGenerator::xvstelm_d(const XVReg &xd, const XReg &rj, int32_t si8, uint32_t idx) { LasxFormatI8ELM(0b00110011, TYPE_D, idx, si8, rj, xd); }
 
+void CodeGenerator::vldx(const VReg &vd, const XReg &rj, const XReg &rk) { LasxFormat3RX(0b00111000010000, rk, rj, vd); }
+void CodeGenerator::vstx(const VReg &vd, const XReg &rj, const XReg &rk) { LasxFormat3RX(0b00111000010001, rk, rj, vd); }
 void CodeGenerator::xvldx(const XVReg &xd, const XReg &rj, const XReg &rk) { LasxFormat3RX(0b00111000010010, rk, rj, xd); }
 void CodeGenerator::xvstx(const XVReg &xd, const XReg &rj, const XReg &rk) { LasxFormat3RX(0b00111000010011, rk, rj, xd); }
 

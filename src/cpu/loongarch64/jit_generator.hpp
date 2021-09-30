@@ -443,6 +443,16 @@ public:
         stptr_d(rd, rj, simm);
     }
 
+    void uni_vld(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            mov_imm(X_TMP_2, simm);
+            vldx(vd, rj, X_TMP_2);
+            return;
+        }
+        vld(vd, rj, simm);
+    }
+
     void uni_xvld(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
@@ -461,6 +471,16 @@ public:
             return;
         }
         xvldx(xd, r1, r2);
+    }
+
+    void uni_vst(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            mov_imm(X_TMP_2, simm);
+            vstx(vd, rj, X_TMP_2);
+            return;
+        }
+        vst(vd, rj, simm);
     }
 
     void uni_xvst(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
@@ -656,152 +676,140 @@ public:
         auto xvreg = Xbyak_loongarch::XVReg(vmm.getIdx());
         auto vreg = Xbyak_loongarch::VReg(vmm.getIdx());
         auto regvalue = X_TMP_0;
-        auto regaddr = X_TMP_1;
+        auto regaddr = reg;
 
-        if (load_size > 0)
-            add_imm(regaddr, reg, offset, regaddr);
+        //if (load_size > 0)
+        //    add_imm(regaddr, reg, offset, regaddr);
         switch (load_size) {
             case 0: break;
             case 1:
-                ld_b(regvalue, regaddr, 0);
+                uni_ld_b(regvalue, regaddr, offset);
                 vinsgr2vr_b(vreg, regvalue, 0);
                 break;
             case 2:
-                ld_h(regvalue, regaddr, 0);
+                uni_ld_h(regvalue, regaddr, offset);
                 vinsgr2vr_h(vreg, regvalue, 0);
                 break;
             case 3:
-                ld_h(regvalue, regaddr, 0);
+                uni_ld_h(regvalue, regaddr, offset);
                 vinsgr2vr_h(vreg, regvalue, 0);
-                ld_b(regvalue, regaddr, 2);
+                uni_ld_b(regvalue, regaddr, offset + 2);
                 vinsgr2vr_b(vreg, regvalue, 2);
                 break;
             case 4:
-                ld_w(regvalue, regaddr, 0);
+                uni_ld_w(regvalue, regaddr, offset);
                 vinsgr2vr_w(vreg, regvalue, 0);
                 break;
             case 5:
-                ld_w(regvalue, regaddr, 0);
+                uni_ld_w(regvalue, regaddr, offset);
                 vinsgr2vr_w(vreg, regvalue, 0);
-                ld_b(regvalue, regaddr, 4);
+                uni_ld_b(regvalue, regaddr, offset + 4);
                 vinsgr2vr_b(vreg, regvalue, 4);
                 break;
             case 6:
-                ld_w(regvalue, regaddr, 0);
+                uni_ld_w(regvalue, regaddr, offset);
                 vinsgr2vr_w(vreg, regvalue, 0);
-                ld_h(regvalue, regaddr, 4);
+                uni_ld_h(regvalue, regaddr, offset + 4);
                 vinsgr2vr_h(vreg, regvalue, 2);
                 break;
             case 7:
-                ld_w(regvalue, regaddr, 0);
+                uni_ld_w(regvalue, regaddr, offset);
                 vinsgr2vr_w(vreg, regvalue, 0);
-                ld_h(regvalue, regaddr, 4);
+                uni_ld_h(regvalue, regaddr, offset + 4);
                 vinsgr2vr_h(vreg, regvalue, 2);
-                ld_b(regvalue, regaddr, 6);
+                uni_ld_b(regvalue, regaddr, offset + 6);
                 vinsgr2vr_b(vreg, regvalue, 6);
                 break;
             case 8:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
                 break;
             case 9:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
-                ld_b(regvalue, regaddr, 8);
+                uni_ld_b(regvalue, regaddr, offset + 8);
                 vinsgr2vr_b(vreg, regvalue, 8);
                 break;
             case 10:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
-                ld_h(regvalue, regaddr, 8);
+                uni_ld_h(regvalue, regaddr, offset + 8);
                 vinsgr2vr_h(vreg, regvalue, 4);
                 break;
             case 11:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
-                ld_h(regvalue, regaddr, 8);
+                uni_ld_h(regvalue, regaddr, offset + 8);
                 vinsgr2vr_h(vreg, regvalue, 4);
-                ld_b(regvalue, regaddr, 10);
+                uni_ld_b(regvalue, regaddr, offset + 10);
                 vinsgr2vr_b(vreg, regvalue, 10);
                 break;
             case 12:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
-                ld_w(regvalue, regaddr, 8);
+                uni_ld_w(regvalue, regaddr, offset + 8);
                 vinsgr2vr_w(vreg, regvalue, 2);
                 break;
             case 13:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
-                ld_w(regvalue, regaddr, 8);
+                uni_ld_w(regvalue, regaddr, offset + 8);
                 vinsgr2vr_w(vreg, regvalue, 2);
-                ld_b(regvalue, regaddr, 12);
+                uni_ld_b(regvalue, regaddr, offset + 12);
                 vinsgr2vr_b(vreg, regvalue, 12);
                 break;
             case 14:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
-                ld_w(regvalue, regaddr, 8);
+                uni_ld_w(regvalue, regaddr, offset + 8);
                 vinsgr2vr_w(vreg, regvalue, 2);
-                ld_h(regvalue, regaddr, 12);
+                uni_ld_h(regvalue, regaddr, offset + 12);
                 vinsgr2vr_h(vreg, regvalue, 6);
                 break;
             case 15:
-                ld_d(regvalue, regaddr, 0);
+                uni_ld_d(regvalue, regaddr, offset);
                 vinsgr2vr_d(vreg, regvalue, 0);
-                ld_w(regvalue, regaddr, 8);
+                uni_ld_w(regvalue, regaddr, offset + 8);
                 vinsgr2vr_w(vreg, regvalue, 2);
-                ld_h(regvalue, regaddr, 12);
+                uni_ld_h(regvalue, regaddr, offset + 12);
                 vinsgr2vr_h(vreg, regvalue, 6);
-                ld_b(regvalue, regaddr, 14);
+                uni_ld_b(regvalue, regaddr, offset + 14);
                 vinsgr2vr_b(vreg, regvalue, 14);
                 break;
             case 16:
-                ld_d(regvalue, regaddr, 0);
-                vinsgr2vr_d(vreg, regvalue, 0);
-                ld_d(regvalue, regaddr, 8);
-                vinsgr2vr_d(vreg, regvalue, 1);
+                uni_vld(vreg, regaddr, offset);
                 break;
             case 17:
             case 18:
             case 19:
             case 20:
-                ld_d(regvalue, regaddr, 0);
-                vinsgr2vr_d(vreg, regvalue, 0);
-                ld_d(regvalue, regaddr, 8);
-                vinsgr2vr_d(vreg, regvalue, 1);
-                ld_w(regvalue, regaddr, 16);
+                uni_vld(vreg, regaddr, offset);
+                uni_ld_w(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_w(xvreg, regvalue, 4);
                 break;
             case 21:
             case 22:
             case 23:
             case 24:
-                ld_d(regvalue, regaddr, 0);
-                vinsgr2vr_d(vreg, regvalue, 0);
-                ld_d(regvalue, regaddr, 8);
-                vinsgr2vr_d(vreg, regvalue, 1);
-                ld_d(regvalue, regaddr, 16);
+                uni_vld(vreg, regaddr, offset);
+                uni_ld_d(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_d(xvreg, regvalue, 2);
                 break;
             case 25:
             case 26:
             case 27:
             case 28:
-                ld_d(regvalue, regaddr, 0);
-                vinsgr2vr_d(vreg, regvalue, 0);
-                ld_d(regvalue, regaddr, 8);
-                vinsgr2vr_d(vreg, regvalue, 1);
-                ld_d(regvalue, regaddr, 16);
+                uni_vld(vreg, regaddr, offset);
+                uni_ld_d(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_d(xvreg, regvalue, 2);
-                ld_w(regvalue, regaddr, 24);
+                uni_ld_w(regvalue, regaddr, offset + 24);
                 xvinsgr2vr_w(xvreg, regvalue, 6);
                 break;
             case 29:
             case 30:
             case 31:
             case 32:
-                xvld(xvreg, regaddr, 0);
+                uni_xvld(xvreg, regaddr, offset);
                 break;
             default:
                 break;
@@ -843,151 +851,139 @@ public:
         auto xvreg = Xbyak_loongarch::XVReg(vmm.getIdx());
         auto vreg = Xbyak_loongarch::VReg(vmm.getIdx());
         auto regvalue = X_TMP_0;
-        auto regaddr = X_TMP_1;
-        if (store_size > 0)
-            add_imm(regaddr, reg, offset, regaddr);
+        auto regaddr = reg;
+        //if (store_size > 0)
+        //    add_imm(regaddr, reg, offset, regaddr);
         switch (store_size) {
             case 0: break;
             case 1:
                 vpickve2gr_b(regvalue, vreg, 0);
-                st_b(regvalue, regaddr, 0);
+                uni_st_b(regvalue, regaddr, offset);
                 break;
             case 2:
                 vpickve2gr_h(regvalue, vreg, 0);
-                st_h(regvalue, regaddr, 0);
+                uni_st_h(regvalue, regaddr, offset);
                 break;
             case 3:
                 vpickve2gr_h(regvalue, vreg, 0);
-                st_h(regvalue, regaddr, 0);
+                uni_st_h(regvalue, regaddr, offset);
                 vpickve2gr_b(regvalue, vreg, 2);
-                st_b(regvalue, regaddr, 2);
+                uni_st_b(regvalue, regaddr, offset + 2);
                 break;
             case 4:
                 vpickve2gr_w(regvalue, vreg, 0);
-                st_w(regvalue, regaddr, 0);
+                uni_st_w(regvalue, regaddr, offset);
                 break;
             case 5:
                 vpickve2gr_w(regvalue, vreg, 0);
-                st_w(regvalue, regaddr, 0);
+                uni_st_w(regvalue, regaddr, offset);
                 vpickve2gr_b(regvalue, vreg, 4);
-                st_b(regvalue, regaddr, 4);
+                uni_st_b(regvalue, regaddr, offset + 4);
                 break;
             case 6:
                 vpickve2gr_w(regvalue, vreg, 0);
-                st_w(regvalue, regaddr, 0);
+                uni_st_w(regvalue, regaddr, offset);
                 vpickve2gr_h(regvalue, vreg, 2);
-                st_h(regvalue, regaddr, 4);
+                uni_st_h(regvalue, regaddr, offset + 4);
                 break;
             case 7:
                 vpickve2gr_w(regvalue, vreg, 0);
-                st_w(regvalue, regaddr, 0);
+                uni_st_w(regvalue, regaddr, offset);
                 vpickve2gr_h(regvalue, vreg, 2);
-                st_h(regvalue, regaddr, 4);
+                uni_st_h(regvalue, regaddr, offset);
                 vpickve2gr_b(regvalue, vreg, 6);
-                st_b(regvalue, regaddr, 6);
+                uni_st_b(regvalue, regaddr, offset);
                 break;
             case 8:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 break;
             case 9:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 vpickve2gr_b(regvalue, vreg, 8);
-                st_b(regvalue, regaddr, 8);
+                uni_st_b(regvalue, regaddr, offset + 8);
                 break;
             case 10:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 vpickve2gr_h(regvalue, vreg, 4);
-                st_h(regvalue, regaddr, 8);
+                uni_st_h(regvalue, regaddr, offset + 8);
                 break;
             case 11:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 vpickve2gr_h(regvalue, vreg, 4);
-                st_h(regvalue, regaddr, 8);
+                uni_st_h(regvalue, regaddr, offset + 8);
                 vpickve2gr_b(regvalue, vreg, 10);
-                st_b(regvalue, regaddr, 10);
+                uni_st_b(regvalue, regaddr, offset + 10);
                 break;
             case 12:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 vpickve2gr_w(regvalue, vreg, 2);
-                st_w(regvalue, regaddr, 8);
+                uni_st_w(regvalue, regaddr, offset + 8);
                 break;
             case 13:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 vpickve2gr_w(regvalue, vreg, 2);
-                st_h(regvalue, regaddr, 8);
+                uni_st_h(regvalue, regaddr, offset + 8);
                 vpickve2gr_b(regvalue, vreg, 12);
-                st_b(regvalue, regaddr, 12);
+                uni_st_b(regvalue, regaddr, offset + 12);
                 break;
             case 14:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 vpickve2gr_w(regvalue, vreg, 2);
-                st_h(regvalue, regaddr, 8);
+                uni_st_w(regvalue, regaddr, offset + 8);
                 vpickve2gr_h(regvalue, vreg, 6);
-                st_h(regvalue, regaddr, 12);
+                uni_st_h(regvalue, regaddr, offset + 12);
                 break;
             case 15:
                 vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
+                uni_st_d(regvalue, regaddr, offset);
                 vpickve2gr_w(regvalue, vreg, 2);
-                st_h(regvalue, regaddr, 8);
+                uni_st_w(regvalue, regaddr, offset + 8);
                 vpickve2gr_h(regvalue, vreg, 6);
-                st_h(regvalue, regaddr, 12);
+                uni_st_h(regvalue, regaddr, offset + 12);
                 vpickve2gr_b(regvalue, vreg, 14);
-                st_b(regvalue, regaddr, 14);
+                uni_st_b(regvalue, regaddr, offset + 14);
                 break;
             case 16:
-                vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
-                vpickve2gr_d(regvalue, vreg, 1);
-                st_d(regvalue, regaddr, 8);
+                uni_vst(vreg, regaddr, offset);
                 break;
             case 17:
             case 18:
             case 19:
             case 20:
-                vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
-                vpickve2gr_d(regvalue, vreg, 1);
-                st_d(regvalue, regaddr, 8);
+                uni_vst(vreg, regaddr, offset);
                 xvpickve2gr_w(regvalue, xvreg, 4);
-                st_w(regvalue, regaddr, 16);
+                uni_st_w(regvalue, regaddr, offset + 16);
                 break;
             case 21:
             case 22:
             case 23:
             case 24:
-                vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
-                vpickve2gr_d(regvalue, vreg, 1);
-                st_d(regvalue, regaddr, 8);
+                uni_vst(vreg, regaddr, offset);
                 xvpickve2gr_d(regvalue, xvreg, 2);
-                st_d(regvalue, regaddr, 16);
+                uni_st_d(regvalue, regaddr, offset + 16);
                 break;
             case 25:
             case 26:
             case 27:
             case 28:
-                vpickve2gr_d(regvalue, vreg, 0);
-                st_d(regvalue, regaddr, 0);
-                vpickve2gr_d(regvalue, vreg, 1);
-                st_d(regvalue, regaddr, 8);
+                uni_vst(vreg, regaddr, offset);
                 xvpickve2gr_d(regvalue, xvreg, 2);
-                st_d(regvalue, regaddr, 16);
+                uni_st_d(regvalue, regaddr, offset + 16);
                 xvpickve2gr_w(regvalue, xvreg, 6);
-                st_w(regvalue, regaddr, 24);
+                uni_st_w(regvalue, regaddr, offset + 24);
                 break;
             case 29:
             case 30:
             case 31:
             case 32:
-                xvst(xvreg, regaddr, 0);
+                uni_xvst(xvreg, regaddr, offset);
                 break;
             default:
                 break;

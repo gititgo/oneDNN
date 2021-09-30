@@ -60,6 +60,8 @@ void xvbitsel_v(const XVReg &xd, const XVReg &xj, const XVReg &xk, const XVReg &
 
 void xvshuf_b(const XVReg &xd, const XVReg &xj, const XVReg &xk, const XVReg &xa);
 
+void vld(const VReg &vd, const XReg &rj, int32_t si12);
+void vst(const VReg &vd, const XReg &rj, int32_t si12);
 void xvld(const XVReg &xd, const XReg &rj, int32_t si12);
 void xvst(const XVReg &xd, const XReg &rj, int32_t si12);
 
@@ -73,6 +75,8 @@ void xvstelm_h(const XVReg &xd, const XReg &rj, int32_t si8, uint32_t idx);
 void xvstelm_w(const XVReg &xd, const XReg &rj, int32_t si8, uint32_t idx);
 void xvstelm_d(const XVReg &xd, const XReg &rj, int32_t si8, uint32_t idx);
 
+void vldx(const VReg &vd, const XReg &rj, const XReg &rk);
+void vstx(const VReg &vd, const XReg &rj, const XReg &rk);
 void xvldx(const XVReg &xd, const XReg &rj, const XReg &rk);
 void xvstx(const XVReg &xd, const XReg &rj, const XReg &rk);
 

@@ -544,10 +544,11 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
                 = [=](const XVReg &dst, const XVReg &src, data_type_t idt) {
                       //Xmm dst_pure = Xmm(dst.getIdx());
                       switch (idt) {
-                          //case f32:
-                          //    if (src.isMEM() || src.getIdx() != dst.getIdx())
-                          //        uni_vmovups(dst, src);
-                          //    break;
+                          case f32:
+                              //if (src.isMEM() || src.getIdx() != dst.getIdx())
+                              //    uni_vmovups(dst, src);
+                              //do nothing in loongarch
+                              break;
                           //case bf16:
                           //    if (mayiuse(avx)) {
                           //        vpmovzxwd(dst, src);
