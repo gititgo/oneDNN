@@ -1414,20 +1414,20 @@ struct jit_single_blk_kernel_t : public jit_generator {
             int j = i % 2 == 0 ? lane + i : i - 1;
             //vshufps(Ymm(lane / 2 + 2 * i), Ymm(j), Ymm(j + 1), lfloat);
             xvld(XVReg(lane / 2 + 2 * i), reg_shuf_ptr1, 0);
-            xvshuf_w(XVReg(lane / 2 + 2 * i), XVReg(j), XVReg(j + 1));
+            xvshuf_w(XVReg(lane / 2 + 2 * i), XVReg(j + 1), XVReg(j));
             //vshufps(Ymm(lane / 2 + 2 * i + 1), Ymm(j), Ymm(j + 1), ufloat);
             xvld(XVReg(lane / 2 + 2 * i + 1), reg_shuf_ptr2, 0);
-            xvshuf_w(XVReg(lane / 2 + 2 * i + 1), XVReg(j), XVReg(j + 1));
+            xvshuf_w(XVReg(lane / 2 + 2 * i + 1), XVReg(j + 1), XVReg(j));
         }
 
-        const unsigned int lquad = 0x20;
+        const unsigned int lquad = 0x02;
         for (int i = 0; i < lane / 2; i++) {
             //vperm2f128(Ymm(i), Ymm(lane / 2 + i), Ymm(lane + i), lquad);
             xvbsll_v(XVReg(i), XVReg(lane / 2 + i), 0);
             xvpermi_q(XVReg(i), XVReg(lane + i), lquad);
         }
 
-        const unsigned int uquad = 0x31;
+        const unsigned int uquad = 0x13;
         for (int i = lane / 2; i < lane; i++)
             //vperm2f128(Ymm(i), Ymm(i), Ymm(lane / 2 + i), uquad);
             xvpermi_q(XVReg(i), XVReg(lane / 2 + i), uquad);
