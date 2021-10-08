@@ -871,8 +871,7 @@ public:
                 uni_st_b(regvalue, regaddr, offset + 2);
                 break;
             case 4:
-                vpickve2gr_w(regvalue, vreg, 0);
-                uni_st_w(regvalue, regaddr, offset);
+                uni_xvstelm_w(xvreg, regaddr, offset, 0);
                 break;
             case 5:
                 vpickve2gr_w(regvalue, vreg, 0);
@@ -895,8 +894,7 @@ public:
                 uni_st_b(regvalue, regaddr, offset);
                 break;
             case 8:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
+                uni_xvstelm_d(xvreg, regaddr, offset, 0);
                 break;
             case 9:
                 vpickve2gr_d(regvalue, vreg, 0);

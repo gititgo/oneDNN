@@ -1454,9 +1454,9 @@ struct jit_single_blk_kernel_t : public jit_generator {
         //vpcmpeqd(ymm_mask, ymm_mask, ymm_mask);
         xvnor_v(ymm_mask, ymm_tmp, ymm_tmp);
         // shift by mask to have tail nelems in ymm_mask
-        //const uint8_t in_mask = 0xFF << mask;
+        const uint8_t in_mask = 0xFF << mask;
         //vpblendd(ymm_mask, ymm_mask, ymm_tmp, in_mask);
-        xvbitsel_v(ymm_mask, ymm_mask, ymm_tmp, ymm_tmp);
+        xvbitseli_b(ymm_mask, ymm_tmp, in_mask);
     }
 
     // TODO: Mark parameter with type information
@@ -1497,7 +1497,7 @@ struct jit_single_blk_kernel_t : public jit_generator {
                 //gen_maskstoreu(
                 //        ptr[reg_ptr_out + o_off + i * output_stride * otype_sz],
                 //        Ymm(i), ymm_mask, lane * otype_sz);
-                store_bytes(XVReg(i), reg_ptr_out, o_off + i * output_stride * otype_sz, out_tail);
+                store_bytes(XVReg(i), reg_ptr_out, o_off + i * output_stride * otype_sz, out_tail * 4);
             }
         }
     }
