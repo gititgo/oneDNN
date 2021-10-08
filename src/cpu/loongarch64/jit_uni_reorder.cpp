@@ -1497,7 +1497,7 @@ struct jit_single_blk_kernel_t : public jit_generator {
                 //gen_maskstoreu(
                 //        ptr[reg_ptr_out + o_off + i * output_stride * otype_sz],
                 //        Ymm(i), ymm_mask, lane * otype_sz);
-                store_bytes(XVReg(i), reg_ptr_out, o_off + i * output_stride * otype_sz, out_tail * 4);
+                store_bytes(XVReg(i), reg_ptr_out, o_off + i * output_stride * otype_sz, out_tail * otype_sz);
             }
         }
     }
