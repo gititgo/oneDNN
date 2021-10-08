@@ -412,23 +412,35 @@ struct jit_uni_reorder_kernel_f32_t : public kernel_t, public jit_generator {
 
         //const unsigned int lfloat = 0x44;
         //const unsigned int ufloat = 0xee;
+        static const uint32_t xd_shuf1[8] = {0x00000000, 0x00000001, 0x00000004,
+                0x00000005, 0x00000000, 0x00000001, 0x00000004, 0x00000005};
+        static const uint32_t xd_shuf2[8] = {0x00000002, 0x00000003, 0x00000006,
+                0x00000007, 0x00000002, 0x00000003, 0x00000006, 0x00000007};
+        mov_imm(X_TMP_3, reinterpret_cast<size_t>(xd_shuf1));
+        mov_imm(X_TMP_4, reinterpret_cast<size_t>(xd_shuf2));
         for (int i = 0; i < unroll / 2; i++) {
             int j = i % 2 == 0 ? unroll + i : i - 1;
             //vshufps(Ymm(unroll / 2 + 2 * i), Ymm(j), Ymm(j + 1), lfloat);
-            xvshuf_w(XVReg(unroll / 2 + 2 * i), XVReg(j), XVReg(j + 1));
+            xvld(XVReg(unroll / 2 + 2 * i), X_TMP_3, 0);
+            xvshuf_w(XVReg(unroll / 2 + 2 * i), XVReg(j + 1), XVReg(j));
             //vshufps(Ymm(unroll / 2 + 2 * i + 1), Ymm(j), Ymm(j + 1), ufloat);
-            xvshuf_w(XVReg(unroll / 2 + 2 * i + 1), XVReg(j), XVReg(j + 1));
+            xvld(XVReg(unroll / 2 + 2 * i + 1), X_TMP_4, 0);
+            xvshuf_w(XVReg(unroll / 2 + 2 * i + 1), XVReg(j + 1), XVReg(j));
         }
 
         //const unsigned int lquad = 0x20;
-        for (int i = 0; i < unroll / 2; i++)
+        const unsigned int lquad = 0x02;
+        for (int i = 0; i < unroll / 2; i++) {
             //vperm2f128(Ymm(i), Ymm(unroll / 2 + i), Ymm(unroll + i), lquad);
-            xvperm_w(XVReg(i), XVReg(unroll / 2 + i), XVReg(unroll + i));
+            xvbsll_v(XVReg(i), XVReg(unroll / 2 + i), 0);
+            xvpermi_q(XVReg(i), XVReg(unroll + i), lquad);
+        }
 
         //const unsigned int uquad = 0x31;
+        const unsigned int uquad = 0x13;
         for (int i = unroll / 2; i < unroll; i++)
             //vperm2f128(Ymm(i), Ymm(i), Ymm(unroll / 2 + i), uquad);
-            xvperm_w(XVReg(i), XVReg(i), XVReg(unroll / 2 + i));
+            xvpermi_q(XVReg(i), XVReg(unroll / 2 + i), uquad);
 
         if (need_saturation) {
             init_saturate_f32(ymm_zero, ymm_saturation_ubound, reg_tmp,
