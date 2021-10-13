@@ -520,32 +520,32 @@ public:
 
     void uni_xvldrepl_h(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
-        if ((simm >> 1) > IMM11_MAX_VALUE || (simm >> 1) < IMM11_MIN_VALUE) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             xvldrepl_h(xd, X_TMP_2, 0);
             return;
         }
-        xvldrepl_h(xd, rj, simm >> 1);
+        xvldrepl_h(xd, rj, simm);
     }
 
     void uni_xvldrepl_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
-        if ((simm >> 2) > IMM10_MAX_VALUE || (simm >> 2) < IMM10_MIN_VALUE) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             xvldrepl_w(xd, X_TMP_2, 0);
             return;
         }
-        xvldrepl_w(xd, rj, simm >> 2);
+        xvldrepl_w(xd, rj, simm);
     }
 
     void uni_xvldrepl_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
-        if ((simm >> 3) > IMM9_MAX_VALUE || (simm >> 3) < IMM9_MIN_VALUE) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
             xvldrepl_d(xd, X_TMP_2, 0);
             return;
         }
-        xvldrepl_d(xd, rj, simm >> 3);
+        xvldrepl_d(xd, rj, simm);
     }
 
     // we use the real offset
