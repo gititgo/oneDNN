@@ -17,7 +17,7 @@
 #include <cassert>
 
 //#include "cpu/x64/jit_avx512_core_bf16cvt.hpp"
-#include "cpu/x64/utils/jit_io_helper.hpp"
+#include "cpu/loongarch64/utils/jit_io_helper.hpp"
 
 namespace dnnl {
 namespace impl {
@@ -180,12 +180,12 @@ template <typename Vmm>
 void jit_io_helper_t<Vmm>::prepare_i8_data_to_store(const Vmm &i8_vmm) {
     assert(saturation_conf_.has_value() && "Config for saturation is not set.");
 
-    static constexpr bool is_ymm = std::is_same<Vmm, Xbyak::Ymm>::value;
+    //static constexpr bool is_ymm = std::is_same<Vmm, Xbyak::Ymm>::value;
 
     //host_->uni_vpackssdw(
     //        i8_vmm, i8_vmm, Vmm(saturation_conf_->vreg_zero_saturation_idx_));
     host_->xvpickev_h(i8_vmm, i8_vmm, i8_vmm);
-    if (is_ymm) {
+    if (isa_ == lasx) {
         // dst[63:0] = src[63:0]
         // dst[127:64] = src[191:128]
         // dst[191:128] = src[127:64]
@@ -285,7 +285,7 @@ void jit_io_helper_t<Xbyak_loongarch::XVReg>::emu_gather(const Xbyak_loongarch::
     //host_->mov(gather_conf_->reg_tmp_, 0);
     host_->mov_imm(gather_conf_->reg_tmp_, 0);
     //host_->mov(gather_conf_->reg_tmp1_, src_reg);
-    host_->add_d(gather_conf_->reg_tmp1_, src_reg, zero);
+    host_->add_d(gather_conf_->reg_tmp1_, src_reg, host_->zero);
 
     constexpr int xmm_size_elem = 4;
 
@@ -294,7 +294,7 @@ void jit_io_helper_t<Xbyak_loongarch::XVReg>::emu_gather(const Xbyak_loongarch::
             : utils::div_up(gather_conf_->simd_w_, xmm_size_elem);
     for (int i = 0; i < number_of_xmms; i++) {
         //host_->vextractf128(xmm_tmp, indices_vmm, i);
-        host_->xvpermi_q(XVReg(xmm_tmp.getIdx()), indices_vmm, 0x30 + i);
+        host_->xvpermi_q(Xbyak_loongarch::XVReg(xmm_tmp.getIdx()), indices_vmm, 0x30 + i);
 
         const int number_of_values_to_load = i == number_of_xmms - 1 && tail
                         && tail_conf_->tail_size_ % xmm_size_elem != 0
@@ -309,8 +309,8 @@ void jit_io_helper_t<Xbyak_loongarch::XVReg>::emu_gather(const Xbyak_loongarch::
                 case data_type::f32:
                 case data_type::s32: {
                     //host_->vpinsrd(xmm_dst, xmm_dst, host_->ptr[src_reg], j);
-                    host_->ld_w(X_TMP_1, src_reg, 0);
-                    vinsgr2vr_w(xmm_dst, X_TMP_1, j);
+                    host_->ld_w(host_->X_TMP_1, src_reg, 0);
+                    host_->vinsgr2vr_w(xmm_dst, host_->X_TMP_1, j);
                     break;
                 }
                 //case data_type::bf16:
@@ -322,25 +322,25 @@ void jit_io_helper_t<Xbyak_loongarch::XVReg>::emu_gather(const Xbyak_loongarch::
                 case data_type::u8: {
                     //host_->vpinsrb(xmm_dst, xmm_dst, host_->ptr[src_reg],
                     //        i * xmm_size_elem + j);
-                    host_->ld_b(X_TMP_1, src_reg, 0);
-                    vinsgr2vr_b(xmm_dst, X_TMP_1, i * xmm_size_elem + j);
+                    host_->ld_b(host_->X_TMP_1, src_reg, 0);
+                    host_->vinsgr2vr_b(xmm_dst, host_->X_TMP_1, i * xmm_size_elem + j);
                     break;
                 }
                 default: assert(!"Unsupported data type.");
             }
             //host_->mov(src_reg, gather_conf_->reg_tmp1_);
-            host_->add_d(src_reg, gather_conf_->reg_tmp1_, zero);
+            host_->add_d(src_reg, gather_conf_->reg_tmp1_, host_->zero);
         }
 
         if (data_type_ == data_type::f32 || data_type_ == data_type::s32) {
             //host_->vinsertf128(dst_vmm, dst_vmm, xmm_dst, i);
-            host_->xvpermi_q(dst_vmm, XVReg(xmm_dst.getIdx()), i == 0 ? 0x30 : 0x02);
+            host_->xvpermi_q(dst_vmm, Xbyak_loongarch::XVReg(xmm_dst.getIdx()), i == 0 ? 0x30 : 0x02);
         }
     }
 
     //if (data_type_ == data_type::s32 || data_type_ == data_type::bf16)
     if (data_type_ == data_type::s32)
-        convert_to_f32(dst_vmm, dst_vmm, data_type_);
+        convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type_);
     else if (data_type_ == data_type::s8 || data_type_ == data_type::u8)
         convert_to_f32(dst_vmm, xmm_dst, data_type_);
 }
@@ -359,7 +359,7 @@ void jit_io_helper_t<Xbyak_loongarch::VReg>::emu_gather(const Xbyak_loongarch::X
     //host_->mov(gather_conf_->reg_tmp_, 0);
     host_->mov_imm(gather_conf_->reg_tmp_, 0);
     //host_->mov(gather_conf_->reg_tmp1_, src_reg);
-    host_->add_d(gather_conf_->reg_tmp1_, src_reg, zero);
+    host_->add_d(gather_conf_->reg_tmp1_, src_reg, host_->zero);
 
     constexpr unsigned xmm_size_elem = 4;
 
@@ -374,8 +374,8 @@ void jit_io_helper_t<Xbyak_loongarch::VReg>::emu_gather(const Xbyak_loongarch::X
             case data_type::f32:
             case data_type::s32: {
                 //host_->pinsrd(dst_vmm, host_->ptr[src_reg], j);
-                host_->ld_w(X_TMP_1, src_reg, 0);
-                vinsgr2vr_w(dst_vmm, X_TMP_1, j);
+                host_->ld_w(host_->X_TMP_1, src_reg, 0);
+                host_->vinsgr2vr_w(dst_vmm, host_->X_TMP_1, j);
                 break;
             }
             //case data_type::bf16:
@@ -385,14 +385,14 @@ void jit_io_helper_t<Xbyak_loongarch::VReg>::emu_gather(const Xbyak_loongarch::X
             case data_type::s8:
             case data_type::u8: {
                 //host_->pinsrb(dst_vmm, host_->ptr[src_reg], j);
-                host_->ld_b(X_TMP_1, src_reg, 0);
-                vinsgr2vr_b(dst_vmm, X_TMP_1, j);
+                host_->ld_b(host_->X_TMP_1, src_reg, 0);
+                host_->vinsgr2vr_b(dst_vmm, host_->X_TMP_1, j);
                 break;
             }
             default: assert(!"Unsupported data type.");
         }
         //host_->mov(src_reg, gather_conf_->reg_tmp1_);
-        host_->add_d(src_reg, gather_conf_->reg_tmp1_, zero);
+        host_->add_d(src_reg, gather_conf_->reg_tmp1_, host_->zero);
     }
 
     if (data_type_ != data_type::f32)
@@ -409,7 +409,7 @@ void jit_io_helper_t<Vmm>::prepare_tail_mask() {
     //    prepare_opmask(tail_conf_->tail_size_, tail_conf_->reg_tmp_,
     //            tail_conf_->tail_opmask_);
     //else if (is_superset(isa_, avx))
-    if (is_superset(isa_, lasx))
+    if (isa_ == lasx)
         prepare_vmm_mask(tail_conf_->tail_size_, tail_conf_->simd_w_,
                 tail_conf_->reg_tmp_, Vmm(tail_conf_->tail_vmm_mask_idx_));
 }
@@ -435,7 +435,7 @@ template <typename Vmm>
 void jit_io_helper_t<Vmm>::init_full_mask() {
     assert(gather_conf_.has_value() && "Config for loading with the use of gather instruction is not set.");
 
-    if (isa_ == avx2) {
+    if (isa_ == lasx) {
         const Vmm vmm_mask = Vmm(gather_conf_->full_vmm_mask_idx_);
         //host_->uni_vxorps(vmm_mask, vmm_mask, vmm_mask);
         host_->uni_vpxor(vmm_mask, vmm_mask, vmm_mask);
@@ -461,13 +461,13 @@ void jit_io_helper_t<Vmm>::gather(const Xbyak_loongarch::XReg &src_reg,
     assert(IMPLICATION(tail, tail_conf_.has_value())
             && "Config for tail processing is not set.");
 
-    const Vmm &mask = tail ? Vmm(tail_conf_->tail_vmm_mask_idx_)
-                           : Vmm(gather_conf_->full_vmm_mask_idx_);
-
-    const Vmm dst_vmm_with_mask = tail ? dst_vmm | tail_conf_->tail_opmask_
-                                       : dst_vmm | gather_conf_->full_opmask_;
-
     // loongarch do not have vgatherdps instruction so comment this use emu_gather
+    //const Vmm &mask = tail ? Vmm(tail_conf_->tail_vmm_mask_idx_)
+    //                       : Vmm(gather_conf_->full_vmm_mask_idx_);
+
+    //const Vmm dst_vmm_with_mask = tail ? dst_vmm | tail_conf_->tail_opmask_
+    //                                   : dst_vmm | gather_conf_->full_opmask_;
+
     //const bool can_use_gather_instruction
     //        = isa_ == avx2 || is_superset(isa_, avx512_common);
     //if ((data_type_ == data_type::f32 || data_type_ == data_type::s32)
@@ -523,14 +523,14 @@ void jit_io_helper_t<Vmm>::load(const Xbyak_loongarch::XReg &src_addr, const int
             && (isa_ == lasx || (!is_tail_load_for_i8_supported && is_i8));
 
     if (can_load_byte_by_byte) {
-        load_byte_by_byte(src_addr, dst_vmm, tail_conf_->tail_size_);
+        load_byte_by_byte(src_addr, offset, dst_vmm, tail_conf_->tail_size_);
     } else {
         switch (data_type_) {
-            case data_type::f32: load_f32(src_addr, dst_vmm, tail); break;
-            case data_type::s32: load_s32(src_addr, dst_vmm, tail); break;
+            case data_type::f32: load_f32(src_addr, offset, dst_vmm, tail); break;
+            case data_type::s32: load_s32(src_addr, offset, dst_vmm, tail); break;
             //case data_type::bf16: load_bf16(src_addr, dst_vmm); break;
             case data_type::s8:
-            case data_type::u8: load_i8(src_addr, dst_vmm); break;
+            case data_type::u8: load_i8(src_addr, offset, dst_vmm); break;
             default: assert(!"Unsupported data type.");
         }
     }
@@ -561,19 +561,21 @@ void jit_io_helper_t<Vmm>::load_byte_by_byte(const Xbyak_loongarch::XReg &src_ad
         assert(!"unsupported source data type");
 
     if (utils::one_of(data_type_, data_type::s32, data_type::s8, data_type::u8))
-        convert_to_f32(dst_vmm, dst_vmm, data_type::s32);
+        convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type::s32);
 }
 
 template <typename Vmm>
 //void jit_io_helper_t<Vmm>::load_f32(
         //const Xbyak::Address &src_addr, const Vmm &dst_vmm, const bool tail) {
-void jit_io_helper_t<Vmm>::load_f32(const Xbyak_loongarch:XReg &src_addr,
+void jit_io_helper_t<Vmm>::load_f32(const Xbyak_loongarch::XReg &src_addr,
         const int32_t offset, const Vmm &dst_vmm, const bool tail) {
-    if (tail && !is_superset(isa_, avx512_common))
+    //if (tail && !is_superset(isa_, avx512_common))
+    if (tail) {
         //host_->vmaskmovps(
         //        dst_vmm, Vmm(tail_conf_->tail_vmm_mask_idx_), src_addr);
         host_->uni_xvld(dst_vmm, src_addr, offset);
         host_->xvand_v(dst_vmm, dst_vmm, Vmm(tail_conf_->tail_vmm_mask_idx_));
+    }
     else
         //host_->uni_vmovups(dst_vmm, src_addr);
         host_->uni_xvld(dst_vmm, src_addr, offset);
@@ -581,7 +583,7 @@ void jit_io_helper_t<Vmm>::load_f32(const Xbyak_loongarch:XReg &src_addr,
 
 template <typename Vmm>
 //void jit_io_helper_t<Vmm>::load_s32(
-        const Xbyak::Address &src_addr, const Vmm &dst_vmm, const bool tail) {
+//        const Xbyak::Address &src_addr, const Vmm &dst_vmm, const bool tail) {
 void jit_io_helper_t<Vmm>::load_s32(const Xbyak_loongarch::XReg &src_addr,
         const int32_t offset, const Vmm &dst_vmm, const bool tail) {
     //if (is_superset(isa_, avx512_common))
@@ -590,8 +592,8 @@ void jit_io_helper_t<Vmm>::load_s32(const Xbyak_loongarch::XReg &src_addr,
     //    load_f32(src_addr, dst_vmm, tail);
     //    convert_to_f32(dst_vmm, dst_vmm, data_type::s32);
     //}
-    load_f32(src_addr, dst_vmm, tail);
-    convert_to_f32(dst_vmm, dst_vmm, data_type::s32);
+    load_f32(src_addr, offset, dst_vmm, tail);
+    convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type::s32);
 }
 
 //template <typename Vmm>
@@ -612,13 +614,13 @@ void jit_io_helper_t<Vmm>::load_i8(const Xbyak_loongarch::XReg &src_addr,
     //    host_->uni_vpmovsxbd(dst_vmm, src_addr);
     //else
     //    host_->uni_vpmovzxbd(dst_vmm, src_addr);
-    uni_xvldrepl_d(dst_vmm, src_addr, offset);
+    host_->uni_xvldrepl_d(dst_vmm, src_addr, offset);
     if (data_type_ == data_type::s8)
-        vext2xv_w_b(dst_vmm, dst_vmm);
+        host_->vext2xv_w_b(dst_vmm, dst_vmm);
     else
-        vext2xv_wu_bu(dst_vmm, dst_vmm);
+        host_->vext2xv_wu_bu(dst_vmm, dst_vmm);
 
-    convert_to_f32(dst_vmm, dst_vmm, data_type::s32);
+    convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type::s32);
 }
 
 template <typename Vmm>
@@ -655,14 +657,14 @@ void jit_io_helper_t<Vmm>::store(const Vmm &src_raw_vmm, const Xbyak_loongarch::
     if (can_store_byte_by_byte) {
         const size_t store_size
                 = tail_conf_->tail_size_ * types::data_type_size(data_type_);
-        store_byte_by_byte(src_vmm, dst_addr, store_size);
+        store_byte_by_byte(src_vmm, dst_addr, offset, store_size);
     } else {
         switch (data_type_) {
             case data_type::f32:
-            case data_type::s32: store_f32(src_vmm, dst_addr, tail); break;
+            case data_type::s32: store_f32(src_vmm, dst_addr, offset, tail); break;
             //case data_type::bf16: store_bf16(src_vmm, dst_addr); break;
             case data_type::s8:
-            case data_type::u8: store_i8(src_vmm, dst_raw_addr); break;
+            case data_type::u8: store_i8(src_vmm, dst_raw_addr, offset); break;
             default: assert(!"Unsupported data type.");
         }
     }
@@ -775,10 +777,10 @@ void jit_io_helper_t<Vmm>::store_i8(const Vmm &src_vmm,
     //}
     if (isa_ == lasx) {
         prepare_i8_data_to_store(src_vmm);
-        uni_xvstelm_d(src_vmm, dst_addr, offset, 0);
+        host_->uni_xvstelm_d(src_vmm, dst_addr, offset, 0);
     } else if (isa_ == lsx) {
         prepare_i8_data_to_store(src_vmm);
-        uni_xvstelm_w(src_vmm, dst_addr, offset, 0);
+        host_->uni_xvstelm_w(src_vmm, dst_addr, offset, 0);
     } else
         assert(!"unsupported isa type!");
 }
@@ -792,7 +794,7 @@ void jit_io_helper_t<Vmm>::convert_to_f32(const Vmm &dst_vmm,
         case data_type::s32: {
             assert(dst_vmm.getIdx() == src_vmm.getIdx());
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->xvffint_s_w(dst_vmm, dst_vmm);
+            host_->xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
             break;
         }
         //case data_type::bf16:
@@ -801,16 +803,16 @@ void jit_io_helper_t<Vmm>::convert_to_f32(const Vmm &dst_vmm,
         //    break;
         case data_type::s8: {
             //host_->uni_vpmovsxbd(dst_vmm, src_vmm);
-            vext2xv_w_b(dst_vmm, src_vmm);
+            host_->vext2xv_w_b(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(src_vmm.getIdx()));
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->xvffint_s_w(dst_vmm, dst_vmm);
+            host_->xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
             break;
         }
         case data_type::u8: {
             //host_->uni_vpmovzxbd(dst_vmm, src_vmm);
-            vext2xv_wu_bu(dst_vmm, src_vmm);
+            host_->vext2xv_wu_bu(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(src_vmm.getIdx()));
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->xvffint_s_w(dst_vmm, dst_vmm);
+            host_->xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
             break;
         }
         default: assert(!"Unsupported data type.");
@@ -838,17 +840,17 @@ void jit_io_helper_t<Vmm>::broadcast(const Xbyak_loongarch::XReg &src_addr,
             //    host_->uni_vbroadcastss(dst_vmm, src_addr);
             //    convert_to_f32(dst_vmm, dst_vmm, data_type_);
             //}
-            host_->uni_xvldrepl_w(dst_vmm, src_addr);
-            convert_to_f32(dst_vmm, dst_vmm, data_type_);
+            host_->uni_xvldrepl_w(dst_vmm, src_addr, offset);
+            convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type_);
             break;
         }
         case data_type::s8:
         case data_type::u8: {
             //const Xbyak::Xmm dst_xmm {dst_vmm.getIdx()};
             //host_->uni_vpinsrb(dst_xmm, dst_xmm, src_addr, 0);
-            host_->uni_ld_b(X_TMP_0, src_addr, offset);
-            host_->vinsgr2vr_b(VReg(dst_vmm.getIdx()), X_TMP_0, 0);
-            convert_to_f32(dst_vmm, dst_vmm, data_type_);
+            host_->uni_ld_b(host_->X_TMP_0, src_addr, offset);
+            host_->vinsgr2vr_b(Xbyak_loongarch::VReg(dst_vmm.getIdx()), host_->X_TMP_0, 0);
+            convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type_);
             //host_->uni_vbroadcastss(dst_vmm, dst_xmm);
             host_->xvreplve0_w(dst_vmm, dst_vmm);
             break;

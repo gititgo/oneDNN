@@ -598,7 +598,7 @@ public:
       the floating point register
      */
     template <typename Vmm>
-    void init_saturate_f32(Vmm vmm_lbound, Vmm vmm_ubound, Xbyak_loongarch::XReg &reg_tmp,
+    void init_saturate_f32(Vmm vmm_lbound, Vmm vmm_ubound, const Xbyak_loongarch::XReg &reg_tmp,
             data_type_t idt, data_type_t odt) {
         using namespace data_type;
         if (!((idt == f32) && utils::one_of(odt, u8, s8, s32))) return;
@@ -612,7 +612,7 @@ public:
 
         float saturation_ubound = types::max_value<float>(odt);
         mov_imm(reg_tmp, float2int(saturation_ubound));
-	    xvreplgr2vr_w(vmm_ubound, reg_tmp);
+        xvreplgr2vr_w(vmm_ubound, reg_tmp);
     }
 
     template <typename Vmm>

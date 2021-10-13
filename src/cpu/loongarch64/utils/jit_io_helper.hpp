@@ -87,7 +87,7 @@ public:
 class io_saturation_conf_t {
 public:
     io_saturation_conf_t(const int vreg_zero_saturation_idx,
-            const int vreg_saturation_ubound_idx, const Xbyak::Reg64 &reg_tmp);
+            const int vreg_saturation_ubound_idx, const Xbyak_loongarch::XReg &reg_tmp);
     io_saturation_conf_t(const io_saturation_conf_t &other) = default;
 
     io_saturation_conf_t &operator=(const io_saturation_conf_t &other)
@@ -115,12 +115,12 @@ public:
 
     std::size_t simd_w_ = 0;
     //Xbyak::Opmask full_opmask_ = Xbyak::Opmask();
-    Xbyak_loongarch::XReg full_opmask_ = Xbyak_loongarch::XReg();
+    Xbyak_loongarch::XReg full_opmask_ = Xbyak_loongarch::XReg(0);
     int full_vmm_mask_idx_ = 0;
     //Xbyak::Reg64 reg_tmp_ = Xbyak::Reg64();
-    Xbyak_loongarch::XReg reg_tmp_ = Xbyak_loongarch::XReg(0);
+    Xbyak_loongarch::XReg reg_tmp_ = Xbyak_loongarch::XReg(26);
     //Xbyak::Reg64 reg_tmp1_ = Xbyak::Reg64();
-    Xbyak_loongarch::XReg reg_tmp1_ = Xbyak_loongarch::XReg(0);
+    Xbyak_loongarch::XReg reg_tmp1_ = Xbyak_loongarch::XReg(27);
     // It is needed, when io_helper use emulation for gather
     // and it is not needed for sse.
     utils::optional_t<int> vmm_tmp_idx_ = utils::nullopt;
@@ -159,41 +159,41 @@ public:
     void init_full_mask();
     void init_saturate_f32() const;
     void init_bf16();
-    void gather(const Xbyak::Reg64 &src_reg, const Vmm &indices_vmm,
+    void gather(const Xbyak_loongarch::XReg &src_reg, const Vmm &indices_vmm,
             const Vmm &dst_vmm, const bool tail);
-    void broadcast(const Xbyak::Address &src_addr, const Vmm &dst_vmm);
-    void load(const Xbyak::Address &src_addr, const Vmm &dst_vmm,
+    void broadcast(const Xbyak_loongarch::XReg &src_addr, const int32_t offset, const Vmm &dst_vmm);
+    void load(const Xbyak_loongarch::XReg &src_addr, const int32_t offset, const Vmm &dst_vmm,
             const bool tail);
-    void store(const Vmm &src_vmm, const Xbyak::Address &dst_addr,
+    void store(const Vmm &src_vmm, const Xbyak_loongarch::XReg &dst_addr, const int32_t offset,
             const bool tail);
 
 private:
     void prepare_opmask(const std::size_t how_many_bits_to_set,
-            const Xbyak::Reg64 &reg_tmp, const Xbyak::Opmask &mask);
+            const Xbyak_loongarch::XReg &reg_tmp, const Xbyak_loongarch::XReg &mask);
     void prepare_vmm_mask(const std::size_t how_many_bits_to_set,
-            const std::size_t simd_w, const Xbyak::Reg64 &reg_tmp,
+            const std::size_t simd_w, const Xbyak_loongarch::XReg &reg_tmp,
             const Vmm &mask);
     void prepare_i8_data_to_store(const Vmm &i8_vmm);
     // Emulates the behavior of vgatherdps for architectures
     // that do not support this instruction.
-    void emu_gather(const Xbyak::Reg64 &src_reg, const Vmm &indices_vmm,
+    void emu_gather(const Xbyak_loongarch::XReg &src_reg, const Vmm &indices_vmm,
             const Vmm &dst_vmm, const bool tail);
-    void load_byte_by_byte(const Xbyak::Address &src_addr, const Vmm &dst_vmm,
+    void load_byte_by_byte(const Xbyak_loongarch::XReg &src_addr, const int32_t offset, const Vmm &dst_vmm,
             const int load_size);
-    void load_f32(const Xbyak::Address &src_addr, const Vmm &dst_vmm,
+    void load_f32(const Xbyak_loongarch::XReg &src_addr, const int32_t offset, const Vmm &dst_vmm,
             const bool tail);
-    void load_s32(const Xbyak::Address &src_addr, const Vmm &dst_vmm,
+    void load_s32(const Xbyak_loongarch::XReg &src_addr, const int32_t offset, const Vmm &dst_vmm,
             const bool tail);
-    void load_bf16(const Xbyak::Address &src_addr, const Vmm &dst_vmm);
-    void load_i8(const Xbyak::Address &src_addr, const Vmm &dst_vmm);
+    //void load_bf16(const Xbyak::Address &src_addr, const Vmm &dst_vmm);
+    void load_i8(const Xbyak_loongarch::XReg &src_addr, const int32_t offset, const Vmm &dst_vmm);
     void saturate(const Vmm &vmm);
-    void store_byte_by_byte(const Vmm &src_vmm, const Xbyak::Address &dst_addr,
+    void store_byte_by_byte(const Vmm &src_vmm, const Xbyak_loongarch::XReg &dst_addr, const int32_t offset,
             const int store_size);
-    void store_f32(const Vmm &src_vmm, const Xbyak::Address &dst_addr,
+    void store_f32(const Vmm &src_vmm, const Xbyak_loongarch::XReg &dst_addr, const int32_t offset,
             const bool tail);
-    void store_bf16(const Vmm &src_vmm, const Xbyak::Address &dst_addr);
-    void store_i8(const Vmm &src_vmm, const Xbyak::Address &dst_addr);
-    void convert_to_f32(const Vmm &dst_vmm, const Xbyak::Xmm &src_vmm,
+    //void store_bf16(const Vmm &src_vmm, const Xbyak_loongarch::XReg &dst_addr, const int32_t offset);
+    void store_i8(const Vmm &src_vmm, const Xbyak_loongarch::XReg &dst_addr, const int32_t offset);
+    void convert_to_f32(const Vmm &dst_vmm, const Xbyak_loongarch::VReg &src_vmm,
             const data_type_t src_data_type);
 
     jit_generator *host_;
