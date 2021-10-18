@@ -171,6 +171,7 @@ class CodeGenerator : public CodeArray {
   void Loongarch1Reg1Imm(uint32_t opCode, int32_t si, uint32_t rd);
   uint32_t LoongarchLabelEnc(uint32_t op, const int32_t rj, const int32_t rd, int64_t labelOffset, int32_t type);
   void LoongarchLabel(uint32_t op, const int32_t rj, const int32_t rd, const Label& label, int32_t type);
+  void LasxFormatI8VSTELM(uint32_t op, uint32_t df, uint32_t idx, int32_t imm8, const XReg &rj, const VReg &vd);
   /******************************************************loongarch end by sunxin******************************************************************/
 
 public:

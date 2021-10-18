@@ -115,8 +115,8 @@ void mov_imm_general(const XReg &dst, uint64_t imm) {
   lu12i_w(dst, imm_20bit_2);
   ori(dst, dst, imm_12bit_1);
 
-  // if high 32bit not 0
-  if (imm & 0xffffffff00000000) {
+  // if high 33bit not 0
+  if (imm & 0xffffffff80000000) {
     uint32_t imm_20bit_3 = (imm>>32) & 0xfffff;
     if( 0 != (imm_20bit_3 & signBit20) ) {
       imm_20bit_3 |= 0xfff00000;  //sign extend

@@ -13,6 +13,87 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+/*LSX begin*/
+void vadd_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vadd_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vadd_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vadd_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vmax_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmax_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmax_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmax_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vmax_bu(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmax_hu(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmax_wu(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmax_du(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vmin_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmin_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmin_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmin_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vmin_bu(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmin_hu(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmin_wu(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmin_du(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vmul_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmul_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmul_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vmul_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vdiv_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vdiv_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vdiv_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vdiv_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vfmax_s(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfmax_d(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfmin_s(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfmin_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vfadd_s(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfadd_d(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfmul_s(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfmul_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vldrepl_b(const VReg &vd, const XReg &rj, int32_t si12);
+void vldrepl_h(const VReg &vd, const XReg &rj, int32_t si11);
+void vldrepl_w(const VReg &vd, const XReg &rj, int32_t si10);
+void vldrepl_d(const VReg &vd, const XReg &rj, int32_t si9);
+
+void vstelm_b(const VReg &vd, const XReg &rj, int32_t si8, uint32_t idx);
+void vstelm_h(const VReg &vd, const XReg &rj, int32_t si8, uint32_t idx);
+void vstelm_w(const VReg &vd, const XReg &rj, int32_t si8, uint32_t idx);
+void vstelm_d(const VReg &vd, const XReg &rj, int32_t si8, uint32_t idx);
+
+void vreplve_b(const VReg &vd, const VReg &vj, const XReg &rk);
+void vreplve_h(const VReg &vd, const VReg &vj, const XReg &rk);
+void vreplve_w(const VReg &vd, const VReg &vj, const XReg &rk);
+void vreplve_d(const VReg &vd, const VReg &vj, const XReg &rk);
+
+void vpickev_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vpickev_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vpickev_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vpickev_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vand_v(const VReg &vd, const VReg &vj, const VReg &vk);
+void vor_v(const VReg &vd, const VReg &vj, const VReg &vk);
+void vxor_v(const VReg &vd, const VReg &vj, const VReg &vk);
+void vnor_v(const VReg &vd, const VReg &vj, const VReg &vk);
+void vandn_v(const VReg &vd, const VReg &vj, const VReg &vk);
+void vorn_v(const VReg &vd, const VReg &vj, const VReg &vk);
+void vffint_s_w(const VReg &vd, const VReg &vj);
+void vftint_w_s(const VReg &vd, const VReg &vj);
+
+void vreplgr2vr_b(const VReg &vd, const XReg &rj);
+void vreplgr2vr_h(const VReg &vd, const XReg &rj);
+void vreplgr2vr_w(const VReg &vd, const XReg &rj);
+void vreplgr2vr_d(const VReg &vd, const XReg &rj);
+/*LSX end*/
+
 
 /*LASX begin*/
 void xvfmadd_s(const XVReg &xd, const XVReg &xj, const XVReg &xk, const XVReg &xa);
@@ -109,6 +190,7 @@ void xvadd_b(const XVReg &xd, const XVReg &xj, const XVReg &xk);
 void xvadd_h(const XVReg &xd, const XVReg &xj, const XVReg &xk);
 void xvadd_w(const XVReg &xd, const XVReg &xj, const XVReg &xk);
 void xvadd_d(const XVReg &xd, const XVReg &xj, const XVReg &xk);
+
 
 void xvsub_b(const XVReg &xd, const XVReg &xj, const XVReg &xk);
 void xvsub_h(const XVReg &xd, const XVReg &xj, const XVReg &xk);

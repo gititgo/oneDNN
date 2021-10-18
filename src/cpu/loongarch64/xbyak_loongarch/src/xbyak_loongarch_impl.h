@@ -396,6 +396,48 @@ void CodeGenerator::LasxFormatI8ELM(uint32_t op, uint32_t df, uint32_t idx, int3
   dd(code);
 }
 
+void CodeGenerator::LasxFormatI8VSTELM(uint32_t op, uint32_t df, uint32_t idx, int32_t imm8, const XReg &rj, const VReg &vd ) {
+  uint32_t df_n = 0;
+
+  switch(df) {
+    case 0:  //Byte: 10|idx4
+    {
+      verifyIncRange(idx, 0, ones(4), ERR_ILLEGAL_IMM_RANGE, false);
+      verifyIncRange(imm8, -1*(1<<7), ones(7), ERR_ILLEGAL_IMM_RANGE, true);
+      uint32_t idx4 = idx & ones(4);
+      df_n = (0b10 << 4) | idx4;
+      break;
+    }
+    case 1:  //H: 010|idx3
+    {
+      verifyIncRange(idx, 0, ones(3), ERR_ILLEGAL_IMM_RANGE, false);
+      verifyIncRange(imm8, -1*(1<<8), ones(8), ERR_ILLEGAL_IMM_RANGE, true);
+      uint32_t idx3 = idx & ones(3);
+      df_n = (0b010 << 3) | idx3;
+      break;
+    }
+    case 2:  //W: 0010|idx2
+    {
+      verifyIncRange(idx, 0, ones(2), ERR_ILLEGAL_IMM_RANGE, false);
+      verifyIncRange(imm8, -1*(1<<9), ones(9), ERR_ILLEGAL_IMM_RANGE, true);
+      uint32_t idx2 = idx & ones(2);
+      df_n = (0b0010 << 2) | idx2;
+      break;
+    }
+    case 3:  //D: 00010|idx1
+    {
+      verifyIncRange(idx, 0, ones(1), ERR_ILLEGAL_IMM_RANGE, false);
+      verifyIncRange(imm8, -1*(1<<10), ones(10), ERR_ILLEGAL_IMM_RANGE, true);
+      uint32_t idx1 = idx & ones(1);
+      df_n = (0b00010 << 1) | idx1;
+      break;
+    }
+  }
+
+  uint32_t code = concat({F(op, 24),F(df_n, 18), F((imm8>>df)&ones(8), 10), F(rj.getIdx(), 5), F(vd.getIdx(), 0)});
+  dd(code);
+}
+
 template <typename T, typename R> 
 void CodeGenerator::LasxFormat3RX(uint32_t op, const R &rk, const R &rj, const T &rd ) {
   uint32_t subOp = 0b000;
@@ -408,6 +450,7 @@ void CodeGenerator::LasxFormat3R(uint32_t op, uint32_t df, const R &rk, const T 
   uint32_t code = concat({F(op, 17), F(df, 15), F(rk.getIdx(), 10), F(rj.getIdx(), 5), F(rd.getIdx(), 0)});
   dd(code);
 }
+
 
 template <typename T> 
 void CodeGenerator::LasxFormat3RVec(uint32_t op, const T &rk, const T &rj, const T &rd ) {

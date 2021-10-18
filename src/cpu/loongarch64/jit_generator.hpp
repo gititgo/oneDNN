@@ -503,9 +503,54 @@ public:
         xvstx(xd, r1, r2);
     }
 
+    void uni_vxor(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+            const Xbyak_loongarch::VReg &vk) {
+        vxor_v(vd, vj, vk);
+    }
+
     void uni_vpxor(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
             const Xbyak_loongarch::XVReg &xk) {
         xvxor_v(xd, xj, xk);
+    }
+
+    void uni_vldrepl_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vldrepl_b(vd, X_TMP_2, 0);
+            return;
+        }
+        vldrepl_b(vd, rj, simm);
+    }
+
+    void uni_vldrepl_h(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vldrepl_h(vd, X_TMP_2, 0);
+            return;
+        }
+        vldrepl_h(vd, rj, simm);
+    }
+
+    void uni_vldrepl_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vldrepl_w(vd, X_TMP_2, 0);
+            return;
+        }
+        vldrepl_w(vd, rj, simm);
+    }
+
+    void uni_vldrepl_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vldrepl_d(vd, X_TMP_2, 0);
+            return;
+        }
+        vldrepl_d(vd, rj, simm);
     }
 
     void uni_xvldrepl_b(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
@@ -546,6 +591,50 @@ public:
             return;
         }
         xvldrepl_d(xd, rj, simm);
+    }
+
+    // we use the real offset
+    void uni_vstelm_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if (simm > IMM8_MAX_VALUE || simm < IMM8_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vstelm_b(vd, X_TMP_2, 0, idx);
+            return;
+        }
+        vstelm_b(vd, rj, simm, idx);
+    }
+
+    // we use the real offset(but the xvstelm.h use si8 << 1)
+    void uni_vstelm_h(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if (simm > IMM9_MAX_VALUE || simm < IMM9_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vstelm_h(vd, X_TMP_2, 0, idx);
+            return;
+        }
+        vstelm_h(vd, rj, simm, idx);
+    }
+
+    // we use the real offset(but the xvstelm.w use si8 << 2)
+    void uni_vstelm_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if (simm > IMM10_MAX_VALUE || simm < IMM10_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vstelm_w(vd, X_TMP_2, 0, idx);
+            return;
+        }
+        vstelm_w(vd, rj, simm, idx);
+    }
+
+    // we use the real offset(but the xvstelm.d use si8 << 3)
+    void uni_vstelm_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm, const uint32_t idx) {
+        if (simm > IMM11_MAX_VALUE || simm < IMM11_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vstelm_d(vd, X_TMP_2, 0, idx);
+            return;
+        }
+        vstelm_d(vd, rj, simm, idx);
     }
 
     // we use the real offset
@@ -591,14 +680,12 @@ public:
         }
         xvstelm_d(xd, rj, simm, idx);
     }
-
     /*
       Saturation facility functions. enable to prepare the register
       holding the saturation upperbound and apply the saturation on
       the floating point register
      */
-    template <typename Vmm>
-    void init_saturate_f32(Vmm vmm_lbound, Vmm vmm_ubound, const Xbyak_loongarch::XReg &reg_tmp,
+    void init_saturate_f32(Xbyak_loongarch::XVReg vmm_lbound, Xbyak_loongarch::XVReg vmm_ubound, const Xbyak_loongarch::XReg &reg_tmp,
             data_type_t idt, data_type_t odt) {
         using namespace data_type;
         if (!((idt == f32) && utils::one_of(odt, u8, s8, s32))) return;
@@ -608,16 +695,15 @@ public:
         // No need to saturate on lower bound for signed integer types, as
         // the conversion to int would return INT_MIN, and then proper
         // saturation will happen in store_data
-        if (odt == u8) uni_vpxor(vmm_lbound, vmm_lbound, vmm_lbound);
+        if (odt == u8) xvxor_v(vmm_lbound, vmm_lbound, vmm_lbound);
 
         float saturation_ubound = types::max_value<float>(odt);
         mov_imm(reg_tmp, float2int(saturation_ubound));
         xvreplgr2vr_w(vmm_ubound, reg_tmp);
     }
 
-    template <typename Vmm>
-    void saturate_f32(const Vmm &vmm, const Vmm &vmm_lbound,
-            const Vmm &vmm_ubound, data_type_t odt) {
+    void saturate_f32(const Xbyak_loongarch::XVReg &vmm, const Xbyak_loongarch::XVReg &vmm_lbound,
+            const Xbyak_loongarch::XVReg &vmm_ubound, data_type_t odt) {
         // This function is used to saturate to odt in f32 before converting
         // to s32 in order to avoid bad saturation due to cvtps2dq
         // behavior (it returns INT_MIN if the f32 is out of the
@@ -628,21 +714,43 @@ public:
         // no need to apply lower saturation bound when odt is
         // signed, as cvtps2dq will return MIN_INT if the value
         // does not fit
-        if (odt == u8) {
-            if (is_valid_isa(lasx))
-                //vmaxps(vmm, vmm, vmm_lbound);
-                xvfmax_s(vmm, vmm, vmm_lbound);
-            else
-                //maxps(vmm, vmm_lbound);
-                xvfmax_s(vmm, vmm, vmm_lbound);
-        }
-        if (is_valid_isa(lasx))
-            //vminps(vmm, vmm, vmm_ubound);
-            xvfmin_s(vmm, vmm, vmm_ubound);
-        else
-            //minps(vmm, vmm_ubound);
-            xvfmin_s(vmm, vmm, vmm_ubound);
+        if (odt == u8) xvfmax_s(vmm, vmm, vmm_lbound);
+        xvfmin_s(vmm, vmm, vmm_ubound);
     }
+
+    void init_saturate_f32(Xbyak_loongarch::VReg vmm_lbound, Xbyak_loongarch::VReg vmm_ubound, const Xbyak_loongarch::XReg &reg_tmp,
+            data_type_t idt, data_type_t odt) {
+        using namespace data_type;
+        if (!((idt == f32) && utils::one_of(odt, u8, s8, s32))) return;
+
+        assert(IMPLICATION(
+                idt == u8, vmm_lbound.getIdx() != vmm_ubound.getIdx()));
+        // No need to saturate on lower bound for signed integer types, as
+        // the conversion to int would return INT_MIN, and then proper
+        // saturation will happen in store_data
+        if (odt == u8) vxor_v(vmm_lbound, vmm_lbound, vmm_lbound);
+
+        float saturation_ubound = types::max_value<float>(odt);
+        mov_imm(reg_tmp, float2int(saturation_ubound));
+        vreplgr2vr_w(vmm_ubound, reg_tmp);
+    }
+
+    void saturate_f32(const Xbyak_loongarch::VReg &vmm, const Xbyak_loongarch::VReg &vmm_lbound,
+            const Xbyak_loongarch::VReg &vmm_ubound, data_type_t odt) {
+        // This function is used to saturate to odt in f32 before converting
+        // to s32 in order to avoid bad saturation due to cvtps2dq
+        // behavior (it returns INT_MIN if the f32 is out of the
+        // s32 range)
+        using namespace data_type;
+        if (!utils::one_of(odt, u8, s8, s32)) return;
+
+        // no need to apply lower saturation bound when odt is
+        // signed, as cvtps2dq will return MIN_INT if the value
+        // does not fit
+        if (odt == u8) vfmax_s(vmm, vmm, vmm_lbound);
+        vfmin_s(vmm, vmm, vmm_ubound);
+    }
+
 
     /**
     * load_bytes is the utility function to facilitate loading of
@@ -857,12 +965,10 @@ public:
         switch (store_size) {
             case 0: break;
             case 1:
-                vpickve2gr_b(regvalue, vreg, 0);
-                uni_st_b(regvalue, regaddr, offset);
+                uni_vstelm_b(vreg, regaddr, offset, 0);
                 break;
             case 2:
-                vpickve2gr_h(regvalue, vreg, 0);
-                uni_st_h(regvalue, regaddr, offset);
+                uni_vstelm_h(vreg, regaddr, offset, 0);
                 break;
             case 3:
                 vpickve2gr_h(regvalue, vreg, 0);
@@ -871,7 +977,7 @@ public:
                 uni_st_b(regvalue, regaddr, offset + 2);
                 break;
             case 4:
-                uni_xvstelm_w(xvreg, regaddr, offset, 0);
+                uni_vstelm_w(vreg, regaddr, offset, 0);
                 break;
             case 5:
                 vpickve2gr_w(regvalue, vreg, 0);
@@ -894,7 +1000,7 @@ public:
                 uni_st_b(regvalue, regaddr, offset);
                 break;
             case 8:
-                uni_xvstelm_d(xvreg, regaddr, offset, 0);
+                uni_vstelm_d(vreg, regaddr, offset, 0);
                 break;
             case 9:
                 vpickve2gr_d(regvalue, vreg, 0);
