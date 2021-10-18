@@ -92,6 +92,11 @@ void vreplgr2vr_b(const VReg &vd, const XReg &rj);
 void vreplgr2vr_h(const VReg &vd, const XReg &rj);
 void vreplgr2vr_w(const VReg &vd, const XReg &rj);
 void vreplgr2vr_d(const VReg &vd, const XReg &rj);
+
+void vextrins_d(const VReg &vd, const VReg &vj, uint32_t imm8);
+void vextrins_w(const VReg &vd, const VReg &vj, uint32_t imm8);
+void vextrins_h(const VReg &vd, const VReg &vj, uint32_t imm8);
+void vextrins_b(const VReg &vd, const VReg &vj, uint32_t imm8);
 /*LSX end*/
 
 

@@ -1087,6 +1087,11 @@ void CodeGenerator::vreplgr2vr_b(const VReg &vd, const XReg &rj) { LasxFormat2R(
 void CodeGenerator::vreplgr2vr_h(const VReg &vd, const XReg &rj) { LasxFormat2R(0b01110010100111110000, TYPE_H, rj, vd); }
 void CodeGenerator::vreplgr2vr_w(const VReg &vd, const XReg &rj) { LasxFormat2R(0b01110010100111110000, TYPE_W, rj, vd); }
 void CodeGenerator::vreplgr2vr_d(const VReg &vd, const XReg &rj) { LasxFormat2R(0b01110010100111110000, TYPE_D, rj, vd); }
+
+void CodeGenerator::vextrins_d(const VReg &vd, const VReg &vj, uint32_t imm8) { LasxFormatI8(0b01110011100000, imm8, vj, vd); }
+void CodeGenerator::vextrins_w(const VReg &vd, const VReg &vj, uint32_t imm8) { LasxFormatI8(0b01110011100001, imm8, vj, vd); }
+void CodeGenerator::vextrins_h(const VReg &vd, const VReg &vj, uint32_t imm8) { LasxFormatI8(0b01110011100010, imm8, vj, vd); }
+void CodeGenerator::vextrins_b(const VReg &vd, const VReg &vj, uint32_t imm8) { LasxFormatI8(0b01110011100011, imm8, vj, vd); }
 /*LSX end*/
 /*******************************************************loongarch begin by sunxin****************************************************/
 void CodeGenerator::add_w(const XReg& rd, const XReg& rj, const XReg& rk) { Loongarch3Reg(0b100000, rk.getIdx(), rj.getIdx(), rd.getIdx()); }
