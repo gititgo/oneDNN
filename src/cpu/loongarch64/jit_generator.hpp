@@ -443,7 +443,7 @@ public:
         stptr_d(rd, rj, simm);
     }
 
-    void uni_vld(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvld(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             mov_imm(X_TMP_2, simm);
@@ -473,7 +473,7 @@ public:
         xvldx(xd, r1, r2);
     }
 
-    void uni_vst(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvst(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             mov_imm(X_TMP_2, simm);
@@ -503,7 +503,7 @@ public:
         xvstx(xd, r1, r2);
     }
 
-    void uni_vxor(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+    void uni_vpxor(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
             const Xbyak_loongarch::VReg &vk) {
         vxor_v(vd, vj, vk);
     }
@@ -513,7 +513,7 @@ public:
         xvxor_v(xd, xj, xk);
     }
 
-    void uni_vldrepl_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvldrepl_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -523,7 +523,7 @@ public:
         vldrepl_b(vd, rj, simm);
     }
 
-    void uni_vldrepl_h(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvldrepl_h(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -533,7 +533,7 @@ public:
         vldrepl_h(vd, rj, simm);
     }
 
-    void uni_vldrepl_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvldrepl_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -543,7 +543,7 @@ public:
         vldrepl_w(vd, rj, simm);
     }
 
-    void uni_vldrepl_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvldrepl_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -594,7 +594,7 @@ public:
     }
 
     // we use the real offset
-    void uni_vstelm_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvstelm_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
         if (simm > IMM8_MAX_VALUE || simm < IMM8_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -605,7 +605,7 @@ public:
     }
 
     // we use the real offset(but the xvstelm.h use si8 << 1)
-    void uni_vstelm_h(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvstelm_h(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
         if (simm > IMM9_MAX_VALUE || simm < IMM9_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -616,7 +616,7 @@ public:
     }
 
     // we use the real offset(but the xvstelm.w use si8 << 2)
-    void uni_vstelm_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvstelm_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
         if (simm > IMM10_MAX_VALUE || simm < IMM10_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -627,7 +627,7 @@ public:
     }
 
     // we use the real offset(but the xvstelm.d use si8 << 3)
-    void uni_vstelm_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+    void uni_xvstelm_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
         if (simm > IMM11_MAX_VALUE || simm < IMM11_MIN_VALUE) {
             add_imm(X_TMP_2, rj, simm, X_TMP_2);
@@ -679,6 +679,80 @@ public:
             return;
         }
         xvstelm_d(xd, rj, simm, idx);
+    }
+
+    void uni_xvreplve0_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj) {
+        xvreplve0_w(xd, xj);
+    }
+
+    void uni_xvreplve0_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj) {
+        vreplvei_w(vd, vj, 0);
+    }
+
+    void uni_xvand_v(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvand_v(xd, xj, xk);
+    }
+
+    void uni_xvand_v(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vand_v(vd, vj, vk);
+    }
+
+    void uni_xvnor_v(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvnor_v(xd, xj, xk);
+    }
+
+    void uni_xvnor_v(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vnor_v(vd, vj, vk);
+    }
+
+    void uni_xvpickev_h(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvpickev_h(xd, xj, xk);
+    }
+
+    void uni_xvpickev_h(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vpickev_h(vd, vj, vk);
+    }
+
+    void uni_xvpickev_b(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvpickev_b(xd, xj, xk);
+    }
+
+    void uni_xvpickev_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vpickev_b(vd, vj, vk);
+    }
+
+    void uni_xvffint_s_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj) {
+        xvffint_s_w(xd, xj);
+    }
+
+    void uni_xvffint_s_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj) {
+        vffint_s_w(vd, vj);
+    }
+
+    void uni_xvftint_w_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj) {
+        xvftint_w_s(xd, xj);
+    }
+
+    void uni_xvftint_w_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj) {
+        vftint_w_s(vd, vj);
+    }
+
+    void uni_xvinsgr2vr_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const uint32_t ui) {
+        xvinsgr2vr_w(xd, rj, ui);
+    }
+
+    void uni_xvinsgr2vr_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const uint32_t ui) {
+        vinsgr2vr_w(vd, rj, ui);
     }
     /*
       Saturation facility functions. enable to prepare the register
@@ -885,13 +959,13 @@ public:
                 vinsgr2vr_b(vreg, regvalue, 14);
                 break;
             case 16:
-                uni_vld(vreg, regaddr, offset);
+                uni_xvld(vreg, regaddr, offset);
                 break;
             case 17:
             case 18:
             case 19:
             case 20:
-                uni_vld(vreg, regaddr, offset);
+                uni_xvld(vreg, regaddr, offset);
                 uni_ld_w(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_w(xvreg, regvalue, 4);
                 break;
@@ -899,7 +973,7 @@ public:
             case 22:
             case 23:
             case 24:
-                uni_vld(vreg, regaddr, offset);
+                uni_xvld(vreg, regaddr, offset);
                 uni_ld_d(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_d(xvreg, regvalue, 2);
                 break;
@@ -907,7 +981,7 @@ public:
             case 26:
             case 27:
             case 28:
-                uni_vld(vreg, regaddr, offset);
+                uni_xvld(vreg, regaddr, offset);
                 uni_ld_d(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_d(xvreg, regvalue, 2);
                 uni_ld_w(regvalue, regaddr, offset + 24);
@@ -965,10 +1039,10 @@ public:
         switch (store_size) {
             case 0: break;
             case 1:
-                uni_vstelm_b(vreg, regaddr, offset, 0);
+                uni_xvstelm_b(vreg, regaddr, offset, 0);
                 break;
             case 2:
-                uni_vstelm_h(vreg, regaddr, offset, 0);
+                uni_xvstelm_h(vreg, regaddr, offset, 0);
                 break;
             case 3:
                 vpickve2gr_h(regvalue, vreg, 0);
@@ -977,7 +1051,7 @@ public:
                 uni_st_b(regvalue, regaddr, offset + 2);
                 break;
             case 4:
-                uni_vstelm_w(vreg, regaddr, offset, 0);
+                uni_xvstelm_w(vreg, regaddr, offset, 0);
                 break;
             case 5:
                 vpickve2gr_w(regvalue, vreg, 0);
@@ -1000,7 +1074,7 @@ public:
                 uni_st_b(regvalue, regaddr, offset);
                 break;
             case 8:
-                uni_vstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
                 break;
             case 9:
                 vpickve2gr_d(regvalue, vreg, 0);
@@ -1055,13 +1129,13 @@ public:
                 uni_st_b(regvalue, regaddr, offset + 14);
                 break;
             case 16:
-                uni_vst(vreg, regaddr, offset);
+                uni_xvst(vreg, regaddr, offset);
                 break;
             case 17:
             case 18:
             case 19:
             case 20:
-                uni_vst(vreg, regaddr, offset);
+                uni_xvst(vreg, regaddr, offset);
                 xvpickve2gr_w(regvalue, xvreg, 4);
                 uni_st_w(regvalue, regaddr, offset + 16);
                 break;
@@ -1069,7 +1143,7 @@ public:
             case 22:
             case 23:
             case 24:
-                uni_vst(vreg, regaddr, offset);
+                uni_xvst(vreg, regaddr, offset);
                 xvpickve2gr_d(regvalue, xvreg, 2);
                 uni_st_d(regvalue, regaddr, offset + 16);
                 break;
@@ -1077,7 +1151,7 @@ public:
             case 26:
             case 27:
             case 28:
-                uni_vst(vreg, regaddr, offset);
+                uni_xvst(vreg, regaddr, offset);
                 xvpickve2gr_d(regvalue, xvreg, 2);
                 uni_st_d(regvalue, regaddr, offset + 16);
                 xvpickve2gr_w(regvalue, xvreg, 6);
@@ -1129,7 +1203,7 @@ public:
                 uni_ld_b(X_TMP_1, reg, offset + i);
             else
                 uni_ld_bu(X_TMP_1, reg, offset + i);
-            xvinsgr2vr_w(vmm, X_TMP_1, i);
+            uni_xvinsgr2vr_w(vmm, X_TMP_1, i);
         }
     }
 

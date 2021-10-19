@@ -167,10 +167,11 @@ void jit_io_helper_t<Vmm>::prepare_vmm_mask(
         //        reinterpret_cast<size_t>(&mask_f32[7 - how_many_bits_to_set]));
         host_->mov_imm(reg_tmp, reinterpret_cast<size_t>(&mask_f32[7 - how_many_bits_to_set]));
         //host_->vmovups(mask, host_->ptr[reg_tmp]);
-        host_->xvld(mask, reg_tmp, 0);
+        host_->uni_xvld(mask, reg_tmp, 0);
     } else if (how_many_bits_to_set == simd_w) {
         //host_->vcmpps(mask, mask, mask, jit_generator::_cmp_eq_oq);
-        host_->xvfcmp_ceq_s(mask, mask, mask);
+        host_->uni_vpxor(mask, mask, mask);
+        host_->uni_xvnor_v(mask, mask, mask);
     } else {
         assert(!"Can't set so many bits.");
     }
@@ -184,7 +185,7 @@ void jit_io_helper_t<Vmm>::prepare_i8_data_to_store(const Vmm &i8_vmm) {
 
     //host_->uni_vpackssdw(
     //        i8_vmm, i8_vmm, Vmm(saturation_conf_->vreg_zero_saturation_idx_));
-    host_->xvpickev_h(i8_vmm, i8_vmm, i8_vmm);
+    host_->uni_xvpickev_h(i8_vmm, i8_vmm, i8_vmm);
     if (isa_ == lasx) {
         // dst[63:0] = src[63:0]
         // dst[127:64] = src[191:128]
@@ -199,11 +200,11 @@ void jit_io_helper_t<Vmm>::prepare_i8_data_to_store(const Vmm &i8_vmm) {
     if (data_type_ == data_type::s8)
         //host_->uni_vpacksswb(i8_vmm, i8_vmm,
         //        Vmm(saturation_conf_->vreg_zero_saturation_idx_));
-        host_->xvpickev_b(i8_vmm, i8_vmm, i8_vmm);
+        host_->uni_xvpickev_b(i8_vmm, i8_vmm, i8_vmm);
     else
         //host_->uni_vpackuswb(i8_vmm, i8_vmm,
         //        Vmm(saturation_conf_->vreg_zero_saturation_idx_));
-        host_->xvpickev_b(i8_vmm, i8_vmm, i8_vmm);
+        host_->uni_xvpickev_b(i8_vmm, i8_vmm, i8_vmm);
 }
 
 //template <>
@@ -310,7 +311,7 @@ void jit_io_helper_t<Xbyak_loongarch::XVReg>::emu_gather(const Xbyak_loongarch::
                 case data_type::s32: {
                     //host_->vpinsrd(xmm_dst, xmm_dst, host_->ptr[src_reg], j);
                     host_->ld_w(host_->X_TMP_1, src_reg, 0);
-                    host_->vinsgr2vr_w(xmm_dst, host_->X_TMP_1, j);
+                    host_->uni_xvinsgr2vr_w(xmm_dst, host_->X_TMP_1, j);
                     break;
                 }
                 //case data_type::bf16:
@@ -375,7 +376,7 @@ void jit_io_helper_t<Xbyak_loongarch::VReg>::emu_gather(const Xbyak_loongarch::X
             case data_type::s32: {
                 //host_->pinsrd(dst_vmm, host_->ptr[src_reg], j);
                 host_->ld_w(host_->X_TMP_1, src_reg, 0);
-                host_->vinsgr2vr_w(dst_vmm, host_->X_TMP_1, j);
+                host_->uni_xvinsgr2vr_w(dst_vmm, host_->X_TMP_1, j);
                 break;
             }
             //case data_type::bf16:
@@ -574,7 +575,7 @@ void jit_io_helper_t<Vmm>::load_f32(const Xbyak_loongarch::XReg &src_addr,
         //host_->vmaskmovps(
         //        dst_vmm, Vmm(tail_conf_->tail_vmm_mask_idx_), src_addr);
         host_->uni_xvld(dst_vmm, src_addr, offset);
-        host_->xvand_v(dst_vmm, dst_vmm, Vmm(tail_conf_->tail_vmm_mask_idx_));
+        host_->uni_xvand_v(dst_vmm, dst_vmm, Vmm(tail_conf_->tail_vmm_mask_idx_));
     }
     else
         //host_->uni_vmovups(dst_vmm, src_addr);
@@ -616,9 +617,9 @@ void jit_io_helper_t<Vmm>::load_i8(const Xbyak_loongarch::XReg &src_addr,
     //    host_->uni_vpmovzxbd(dst_vmm, src_addr);
     host_->uni_xvldrepl_d(dst_vmm, src_addr, offset);
     if (data_type_ == data_type::s8)
-        host_->vext2xv_w_b(dst_vmm, dst_vmm);
+        host_->vext2xv_w_b(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
     else
-        host_->vext2xv_wu_bu(dst_vmm, dst_vmm);
+        host_->vext2xv_wu_bu(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
 
     convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type::s32);
 }
@@ -677,7 +678,7 @@ void jit_io_helper_t<Vmm>::saturate(const Vmm &vmm) {
     host_->saturate_f32(vmm, Vmm(saturation_conf_->vreg_zero_saturation_idx_),
             Vmm(saturation_conf_->vreg_saturation_ubound_idx_), data_type_);
     //host_->uni_vcvtps2dq(vmm, vmm);
-    host_->xvftint_w_s(vmm, vmm);
+    host_->uni_xvftint_w_s(vmm, vmm);
 }
 
 template <typename Vmm>
@@ -794,7 +795,7 @@ void jit_io_helper_t<Vmm>::convert_to_f32(const Vmm &dst_vmm,
         case data_type::s32: {
             assert(dst_vmm.getIdx() == src_vmm.getIdx());
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
+            host_->uni_xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
             break;
         }
         //case data_type::bf16:
@@ -805,14 +806,14 @@ void jit_io_helper_t<Vmm>::convert_to_f32(const Vmm &dst_vmm,
             //host_->uni_vpmovsxbd(dst_vmm, src_vmm);
             host_->vext2xv_w_b(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(src_vmm.getIdx()));
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
+            host_->uni_xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
             break;
         }
         case data_type::u8: {
             //host_->uni_vpmovzxbd(dst_vmm, src_vmm);
             host_->vext2xv_wu_bu(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(src_vmm.getIdx()));
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
+            host_->uni_xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
             break;
         }
         default: assert(!"Unsupported data type.");
@@ -852,7 +853,7 @@ void jit_io_helper_t<Vmm>::broadcast(const Xbyak_loongarch::XReg &src_addr,
             host_->vinsgr2vr_b(Xbyak_loongarch::VReg(dst_vmm.getIdx()), host_->X_TMP_0, 0);
             convert_to_f32(dst_vmm, Xbyak_loongarch::VReg(dst_vmm.getIdx()), data_type_);
             //host_->uni_vbroadcastss(dst_vmm, dst_xmm);
-            host_->xvreplve0_w(dst_vmm, dst_vmm);
+            host_->uni_xvreplve0_w(dst_vmm, dst_vmm);
             break;
         }
         default: assert(!"Unsupported data type.");
@@ -938,11 +939,13 @@ jit_io_multi_dt_helper_t<Vmm>::~jit_io_multi_dt_helper_t() = default;
 //template class jit_io_helper_t<Xbyak::Ymm>;
 //template class jit_io_helper_t<Xbyak::Xmm>;
 template class jit_io_helper_t<Xbyak_loongarch::XVReg>;
+template class jit_io_helper_t<Xbyak_loongarch::VReg>;
 
 //template class jit_io_multi_dt_helper_t<Xbyak::Zmm>;
 //template class jit_io_multi_dt_helper_t<Xbyak::Ymm>;
 //template class jit_io_multi_dt_helper_t<Xbyak::Xmm>;
 template class jit_io_multi_dt_helper_t<Xbyak_loongarch::XVReg>;
+template class jit_io_multi_dt_helper_t<Xbyak_loongarch::VReg>;
 
 } // namespace io
 } // namespace loongarch64
