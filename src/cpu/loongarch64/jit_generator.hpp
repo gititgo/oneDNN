@@ -754,6 +754,16 @@ public:
             const uint32_t ui) {
         vinsgr2vr_w(vd, rj, ui);
     }
+
+    void uni_xvseq_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvseq_d(xd, xj, xk);
+    }
+
+    void uni_xvseq_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vseq_d(vd, vj, vk);
+    }
     /*
       Saturation facility functions. enable to prepare the register
       holding the saturation upperbound and apply the saturation on

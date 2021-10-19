@@ -170,8 +170,7 @@ void jit_io_helper_t<Vmm>::prepare_vmm_mask(
         host_->uni_xvld(mask, reg_tmp, 0);
     } else if (how_many_bits_to_set == simd_w) {
         //host_->vcmpps(mask, mask, mask, jit_generator::_cmp_eq_oq);
-        host_->uni_vpxor(mask, mask, mask);
-        host_->uni_xvnor_v(mask, mask, mask);
+        host_->uni_xvseq_d(mask, mask, mask);
     } else {
         assert(!"Can't set so many bits.");
     }

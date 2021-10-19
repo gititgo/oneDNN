@@ -97,6 +97,16 @@ void vextrins_d(const VReg &vd, const VReg &vj, uint32_t imm8);
 void vextrins_w(const VReg &vd, const VReg &vj, uint32_t imm8);
 void vextrins_h(const VReg &vd, const VReg &vj, uint32_t imm8);
 void vextrins_b(const VReg &vd, const VReg &vj, uint32_t imm8);
+
+void vseq_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vseq_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vseq_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vseq_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vfsub_s(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfsub_d(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfdiv_s(const VReg &vd, const VReg &vj, const VReg &vk);
+void vfdiv_d(const VReg &vd, const VReg &vj, const VReg &vk);
 /*LSX end*/
 
 
