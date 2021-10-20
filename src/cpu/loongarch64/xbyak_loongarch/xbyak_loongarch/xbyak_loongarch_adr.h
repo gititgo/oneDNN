@@ -133,6 +133,17 @@ public:
   uint32_t getImm() const { return uimm_; }
 };
 
+// base size_t offset (unsigned immediate) for binary_injector
+class Address : public Adr {
+  XReg xn_;
+  size_t offset_;
+
+public:
+  explicit Address(const XReg &xn, size_t offset) : Adr(BASE_IMM), xn_(xn), offset_(offset) {}
+  const XReg &getXReg() const { return xn_; }
+  uint32_t getOffset() const { return offset_; }
+};
+
 // base plus offset (register)
 class AdrReg : public Adr {
   XReg xn_;
@@ -226,6 +237,8 @@ inline AdrNoOfs ptr(const XReg &xn) { return AdrNoOfs(xn); }
 inline AdrImm ptr(const XReg &xn, int32_t imm) { return AdrImm(xn, imm); }
 
 inline AdrUimm ptr(const XReg &xn, uint32_t uimm) { return AdrUimm(xn, uimm); }
+
+inline Address ptr(const XReg &xn, size_t offset) { return Address(xn, offset); }
 
 inline AdrReg ptr(const XReg &xn, const XReg &xm) { return AdrReg(xn, xm); }
 
