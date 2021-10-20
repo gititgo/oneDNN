@@ -794,7 +794,7 @@ void jit_io_helper_t<Vmm>::convert_to_f32(const Vmm &dst_vmm,
         case data_type::s32: {
             assert(dst_vmm.getIdx() == src_vmm.getIdx());
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->uni_xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
+            host_->uni_xvffint_s_w(dst_vmm, dst_vmm);
             break;
         }
         //case data_type::bf16:
@@ -805,14 +805,14 @@ void jit_io_helper_t<Vmm>::convert_to_f32(const Vmm &dst_vmm,
             //host_->uni_vpmovsxbd(dst_vmm, src_vmm);
             host_->vext2xv_w_b(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(src_vmm.getIdx()));
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->uni_xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
+            host_->uni_xvffint_s_w(dst_vmm, dst_vmm);
             break;
         }
         case data_type::u8: {
             //host_->uni_vpmovzxbd(dst_vmm, src_vmm);
             host_->vext2xv_wu_bu(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(src_vmm.getIdx()));
             //host_->uni_vcvtdq2ps(dst_vmm, dst_vmm);
-            host_->uni_xvffint_s_w(Xbyak_loongarch::XVReg(dst_vmm.getIdx()), Xbyak_loongarch::XVReg(dst_vmm.getIdx()));
+            host_->uni_xvffint_s_w(dst_vmm, dst_vmm);
             break;
         }
         default: assert(!"Unsupported data type.");
