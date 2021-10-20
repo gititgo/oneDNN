@@ -137,11 +137,13 @@ public:
 class Address : public Adr {
   XReg xn_;
   size_t offset_;
+  bool broadcast_;
 
 public:
-  explicit Address(const XReg &xn, size_t offset) : Adr(BASE_IMM), xn_(xn), offset_(offset) {}
+  explicit Address(const XReg &xn, size_t offset, bool broadcast = false) : Adr(BASE_IMM), xn_(xn), offset_(offset), broadcast_(broadcast) {}
   const XReg &getXReg() const { return xn_; }
   uint32_t getOffset() const { return offset_; }
+  bool getBroadcast() const { return broadcast_; }
 };
 
 // base plus offset (register)
@@ -238,7 +240,9 @@ inline AdrImm ptr(const XReg &xn, int32_t imm) { return AdrImm(xn, imm); }
 
 inline AdrUimm ptr(const XReg &xn, uint32_t uimm) { return AdrUimm(xn, uimm); }
 
-inline Address ptr(const XReg &xn, size_t offset) { return Address(xn, offset); }
+inline Address ptr_a(const XReg &xn, size_t offset) { return Address(xn, offset); }
+
+inline Address ptr_b(const XReg &xn, size_t offset) { return Address(xn, offset, true); }
 
 inline AdrReg ptr(const XReg &xn, const XReg &xm) { return AdrReg(xn, xm); }
 
