@@ -187,7 +187,7 @@ void jit_uni_reduction_kernel_t<Vmm>::reduce_xmm_to_scalar(const VReg &acc,
     for (std::size_t i = 0; i < number_of_values_to_reduce - 1; i++) {
         //insertps(ymm_to_acc, xmm_acc, insertps_configuration[i]);   
         //high不变，低32位改变为xmm的32-63;64-95;96-127
-        vinsgr2vr_w(ymm_to_acc, XReg(xmm_acc.getIdx()), insertps_configuration[i]);
+        vextrins_w(ymm_to_acc, xmm_acc, insertps_configuration[i]);
         compute_scalar_op_(xmm_acc, ymm_to_acc);
     }
 }
@@ -315,7 +315,7 @@ void jit_uni_reduction_kernel_t<Vmm>::finalize() {
         //mov(reg_tmp_.cvt32(), float2int(static_cast<float>(conf_.reduce_size)));
         mov_imm(reg_tmp_, float2int(static_cast<float>(conf_.reduce_size)));
         //uni_vmovd(xmm_reduce_size, reg_tmp_.cvt32());
-        addi_d(XReg(xmm_reduce_size.getIdx()), reg_tmp_, 0);
+        vinsgr2vr_w(xmm_reduce_size, reg_tmp_, 0);
         //uni_vdivss(xmm_acc, xmm_acc, xmm_reduce_size);
         vfdiv_s(VReg(31), xmm_acc, xmm_reduce_size);
         vextrins_w(xmm_acc, VReg(31), 0);
