@@ -32,7 +32,7 @@ io_tail_conf_t::io_tail_conf_t(const std::size_t simd_w,
         //const std::size_t tail_size, const Xbyak::Opmask &tail_opmask,
         const std::size_t tail_size, const Xbyak_loongarch::XReg &tail_opmask,
         //const int tail_vmm_mask_idx, const Xbyak::Reg64 &reg_tmp)
-        const int tail_vmm_mask_idx, const Xbyak_loongarch::XReg &reg_tmp)
+        const uint32_t tail_vmm_mask_idx, const Xbyak_loongarch::XReg &reg_tmp)
     : simd_w_(simd_w)
     , tail_size_(tail_size)
     , tail_opmask_(tail_opmask)
@@ -49,16 +49,16 @@ io_tail_conf_t::io_tail_conf_t(const std::size_t simd_w,
 //    , reg_tmp_(reg_tmp)
 //    , bf16_emu_reserv_4_(bf16_emu_reserv_4) {}
 
-io_saturation_conf_t::io_saturation_conf_t(const int vreg_zero_saturation_idx,
+io_saturation_conf_t::io_saturation_conf_t(const uint32_t vreg_zero_saturation_idx,
         //const int vreg_saturation_ubound_idx, const Xbyak::Reg64 &reg_tmp)
-        const int vreg_saturation_ubound_idx, const Xbyak_loongarch::XReg &reg_tmp)
+        const uint32_t vreg_saturation_ubound_idx, const Xbyak_loongarch::XReg &reg_tmp)
     : vreg_zero_saturation_idx_(vreg_zero_saturation_idx)
     , vreg_saturation_ubound_idx_(vreg_saturation_ubound_idx)
     , reg_tmp_(reg_tmp) {}
 
 io_gather_conf_t::io_gather_conf_t(const std::size_t simd_w,
         //const Xbyak::Opmask &full_opmask, const int full_vmm_mask_idx,
-        const Xbyak_loongarch::XReg &full_opmask, const int full_vmm_mask_idx,
+        const Xbyak_loongarch::XReg &full_opmask, const uint32_t full_vmm_mask_idx,
         //const Xbyak::Reg64 &reg_tmp, const Xbyak::Reg64 &reg_tmp1,
         const Xbyak_loongarch::XReg &reg_tmp, const Xbyak_loongarch::XReg &reg_tmp1,
         const utils::optional_t<int> &vmm_tmp_idx)

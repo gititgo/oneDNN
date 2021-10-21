@@ -755,6 +755,14 @@ public:
         vinsgr2vr_w(vd, rj, ui);
     }
 
+    void uni_replgr2vr_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj) {
+        xvreplgr2vr_w(xd, rj);
+    }
+
+    void uni_replgr2vr_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj) {
+        vreplgr2vr_w(vd, rj);
+    }
+
     void uni_xvseq_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
              const Xbyak_loongarch::XVReg &xk) {
         xvseq_d(xd, xj, xk);
@@ -763,6 +771,85 @@ public:
     void uni_xvseq_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
              const Xbyak_loongarch::VReg &vk) {
         vseq_d(vd, vj, vk);
+    }
+
+    void uni_fmax_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmax_s(xd, xj, xk);
+    }
+
+    void uni_fmax_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmax_s(vd, vj, vk);
+    }
+
+    void uni_fmax_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmax_d(xd, xj, xk);
+    }
+
+    void uni_fmax_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmax_d(vd, vj, vk);
+    }
+    void uni_fmin_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmin_s(xd, xj, xk);
+    }
+
+    void uni_fmin_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmin_s(vd, vj, vk);
+    }
+
+    void uni_fmin_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmin_d(xd, xj, xk);
+    }
+
+    void uni_fmin_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmin_d(vd, vj, vk);
+    }
+
+    void uni_fadd_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmax_s(xd, xj, xk);
+    }
+
+    void uni_fadd_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmax_s(vd, vj, vk);
+    }
+
+    void uni_fadd_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmax_d(xd, xj, xk);
+    }
+
+    void uni_fadd_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmax_d(vd, vj, vk);
+    }
+
+    void uni_fmul_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmax_s(xd, xj, xk);
+    }
+
+    void uni_fmul_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmax_s(vd, vj, vk);
+    }
+
+    void uni_fmul_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfmax_d(xd, xj, xk);
+    }
+
+    void uni_fmul_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfmax_d(vd, vj, vk);
     }
     /*
       Saturation facility functions. enable to prepare the register

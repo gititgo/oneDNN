@@ -50,7 +50,7 @@ class io_tail_conf_t {
 public:
     io_tail_conf_t(const std::size_t simd_w, const std::size_t tail_size,
             //const Xbyak::Opmask &tail_opmask, const int tail_vmm_mask_idx,
-            const Xbyak_loongarch::XReg &tail_opmask, const int tail_vmm_mask_idx,
+            const Xbyak_loongarch::XReg &tail_opmask, const uint32_t tail_vmm_mask_idx,
             //const Xbyak::Reg64 &reg_tmp);
             const Xbyak_loongarch::XReg &reg_tmp);
     io_tail_conf_t(const io_tail_conf_t &other) = default;
@@ -61,7 +61,7 @@ public:
     std::size_t tail_size_ = 0;
     //Xbyak::Opmask tail_opmask_ = Xbyak::Opmask();
     Xbyak_loongarch::XReg tail_opmask_ = Xbyak_loongarch::XReg(0);
-    int tail_vmm_mask_idx_ = 0;
+    uint32_t tail_vmm_mask_idx_ = 0;
     //Xbyak::Reg64 reg_tmp_ = Xbyak::Reg64();
     Xbyak_loongarch::XReg reg_tmp_ = Xbyak_loongarch::XReg(0);
 };
@@ -86,15 +86,15 @@ public:
 
 class io_saturation_conf_t {
 public:
-    io_saturation_conf_t(const int vreg_zero_saturation_idx,
-            const int vreg_saturation_ubound_idx, const Xbyak_loongarch::XReg &reg_tmp);
+    io_saturation_conf_t(const uint32_t vreg_zero_saturation_idx,
+            const uint32_t vreg_saturation_ubound_idx, const Xbyak_loongarch::XReg &reg_tmp);
     io_saturation_conf_t(const io_saturation_conf_t &other) = default;
 
     io_saturation_conf_t &operator=(const io_saturation_conf_t &other)
             = default;
 
-    int vreg_zero_saturation_idx_ = 0;
-    int vreg_saturation_ubound_idx_ = 0;
+    uint32_t vreg_zero_saturation_idx_ = 0;
+    uint32_t vreg_saturation_ubound_idx_ = 0;
     //Xbyak::Reg64 reg_tmp_ = Xbyak::Reg64();
     Xbyak_loongarch::XReg reg_tmp_ = Xbyak_loongarch::XReg(0);
 };
@@ -106,7 +106,7 @@ public:
     //        const Xbyak::Reg64 &reg_tmp1,
     //        const utils::optional_t<int> &vmm_tmp_idx = utils::nullopt);
     io_gather_conf_t(const std::size_t simd_w, const Xbyak_loongarch::XReg &full_opmask,
-            const int full_vmm_mask_idx, const Xbyak_loongarch::XReg &reg_tmp,
+            const uint32_t full_vmm_mask_idx, const Xbyak_loongarch::XReg &reg_tmp,
             const Xbyak_loongarch::XReg &reg_tmp1,
             const utils::optional_t<int> &vmm_tmp_idx = utils::nullopt);
     io_gather_conf_t(const io_gather_conf_t &other) = default;
@@ -116,7 +116,7 @@ public:
     std::size_t simd_w_ = 0;
     //Xbyak::Opmask full_opmask_ = Xbyak::Opmask();
     Xbyak_loongarch::XReg full_opmask_ = Xbyak_loongarch::XReg(0);
-    int full_vmm_mask_idx_ = 0;
+    uint32_t full_vmm_mask_idx_ = 0;
     //Xbyak::Reg64 reg_tmp_ = Xbyak::Reg64();
     Xbyak_loongarch::XReg reg_tmp_ = Xbyak_loongarch::XReg(26);
     //Xbyak::Reg64 reg_tmp1_ = Xbyak::Reg64();

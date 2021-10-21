@@ -67,7 +67,10 @@ public:
     int status = 0;
 
     g_support_cpucfg = 0;
-    pipe(g__fd);
+    status = pipe(g__fd);
+    if (status != 0) {
+        printf("xbyak util pipe failed!\n");
+    }
     pid = fork();
     if (pid == 0) { /* Subprocess */
         struct sigaction act;
@@ -82,7 +85,9 @@ public:
             :::
         );
         g_support_cpucfg = 1;
-        write(g__fd[1], &g_support_cpucfg, sizeof(g_support_cpucfg));
+        if (-1 == write(g__fd[1], &g_support_cpucfg, sizeof(g_support_cpucfg))) {
+            printf("xbyak util write error!\n");
+        }
         close(g__fd[1]);
         exit(0);
     } else if (pid > 0) { /* Parent process*/
@@ -127,7 +132,9 @@ public:
           return flags;
 
       memset(buf, 0, sizeof(buf));
-      fread(buf, sizeof(char), sizeof(buf) - 1, fp);
+      if (0 == fread(buf, sizeof(char), sizeof(buf) - 1, fp)) {
+          printf("xbyak util fread error!\n");
+      }
       fclose(fp);
       if (strstr(buf, "3A5000")) {
           flags |= tLASX | tLSX;
