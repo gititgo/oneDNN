@@ -174,6 +174,12 @@ class CodeGenerator : public CodeArray {
   void LasxFormatI8VSTELM(uint32_t op, uint32_t df, uint32_t idx, int32_t imm8, const XReg &rj, const VReg &vd);
   /******************************************************loongarch end by sunxin******************************************************************/
 
+  template <class T> void putL_inner(T &label) {
+    if (isAutoGrow() && size_ >= maxSize_)
+      growMemory();
+    LoongarchLabel(0b010100, 0, 0, label, 4); // insert nemonic (B <label>)
+  }
+
 public:
   const XReg zero, ra, tp, sp, a0, v0, a1, v1, a2, a3, a4, a5, a6, a7, t0;
   const XReg t1, t2, t3, t4, t5, t6, t7, t8, x_, fp, s0, s1, s2, s3, s4, s5;
@@ -242,6 +248,7 @@ public:
           put address of label to buffer
           @note the put size is 4(32-bit), 8(64-bit)
   */
+  void putL(const Label &label) { putL_inner(label); }
 
   void reset() {
     resetSize();

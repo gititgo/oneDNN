@@ -107,6 +107,50 @@ void vfsub_s(const VReg &vd, const VReg &vj, const VReg &vk);
 void vfsub_d(const VReg &vd, const VReg &vj, const VReg &vk);
 void vfdiv_s(const VReg &vd, const VReg &vj, const VReg &vk);
 void vfdiv_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vilvl_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vilvl_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vilvl_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vilvl_d(const VReg &vd, const VReg &vj, const VReg &vk);
+void vilvh_b(const VReg &vd, const VReg &vj, const VReg &vk);
+void vilvh_h(const VReg &vd, const VReg &vj, const VReg &vk);
+void vilvh_w(const VReg &vd, const VReg &vj, const VReg &vk);
+void vilvh_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+void vshuf4i_b(const VReg &vd, const VReg &vj, uint32_t ui8);
+void vshuf4i_h(const VReg &vd, const VReg &vj, uint32_t ui8);
+void vshuf4i_w(const VReg &vd, const VReg &vj, uint32_t ui8);
+void vshuf4i_d(const VReg &vd, const VReg &vj, uint32_t ui8);
+
+void vbsll_v(const VReg &vd, const VReg &vj, uint32_t ui5);
+void vbsrl_v(const VReg &vd, const VReg &vj, uint32_t ui5);
+
+#define VFCMP_MN_FUNC_DECLEAR(name) \
+   void vfcmp_##name##_s(const VReg &vd, const VReg &vj, const VReg &vk); \
+   void vfcmp_##name##_d(const VReg &vd, const VReg &vj, const VReg &vk);
+
+VFCMP_MN_FUNC_DECLEAR(caf)
+VFCMP_MN_FUNC_DECLEAR(cun)
+VFCMP_MN_FUNC_DECLEAR(ceq)
+VFCMP_MN_FUNC_DECLEAR(cueq)
+VFCMP_MN_FUNC_DECLEAR(clt)
+VFCMP_MN_FUNC_DECLEAR(cult)
+VFCMP_MN_FUNC_DECLEAR(cle)
+VFCMP_MN_FUNC_DECLEAR(cule)
+VFCMP_MN_FUNC_DECLEAR(cne)
+VFCMP_MN_FUNC_DECLEAR(cor)
+VFCMP_MN_FUNC_DECLEAR(cune)
+VFCMP_MN_FUNC_DECLEAR(saf)
+VFCMP_MN_FUNC_DECLEAR(sun)
+VFCMP_MN_FUNC_DECLEAR(seq)
+VFCMP_MN_FUNC_DECLEAR(sueq)
+VFCMP_MN_FUNC_DECLEAR(slt)
+VFCMP_MN_FUNC_DECLEAR(sult)
+VFCMP_MN_FUNC_DECLEAR(sle)
+VFCMP_MN_FUNC_DECLEAR(sule)
+VFCMP_MN_FUNC_DECLEAR(sne)
+VFCMP_MN_FUNC_DECLEAR(sor)
+VFCMP_MN_FUNC_DECLEAR(sune)
 /*LSX end*/
 
 

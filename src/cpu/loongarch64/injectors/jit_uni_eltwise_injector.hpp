@@ -61,6 +61,22 @@ struct static_params_t {
     bool is_fwd;
     bool use_dst;
 };
+
+/*
+ * Checks if isa is supported by eltwise injector.
+ */
+bool is_isa_supported(cpu_isa_t isa);
+
+/*
+ * Checks if eltwise algorithm is supported by eltwise injector.
+ */
+bool is_alg_supported(alg_kind_t alg);
+
+/*
+ * Checks if eltwise injection for given args is supported.
+ */
+bool is_supported(cpu_isa_t isa, alg_kind_t alg);
+
 } // namespace eltwise_injector
 
 template <cpu_isa_t isa>

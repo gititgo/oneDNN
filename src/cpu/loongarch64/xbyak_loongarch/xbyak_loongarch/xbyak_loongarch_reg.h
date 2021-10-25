@@ -181,6 +181,8 @@ class Reg : public Operand {
 public:
   explicit Reg(uint32_t index, Kind kind, uint32_t bit) : Operand(kind, bit), index_(index) {}
   uint32_t getIdx() const { return index_; }
+  bool operator==(const Reg& rhs) const { return getIdx() == rhs.getIdx() && getBit() == rhs.getBit(); }
+  bool operator!=(const Reg& rhs) const { return !operator==(rhs); }
 };
 
 // General Purpose Register

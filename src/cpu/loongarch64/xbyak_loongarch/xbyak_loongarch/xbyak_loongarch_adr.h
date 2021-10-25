@@ -143,6 +143,12 @@ public:
   explicit Address(const XReg &xn, size_t offset, bool broadcast = false) : Adr(BASE_IMM), xn_(xn), offset_(offset), broadcast_(broadcast) {}
   const XReg &getXReg() const { return xn_; }
   uint32_t getOffset() const { return offset_; }
+  uint32_t getIdx() const { return xn_.getIdx(); }
+  bool operator==(const Address& rhs) const
+  {
+    return getIdx() == rhs.getIdx() && getOffset() == rhs.getOffset() && getBroadcast() == rhs.getBroadcast();
+  }
+  bool operator!=(const Address& rhs) const { return !operator==(rhs); }
   bool getBroadcast() const { return broadcast_; }
 };
 

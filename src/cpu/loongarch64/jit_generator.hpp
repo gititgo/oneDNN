@@ -792,6 +792,7 @@ public:
              const Xbyak_loongarch::VReg &vk) {
         vfmax_d(vd, vj, vk);
     }
+
     void uni_fmin_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
              const Xbyak_loongarch::XVReg &xk) {
         xvfmin_s(xd, xj, xk);
@@ -814,42 +815,182 @@ public:
 
     void uni_fadd_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
              const Xbyak_loongarch::XVReg &xk) {
-        xvfmax_s(xd, xj, xk);
+        xvfadd_s(xd, xj, xk);
     }
 
     void uni_fadd_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
              const Xbyak_loongarch::VReg &vk) {
-        vfmax_s(vd, vj, vk);
+        vfadd_s(vd, vj, vk);
     }
 
     void uni_fadd_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
              const Xbyak_loongarch::XVReg &xk) {
-        xvfmax_d(xd, xj, xk);
+        xvfadd_d(xd, xj, xk);
     }
 
     void uni_fadd_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
              const Xbyak_loongarch::VReg &vk) {
-        vfmax_d(vd, vj, vk);
+        vfadd_d(vd, vj, vk);
+    }
+
+    void uni_fsub_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfsub_s(xd, xj, xk);
+    }
+
+    void uni_fsub_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfsub_s(vd, vj, vk);
     }
 
     void uni_fmul_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
              const Xbyak_loongarch::XVReg &xk) {
-        xvfmax_s(xd, xj, xk);
+        xvfmul_s(xd, xj, xk);
     }
 
     void uni_fmul_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
              const Xbyak_loongarch::VReg &vk) {
-        vfmax_s(vd, vj, vk);
+        vfmul_s(vd, vj, vk);
     }
 
     void uni_fmul_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
              const Xbyak_loongarch::XVReg &xk) {
-        xvfmax_d(xd, xj, xk);
+        xvfmul_d(xd, xj, xk);
     }
 
     void uni_fmul_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
              const Xbyak_loongarch::VReg &vk) {
-        vfmax_d(vd, vj, vk);
+        vfmul_d(vd, vj, vk);
+    }
+
+    void uni_fdiv_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfdiv_s(xd, xj, xk);
+    }
+
+    void uni_fdiv_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfdiv_s(vd, vj, vk);
+    }
+
+    void uni_bsll_v(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const uint32_t ui5) {
+        xvbsll_v(xd, xj, ui5);
+    }
+
+    void uni_bsll_v(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const uint32_t ui5) {
+        vbsll_v(vd, vj, ui5);
+    }
+
+    void uni_fcmp_caf_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_caf_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_caf_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_caf_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cun_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cun_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cun_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cun_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_ceq_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_ceq_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_ceq_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_ceq_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cueq_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cueq_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cueq_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cueq_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_clt_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_clt_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_clt_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_clt_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cle_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cle_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cle_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cle_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cule_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cule_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cule_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cule_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cult_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cult_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cult_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cult_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cne_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cne_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cne_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cne_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cor_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cor_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cor_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cor_s(vd, vj, vk);
+    }
+
+    void uni_fcmp_cune_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvfcmp_cune_s(xd, xj, xk);
+    }
+
+    void uni_fcmp_cune_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vfcmp_cune_s(vd, vj, vk);
     }
     /*
       Saturation facility functions. enable to prepare the register
@@ -1302,6 +1443,80 @@ public:
                 uni_ld_bu(X_TMP_1, reg, offset + i);
             uni_xvinsgr2vr_w(vmm, X_TMP_1, i);
         }
+    }
+
+    /* A utility function to load data of type type_in to vmm register
+     * from the memory. Moreover load_size many chunks are read from the memory
+     * beginning with ptr[reg + offset] address.
+     *
+     * TODO: Support for every possible data type.
+     */
+    template <typename Vmm>
+    void load_data(data_type_t type_in, const Vmm &vmm, const Xbyak_loongarch::XReg &reg,
+            int64_t offset, int load_size) {
+        // Ensure offset is at most 4 bytes to be encoded in the instruction
+        assert(offset >= INT_MIN && offset <= INT_MAX);
+
+        assert(is_valid_isa(lsx)
+                && "routine is not supported for the current isa");
+
+        switch (type_in) {
+            case data_type::f32:
+            case data_type::s32:
+                load_bytes(vmm, reg, offset, sizeof(int32_t) * load_size);
+                break;
+            case data_type::s8:
+            case data_type::u8:
+                load_bytes_to_dword_extension(
+                        vmm, reg, offset, type_in == data_type::s8, load_size);
+                break;
+            default: assert(!"unsupported source data type");
+        }
+    }
+
+    /* A utility function to process f32 tail (load, store or other) depending
+     * on tail size, stored in Reg64. Tail size must be value from 0 to 3/7
+     * (Xmm/Ymm). Tail process functions require integer as argument to specify
+     * behavior for each tail size.
+     *
+     * Only supported for Xmm and Ymm.
+     */
+    template <typename Vmm>
+    void runtime_tail_process(const Xbyak_loongarch::XReg &reg_tail,
+            const Xbyak_loongarch::XReg &reg_tmp,
+            const std::function<void(int)> &tail_process) {
+        constexpr int simd_w_ymm = 8;
+        constexpr int f32_bits = sizeof(float) * 8;
+        const auto simd_w = Vmm(0).getBit() / f32_bits;
+        assert(simd_w != Xbyak_loongarch::_ZReg(0).getBit() / f32_bits);
+
+        Xbyak_loongarch::Label label_tbl, label_tbl_end;
+        Xbyak_loongarch::Label l_case[simd_w_ymm];
+
+        //mov(reg_tmp, label_tbl);
+        const uint32_t *label_addr = label_tbl.getAddress();
+        mov_imm(reg_tmp, (uint64_t)label_addr);
+        //const Xbyak::Address label_address
+        //        = ptr[reg_tmp + reg_tail * sizeof(void *)];
+        //jmp(label_address);
+        jirl(reg_tmp, reg_tail, label_tbl);
+
+        // create jump table
+        L(label_tbl);
+        for (size_t i = 0; i < simd_w; i++)
+            putL(l_case[i]);
+
+        // cases for each tail size - from 0 to 3/7
+        L(l_case[0]);
+        //jmp(label_tbl_end, T_NEAR);
+        b(label_tbl_end);
+        for (size_t i = 1; i < simd_w; i++) {
+            L(l_case[i]);
+            tail_process(i);
+            //jmp(label_tbl_end, T_NEAR);
+            b(label_tbl_end);
+        }
+        L(label_tbl_end);
     }
 
     DNNL_DISALLOW_COPY_AND_ASSIGN(jit_generator);
