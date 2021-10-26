@@ -1001,7 +1001,7 @@ void jit_uni_eltwise_injector_f32<isa>::log_compute_vector_fwd(
     //const auto &mask = p_tmp0.s;
     const auto &mask = z_tmp2;
     //const auto &wt0 = h->W_TMP_0;
-    const auto &xt0 = h->X_TMP_0;
+    const auto &xt0 = h->X_TMP_3;
     auto set_imm = [&](const Vmm &dst, uint32_t imm) {
         //h->mov_imm(wt0, imm);
         //h->cpy(dst, p_all, wt0);

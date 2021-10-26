@@ -118,8 +118,8 @@ jit_io_helper_t<Vmm>::jit_io_helper_t(jit_generator *host, const cpu_isa_t &isa,
     MAYBE_UNUSED(is_xmm);
     MAYBE_UNUSED(is_avx_u8s8);
 
-    assert(IMPLICATION(is_avx_u8s8, is_xmm)
-            && "s8u8 with LASX should be used with VReg vreg");
+    //assert(IMPLICATION(is_avx_u8s8, is_xmm)
+    //        && "s8u8 with LASX should be used with VReg vreg");
 
     //static constexpr bool is_zmm = std::is_same<Vmm, Xbyak::Zmm>::value;
     static constexpr bool is_zmm = false;
