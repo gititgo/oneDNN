@@ -13,7 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifdef BUILD_IN
 #include "common/dnnl_thread.hpp"
 
 //#include "cpu/loongarch64/jit_avx512_core_bf16cvt.hpp"
@@ -83,8 +82,8 @@ jit_uni_binary_kernel_t<isa>::jit_uni_binary_kernel_t(
               {false},
               io::io_tail_conf_t {simd_w_, tail_size_, tail_opmask_,
                       vmm_tail_vmask_.getIdx(), reg_tmp_},
-              io::io_emu_bf16_conf_t {vreg_bf16_emu_1_, vreg_bf16_emu_2_,  //TODO
-                      vreg_bf16_emu_3_, reg_tmp_, vreg_bf16_emu_4_},
+              //io::io_emu_bf16_conf_t {vreg_bf16_emu_1_, vreg_bf16_emu_2_,
+              //        vreg_bf16_emu_3_, reg_tmp_, vreg_bf16_emu_4_},
               create_saturation_vmm_map(),
               io::io_gather_conf_t {simd_w_, full_mask_,
                       vmm_full_mask_.getIdx(), reg_tmp_, reg_tmp1_,
@@ -137,7 +136,7 @@ void jit_uni_binary_kernel_t<isa>::apply_postops(int unroll, bool tail) {
     for (int vmm_idx = 1; vmm_idx < unroll + vmm_start_idx_; vmm_idx++) {
         if (utils::one_of(conf_.op_type, op_t::c_blocked, op_t::n_c_spatial)) {
             rhs_arg_params.vmm_idx_to_oc_elem_off_addr.emplace(
-                    vmm_idx, ptr[param1 + PARAM_OFF(oc_l_off)]);  //TODO
+                    vmm_idx, ptr_a(param1, PARAM_OFF(oc_l_off)));
         } else if (conf_.op_type == op_t::n_spatial_c) {
             rhs_arg_params.vmm_idx_to_oc_off_oprnd.emplace(
                     vmm_idx, reg_off_rhs_postops_);
@@ -209,8 +208,9 @@ Address jit_uni_binary_kernel_t<isa>::dst_ptr(size_t offt) {
     return vmmword[reg_dst_ + reg_offt_dst + offt];
 }
 */
-XReg xreg_addr(const XReg &base, const XReg &off = XReg(DUMMY_IDX),
-        const int disp = 0) {
+template <cpu_isa_t isa>
+XReg jit_uni_binary_kernel_t<isa>::xreg_addr(const XReg &base, const XReg &off,
+        const int disp) {
     XReg x_addr = base;
     uint32_t offIdx = off.getIdx();
 
@@ -238,7 +238,7 @@ XReg jit_uni_binary_kernel_t<isa>::src1_ptr(size_t offt) {
 
 template <cpu_isa_t isa>
 XReg jit_uni_binary_kernel_t<isa>::dst_ptr(size_t offt) {
-    const Reg64 &reg_offt_dst = conf_.is_i8 ? reg_offt_dst_ : reg_offt_src0_;
+    const XReg  &reg_offt_dst = conf_.is_i8 ? reg_offt_dst_ : reg_offt_src0_;
     return xreg_addr(reg_dst_, reg_offt_dst, offt);
 }
 
@@ -256,28 +256,29 @@ unsigned int jit_uni_binary_kernel_t<isa>::cmp_predicate(alg_kind_t alg) {
     }
 }
 
-void compute_cmp_mask(const Vmm &p_mask,
+template <cpu_isa_t isa>
+void jit_uni_binary_kernel_t<isa>::compute_cmp_mask(const Vmm &p_mask,
                       const Vmm &vmm_src, 
                       const Vmm &compare_operand, 
                       int cmp_predicate) {
     switch (cmp_predicate) {
         case _cmp_eq_oq:
-            h->xvfcmp_ceq_s(p_mask, vmm_src, compare_operand);
+            xvfcmp_ceq_s(p_mask, vmm_src, compare_operand);
             break;
         case _cmp_lt_os:
-            h->xvfcmp_clt_s(p_mask, vmm_src, compare_operand);
+            xvfcmp_clt_s(p_mask, vmm_src, compare_operand);
             break;
         case _cmp_le_os:
-            h->xvfcmp_cle_s(p_mask, vmm_src, compare_operand);
+            xvfcmp_cle_s(p_mask, vmm_src, compare_operand);
             break;
         case _cmp_neq_uq:
-            h->xvfcmp_cne_s(p_mask, vmm_src, compare_operand);
+            xvfcmp_cne_s(p_mask, vmm_src, compare_operand);
             break;
         case _cmp_nlt_us:
-            h->xvfcmp_cle_s(p_mask, compare_operand, vmm_src);
+            xvfcmp_cle_s(p_mask, compare_operand, vmm_src);
             break;
         case _cmp_nle_us:
-            h->xvfcmp_clt_s(p_mask, compare_operand, vmm_src);
+            xvfcmp_clt_s(p_mask, compare_operand, vmm_src);
             break;
         default: assert(!"Unsupported compare mode"); break;
     }
@@ -343,10 +344,10 @@ void jit_uni_binary_kernel_t<isa>::compute_bcast(bool tail) {
     if (conf_.broadcast_src1_value) {
         if (conf_.is_i8)
             //uni_vpxor(xreg_bcast_src1_, xreg_bcast_src1_, xreg_bcast_src1_);
-            xvxor_v(xreg_bcast_src1_, xreg_bcast_src1_, xreg_bcast_src1_);
-        io_.at(conf_.src1_type)->broadcast(src1_ptr(), vreg_bcast_src1_);
+            vxor_v(xreg_bcast_src1_, xreg_bcast_src1_, xreg_bcast_src1_);
+        io_.at(conf_.src1_type)->broadcast(src1_ptr(), 0, vreg_bcast_src1_);
     } else if (!conf_.is_i8 && offt_src1_ == 0) {
-        io_.at(conf_.src1_type)->load(src1_ptr(), vreg_bcast_src1_, tail);
+        io_.at(conf_.src1_type)->load(src1_ptr(), 0, vreg_bcast_src1_, tail);
     }
 }
 
@@ -365,13 +366,13 @@ void jit_uni_binary_kernel_t<isa>::load_src1(
         //add(reg_src1_,
           //      types::data_type_size(conf_.src1_type) * conf_.src1_stride
             //            * simd_w_);
-        add_imm(reg_src1_, reg_src1_
+        add_imm(reg_src1_, reg_src1_,
                 types::data_type_size(conf_.src1_type) * conf_.src1_stride * simd_w_,
                 X_TMP_0);
         //sub(reg_reverse_src1_stride_range_,
           //      types::data_type_size(conf_.src1_type) * conf_.src1_stride
             //            * simd_w_);
-        sub_imm(reg_reverse_src1_stride_range_, reg_reverse_src1_stride_range_
+        sub_imm(reg_reverse_src1_stride_range_, reg_reverse_src1_stride_range_, 
                 types::data_type_size(conf_.src1_type) * conf_.src1_stride * simd_w_,
                 X_TMP_0);
 
@@ -393,7 +394,7 @@ void jit_uni_binary_kernel_t<isa>::load_src1(
         L(src1_stride_range_not_exceed);
     } else
         io_.at(conf_.src1_type)
-                ->load(src1_ptr(offt * types::data_type_size(conf_.src1_type)),
+                ->load(src1_ptr(offt * types::data_type_size(conf_.src1_type)), 0,
                         vreg_src1, tail);
 }
 
@@ -407,7 +408,7 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
         const Vmm vreg_tmp_src1 = offt_src1_ ? vreg_tmp : vreg_bcast_src1_;
         const int offt = simd_w_ * i;
         io_.at(conf_.src0_type)
-                ->load(src0_ptr(offt * types::data_type_size(conf_.src0_type)),
+                ->load(src0_ptr(offt * types::data_type_size(conf_.src0_type)), 0,
                         vreg_tmp_src0, tail);
         if (offt_src1_) load_src1(vreg_tmp_src1, offt, tail);
 
@@ -421,7 +422,7 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
         if (conf_.do_sum) {
             io_.at(conf_.dst_type)
                     ->load(dst_ptr(offt
-                                   * types::data_type_size(conf_.dst_type)),
+                                   * types::data_type_size(conf_.dst_type)), 0,
                             vreg_tmp, tail);
             //uni_vfmadd231ps(vreg_tmp_src0, vreg_tmp, vreg_sum_scale_);
             xvfmadd_s(vreg_tmp_src0, vreg_tmp, vreg_sum_scale_, vreg_tmp_src0);
@@ -457,12 +458,12 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
                     xvbitsel_v(vreg_zero_, vreg_zero_, vreg_tmp_src0,
                             vmm_tail_vmask_);  //TODO
                 io_.at(conf_.dst_type)
-                        ->store(vreg_zero_, dst_ptr(offt * dt_size), false);
+                        ->store(vreg_zero_, dst_ptr(offt * dt_size), 0, false);
                 off_base = simd_w_ * dt_size;
                 zero_pad_left -= simd_w_ - tail_size_;
             } else {
                 io_.at(conf_.dst_type)
-                        ->store(vreg_tmp_src0, dst_ptr(offt * dt_size), true);
+                        ->store(vreg_tmp_src0, dst_ptr(offt * dt_size), 0, true);
                 off_base = tail_size_ * dt_size;
             }
 
@@ -472,9 +473,9 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
                 //const Reg32 &reg_zero = eax;
                 //const Reg64 &reg_ptr = rdi;
                 //const Reg64 &reg_counter = rcx;
-                const Reg64 &reg_zero = X_TMP_1;
-                const Reg64 &reg_ptr = X_TMP_2;
-                const Reg64 &reg_counter = rcx;
+                const XReg &reg_zero = X_TMP_1;
+                const XReg &reg_ptr = X_TMP_2;
+                const XReg &reg_counter = X_TMP_3;
                 const auto off_start = off_base;
                 const auto off_end = off_start + zero_pad_left * dt_size;
                 //xor_(reg_zero, reg_zero);
@@ -495,7 +496,7 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
             L(end);
         } else
             io_.at(conf_.dst_type)
-                    ->store(vreg_tmp_src0, dst_ptr(offt * dt_size), tail);
+                    ->store(vreg_tmp_src0, dst_ptr(offt * dt_size), 0, tail);
     }
 }
 
@@ -588,7 +589,7 @@ void jit_uni_binary_kernel_t<isa>::forward() {
                 //add(reg_offt_src1_, offt * src1_type_size);
                 add_imm(reg_offt_src1_, reg_offt_src1_, offt * src1_type_size, X_TMP_0);
             //if (conf_.use_stride_rhs_postops) add(reg_off_rhs_postops_, offt);
-            if (conf_.use_stride_rhs_postops) add_imm(reg_off_rhs_postops_, reg_off_rhs_postops_, offt);
+            if (conf_.use_stride_rhs_postops) add_imm(reg_off_rhs_postops_, reg_off_rhs_postops_, offt, X_TMP_0);
         }
         //jmp(unroll_loop);
         b(unroll_loop);
@@ -651,7 +652,7 @@ void jit_uni_binary_kernel_t<isa>::forward() {
     L(end);
     //if (conf_.is_src_different_layouts) pop(reg_src1_);
     if (conf_.is_src_different_layouts) {
-        ld_d(reg_src, sp, 0);
+        ld_d(reg_src1_, sp, 0);
         add_imm(sp, sp, 8, X_TMP_0);
     }
 }
@@ -665,7 +666,7 @@ void jit_uni_binary_kernel_t<isa>::forward_over_outer_dims() {
         //uni_vpxor(vreg_zero_, vreg_zero_, vreg_zero_);
         xvxor_v(vreg_zero_, vreg_zero_, vreg_zero_);
         io_.init_saturate_f32({conf_.dst_type});
-        xor_(reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
+        //xor_(reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
         xor_(reg_offt_dst_, reg_offt_dst_, reg_offt_dst_); // offt_dst to get addr of dst
     }
 
@@ -721,4 +722,3 @@ template struct jit_uni_binary_kernel_t<lasx>;
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
-#endif

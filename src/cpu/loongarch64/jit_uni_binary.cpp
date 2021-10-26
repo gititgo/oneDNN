@@ -13,7 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-#ifdef BUILD_IN
 #include <functional>
 
 #include "cpu/cpu_primitive.hpp"
@@ -460,8 +459,11 @@ binary_kernel_t *create_binary_kernel(
         return new kernel_t(pd, conf, tail_kernel && !conf.is_i8);
     }*/
 
-    if (mayiuse(lsax)) { 
-        using kernel_t = jit_uni_binary_kernel_t<lsax>;
+    if (mayiuse(lasx)) { 
+        using kernel_t = jit_uni_binary_kernel_t<lasx>;
+        return new kernel_t(pd, conf, tail_kernel && !conf.is_i8);
+    } else {
+        using kernel_t = jit_uni_binary_kernel_t<lasx>;
         return new kernel_t(pd, conf, tail_kernel && !conf.is_i8);
     }
 }
@@ -881,4 +883,3 @@ status_t jit_uni_binary_t::execute(const exec_ctx_t &ctx) const {
 } // namespace cpu
 } // namespace impl
 } // namespace dnnl
-#endif

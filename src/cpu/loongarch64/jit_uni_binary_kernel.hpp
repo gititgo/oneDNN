@@ -101,29 +101,27 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     const Reg64 &reg_scales_src1_ = rbp;
     const Reg64 &reg_offt_dst_ = rdx;
 */
-    using Reg64 = typename Xbyak_loongarch::XReg;
+    const XReg &reg_param_ = abi_param1;
+    const XReg &reg_src0_ = t0;
+    const XReg &reg_src1_ = t1;
+    const XReg &reg_dst_ = t2;
+    const XReg &reg_offt_src0_ = t3;
+    const XReg &reg_outer_dims_range_ = t4;
+    const XReg &reg_offt_src1_ = t5;
+    const XReg &reg_src1_stride_range_ = t6;
+    const XReg &reg_reverse_src1_stride_range_ = t5;
+    const XReg &reg_reverse_spat_offt_ = t7;
+    const XReg &reg_tmp_ = s3;
+    const XReg &reg_tmp1_ = abi_not_param1;
+    const XReg &reg_elt_inj_table_ = t7;
+    const XReg &reg_off_rhs_postops_ = a2;
+    const XReg &reg_scales_src0_ = a3;
+    const XReg &reg_scales_src1_ = a4;
+    const XReg &reg_offt_dst_ = a2;
 
-    const Reg64 &reg_param_ = abi_param1;
-    const Reg64 &reg_src0_ = t0;
-    const Reg64 &reg_src1_ = t1;
-    const Reg64 &reg_dst_ = t2;
-    const Reg64 &reg_offt_src0_ = t3;
-    const Reg64 &reg_outer_dims_range_ = t4;
-    const Reg64 &reg_offt_src1_ = rax;
-    const Reg64 &reg_src1_stride_range_ = t7;
-    const Reg64 &reg_reverse_src1_stride_range_ = a1;
-    const Reg64 &reg_reverse_spat_offt_ = t5;
-    const Reg64 &reg_tmp_ = t6;
-    const Reg64 &reg_tmp1_ = abi_not_param1;
-    const Reg64 &reg_elt_inj_table_ = t7;
-    const Reg64 &reg_off_rhs_postops_ = a2;
-    const Reg64 &reg_scales_src0_ = a3;
-    const Reg64 &reg_scales_src1_ = a4;
-    const Reg64 &reg_offt_dst_ = a2;
-
-    //const Opmask &tail_opmask_ = k2;
-    //const Opmask &cmp_mask = k3;
-    //const Opmask &full_mask_ = k4;
+    const XReg &tail_opmask_ = a5;
+    const XReg &cmp_mask = a6;
+    const XReg &full_mask_ = a7;
 /*
     const Vmm vmm_tail_vmask_ = Vmm(0);
     const Vmm vreg_sum_scale_ = Vmm(is_avx512 ? 17 : 9);
@@ -138,12 +136,12 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
 */
     const Vmm vmm_tail_vmask_ = Vmm(0);
     const Vmm vreg_sum_scale_ = Vmm(9);
-    //const Xmm xreg_sum_scale_ = Xmm(9);
+    const VReg xreg_sum_scale_ = VReg(9);
     const Vmm vreg_zero_ = Vmm(10);
     const Vmm vreg_one_ = Vmm(11);
     const Vmm vreg_saturation_ubound_ = Vmm(12);
     const Vmm vreg_bcast_src1_ = Vmm(13);
-    //const Xmm xreg_bcast_src1_ = Xmm(13);
+    const VReg xreg_bcast_src1_ = VReg(13);
     const Vmm vreg_scales_src0_ = Vmm(14);
     const Vmm vreg_scales_src1_ = Vmm(15);
 
@@ -192,7 +190,11 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     XReg src0_ptr(size_t offt = 0);
     XReg src1_ptr(size_t offt = 0);
     XReg dst_ptr(size_t offt = 0);
+    XReg xreg_addr(const XReg &base, const XReg &off = XReg(DUMMY_IDX),
+        const int disp = 0);
     unsigned int cmp_predicate(alg_kind_t alg);
+    void compute_cmp_mask(const Vmm &p_mask, const Vmm &vmm_src,  
+                      const Vmm &compare_operand, int cmp_predicate);
     void perform_op(
             const Vmm &v0, const Vmm &v1, const Vmm &s_src0, const Vmm &s_src1);
     void prepare_isa_kernel();
