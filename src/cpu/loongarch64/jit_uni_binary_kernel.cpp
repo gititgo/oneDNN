@@ -333,10 +333,11 @@ template <cpu_isa_t isa>
 void jit_uni_binary_kernel_t<isa>::prepare_isa_kernel() {
     //if (conf_.is_bf16) io_.init_bf16();
     if (tail_size_ > 0) io_.prepare_tail_mask();
-    /*if (conf_.is_src_different_layouts && is_superset(isa, avx2)) {
+    //if (conf_.is_src_different_layouts && is_superset(isa, avx2)) {
+    if (conf_.is_src_different_layouts && mayiuse(isa, lasx)) {
         io_.init_full_mask();
         io_.prepare_full_mask();
-    }*/
+    }
 }
 
 template <cpu_isa_t isa>
@@ -475,7 +476,6 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
                 //const Reg64 &reg_counter = rcx;
                 const XReg &reg_zero = X_TMP_1;
                 const XReg &reg_ptr = X_TMP_2;
-                const XReg &reg_counter = X_TMP_3;
                 const auto off_start = off_base;
                 const auto off_end = off_start + zero_pad_left * dt_size;
                 //xor_(reg_zero, reg_zero);
@@ -487,7 +487,7 @@ void jit_uni_binary_kernel_t<isa>::compute_dst(int unroll, bool tail) {
                 //mov(reg_counter, off_end - off_start);
                 //rep();
                 //stosb();
-                for(int j=0; j++; j<off_end-off_start) {
+                for(size_t j = 0; j < off_end-off_start; ++j) {
                    st_b(reg_zero, reg_ptr, j);
                 }
                 //pop(abi_param1);

@@ -61,7 +61,7 @@ io_gather_conf_t::io_gather_conf_t(const std::size_t simd_w,
         const Xbyak_loongarch::XReg &full_opmask, const uint32_t full_vmm_mask_idx,
         //const Xbyak::Reg64 &reg_tmp, const Xbyak::Reg64 &reg_tmp1,
         const Xbyak_loongarch::XReg &reg_tmp, const Xbyak_loongarch::XReg &reg_tmp1,
-        const utils::optional_t<int> &vmm_tmp_idx)
+        const utils::optional_t<uint32_t> &vmm_tmp_idx)
     : simd_w_(simd_w)
     , full_opmask_(full_opmask)
     , full_vmm_mask_idx_(full_vmm_mask_idx)

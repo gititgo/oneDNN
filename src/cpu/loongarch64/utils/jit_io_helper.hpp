@@ -108,7 +108,7 @@ public:
     io_gather_conf_t(const std::size_t simd_w, const Xbyak_loongarch::XReg &full_opmask,
             const uint32_t full_vmm_mask_idx, const Xbyak_loongarch::XReg &reg_tmp,
             const Xbyak_loongarch::XReg &reg_tmp1,
-            const utils::optional_t<int> &vmm_tmp_idx = utils::nullopt);
+            const utils::optional_t<uint32_t> &vmm_tmp_idx = utils::nullopt);
     io_gather_conf_t(const io_gather_conf_t &other) = default;
 
     io_gather_conf_t &operator=(const io_gather_conf_t &other) = default;
@@ -123,7 +123,7 @@ public:
     Xbyak_loongarch::XReg reg_tmp1_ = Xbyak_loongarch::XReg(27);
     // It is needed, when io_helper use emulation for gather
     // and it is not needed for sse.
-    utils::optional_t<int> vmm_tmp_idx_ = utils::nullopt;
+    utils::optional_t<uint32_t> vmm_tmp_idx_ = utils::nullopt;
 };
 
 template <typename Vmm>

@@ -111,7 +111,7 @@ struct jit_uni_binary_kernel_t : public binary_kernel_t {
     const XReg &reg_src1_stride_range_ = t6;
     const XReg &reg_reverse_src1_stride_range_ = t5;
     const XReg &reg_reverse_spat_offt_ = t7;
-    const XReg &reg_tmp_ = s3;
+    const XReg &reg_tmp_ = a7;
     const XReg &reg_tmp1_ = abi_not_param1;
     const XReg &reg_elt_inj_table_ = t7;
     const XReg &reg_off_rhs_postops_ = a2;

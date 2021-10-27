@@ -694,10 +694,11 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
             for (int i = 0; i < unroll; i++) {
                 Vmm vreg_tmp_src = Vmm(i + 1);
                 if (!tail) {
-                    if (is_softmax_)
+                    if (is_softmax_) {
                         //uni_vmulps(vreg_tmp_src, vsum, dst_ptr(axis_stride_ * i));
                         uni_xvld(XVReg(31), dst_ptr(axis_stride_ * i), 0);
                         xvfmul_s(vreg_tmp_src, vsum, XVReg(31));
+                    }
                     
                     if (is_logsoftmax_) {
                         //uni_vmovups(vreg_tmp_src, dst_ptr(axis_stride_ * i));

@@ -595,7 +595,7 @@ void jit_uni_binary_injector_t<isa, Vmm>::append_offset_from_operand(
         } else {
             const int shift_val = std::log2(elem_size_bytes);
             //host_->mov(tmp_reg, it_operand_off->second);
-            host_->add_d(tmp_reg, addr_reg, it_operand_off->second);
+            host_->add_d(tmp_reg, it_operand_off->second, host_->zero);
             //host_->sal(tmp_reg, shift_val);
             host_->slli_d(tmp_reg, tmp_reg, shift_val);
             //host_->add(addr_reg, tmp_reg);
@@ -622,7 +622,7 @@ void jit_uni_binary_injector_t<isa, Vmm>::append_offset_under_mem_addr(
         } else {
             const int shift_val = std::log2(elem_size_bytes);
             //host_->mov(tmp_reg, it_off_addr->second);
-            host_->add_imm(tmp_reg, addr_reg, 
+            host_->add_imm(tmp_reg, it_off_addr->second.getXReg(),
                             it_off_addr->second.getOffset(), host_->X_TMP_0);
             //host_->sal(tmp_reg, shift_val);
             host_->slli_d(tmp_reg, tmp_reg, shift_val);
