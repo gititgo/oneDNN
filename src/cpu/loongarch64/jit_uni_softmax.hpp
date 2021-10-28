@@ -83,7 +83,7 @@ struct jit_uni_softmax_fwd_t : public primitive_t {
 
                             //is_superset(isa, avx512_common)
                             //        && mayiuse(avx512_core))
-                            (isa == lasx))
+                            false)
 
                     && is_dense() // not dense impl can be easily done
                     && attr()->has_default_values();
@@ -151,7 +151,7 @@ struct jit_uni_softmax_bwd_t : public primitive_t {
                             
                             //is_superset(isa, avx512_common)
                             //        && mayiuse(avx512_core))
-                            (isa == lasx))
+                            false)
 
                     && set_default_formats_common()
                     && is_dense() // not dense impl can be easily done

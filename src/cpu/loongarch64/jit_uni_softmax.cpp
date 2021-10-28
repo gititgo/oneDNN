@@ -265,15 +265,15 @@ struct jit_softmax_base_t : public jit_generator {
         {
             if (n_loops_) {
                 //cmp(reg_reverse_spat_offt, unroll_regs_ * axis_stride_);
-                addi_d(X_TMP_0, zero, unroll_regs_ * axis_stride_);
+                mov_imm(X_TMP_0, unroll_regs_ * axis_stride_);
                 //jl(tail_loop, T_NEAR);
                 blt(reg_reverse_spat_offt, X_TMP_0, tail_loop);
 
                 body(unroll_regs_, false);
                 //sub(reg_reverse_spat_offt, unroll_regs_ * axis_stride_);
-                addi_d(reg_reverse_spat_offt, reg_reverse_spat_offt, -1 * unroll_regs_ * axis_stride_);
+                add_imm(reg_reverse_spat_offt, reg_reverse_spat_offt, -1 * unroll_regs_ * axis_stride_, X_TMP_0);
                 //add(reg_spat_offt, unroll_regs_ * axis_stride_);
-                addi_d(reg_spat_offt, reg_spat_offt, unroll_regs_ * axis_stride_);
+                add_imm(reg_spat_offt, reg_spat_offt, unroll_regs_ * axis_stride_, X_TMP_0);
                 //jmp(main_loop);
                 b(main_loop);
             }
@@ -284,7 +284,7 @@ struct jit_softmax_base_t : public jit_generator {
             if (loop_tail_) {
                 body(loop_tail_, false);
                 //add(reg_spat_offt, loop_tail_ * axis_stride_);
-                addi_d(reg_spat_offt, reg_spat_offt, loop_tail_ * axis_stride_);
+                add_imm(reg_spat_offt, reg_spat_offt, loop_tail_ * axis_stride_, X_TMP_0);
             }
         }
 
@@ -572,15 +572,15 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
 
     void get_horizontal_op(const Vmm &v, const Vmm &vtmp, op_t op) override {
         //vperm2f128(vtmp, v, v, 0x1); // 128/256-bit shuffle
-        xvshuf4i_w(vtmp, v, 0xB1);
+        xvpermi_q(vtmp, v, 0x11);
         perform_op(v, vtmp, op);
         
         //vshufps(vtmp, v, v, 0x4E); // 64/128-bit shuffle
-        xvshuf_d(vtmp, v, v);
+        xvshuf4i_w(vtmp, v, 0x4E);
         perform_op(v, vtmp, op);
         
         //vshufps(vtmp, v, v, 0xB1); // 32/64-bit shuffle
-        xvshuf_w(vtmp, v, v);
+        xvshuf4i_w(vtmp, v, 0xB1);
         perform_op(v, vtmp, op);
     }
 
@@ -615,7 +615,7 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
                 else {
                     vtmp = Vmm(i + 1);
                     //uni_vmovups_tail(vtmp, tail_vmask, src_ptr(axis_stride_ * i));
-                    movups_tail(vtmp, axis_simd_tail_, src_ptr(axis_stride_ * i));
+                    load_bytes(vtmp, src_ptr(axis_stride_ * i), 0, axis_simd_tail_ * sizeof(float));
                     
                     //uni_vblendvps(vtmp, vneg_flt_max, vtmp, tail_vmask);
                     xvbitsel_v(vtmp, vneg_flt_max, vtmp, tail_vmask);
@@ -656,14 +656,14 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
                         uni_xvst(vreg_tmp_src, dst_ptr(axis_stride_ * i), 0);
                 } else {
                     //uni_vmovups_tail(vreg_tmp_src, tail_vmask, src_ptr(axis_stride_ * i));
-                    movups_tail(vreg_tmp_src, axis_simd_tail_, src_ptr(axis_stride_ * i));
+                    load_bytes(vreg_tmp_src, src_ptr(axis_stride_ * i), 0, axis_simd_tail_ * sizeof(float));
                     
                     //uni_vsubps(vreg_tmp_src, vreg_tmp_src, vmax);
                     xvfsub_s(vreg_tmp_src, vreg_tmp_src, vmax);
                     
                     if (is_logsoftmax_) // store before applying exp
                         //uni_vmovups_tail(dst_ptr(axis_stride_ * i), tail_vmask, vreg_tmp_src);
-                        movups_tail(dst_ptr(axis_stride_ * i), axis_simd_tail_, vreg_tmp_src);
+                        store_bytes(vreg_tmp_src, dst_ptr(axis_stride_ * i), 0, axis_simd_tail_ * sizeof(float));
 
                     exp_injector_->compute_vector(vreg_tmp_src.getIdx());
                     vtmp = Vmm(vreg_tmp_src.getIdx() + 1);
@@ -676,7 +676,7 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
 
                     if (is_softmax_) // store after applying exp
                         //uni_vmovups_tail(dst_ptr(axis_stride_ * i), tail_vmask, vreg_tmp_src);
-                        movups_tail(dst_ptr(axis_stride_ * i), axis_simd_tail_, vreg_tmp_src);
+                        store_bytes(vreg_tmp_src, dst_ptr(axis_stride_ * i), 0, axis_simd_tail_ * sizeof(float));
                 }
             }
         });
@@ -712,7 +712,7 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
                     uni_xvst(vreg_tmp_src, dst_ptr(axis_stride_ * i), 0);
                 } else {
                     //uni_vmovups_tail(vreg_tmp_src, tail_vmask, dst_ptr(axis_stride_ * i));
-                    movups_tail(vreg_tmp_src, axis_simd_tail_, dst_ptr(axis_stride_ * i));
+                    load_bytes(vreg_tmp_src, dst_ptr(axis_stride_ * i), 0, axis_simd_tail_ * sizeof(float));
 
                     if (is_softmax_)
                         //uni_vmulps(vreg_tmp_src, vreg_tmp_src, vsum);
@@ -733,7 +733,7 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
                         uni_xvst(vzeropad, dst_ptr(axis_stride_ * i), 0);
                     } else {
                         //uni_vmovups_tail(dst_ptr(axis_stride_ * i), tail_vmask, vreg_tmp_src);
-                        movups_tail(dst_ptr(axis_stride_ * i), axis_simd_tail_, vreg_tmp_src);
+                        store_bytes(vreg_tmp_src, dst_ptr(axis_stride_ * i), 0, axis_simd_tail_ * sizeof(float));
                     }
                 }
             }
