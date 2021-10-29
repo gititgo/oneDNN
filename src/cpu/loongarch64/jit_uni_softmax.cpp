@@ -572,7 +572,7 @@ struct jit_softmax_t<lasx> : public jit_softmax_base_t<lasx> {
 
     void get_horizontal_op(const Vmm &v, const Vmm &vtmp, op_t op) override {
         //vperm2f128(vtmp, v, v, 0x1); // 128/256-bit shuffle
-        xvpermi_q(vtmp, v, 0x11);
+        xvpermi_q(vtmp, v, 0x1);
         perform_op(v, vtmp, op);
         
         //vshufps(vtmp, v, v, 0x4E); // 64/128-bit shuffle

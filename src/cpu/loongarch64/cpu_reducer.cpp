@@ -171,8 +171,8 @@ struct reducer_2d_driver_f_s_32_t : public reducer_2d_driver_t<data_type> {
     XReg reg_ny = abi_param3;
     XReg reg_nx = abi_param4;
 
-    XReg reg_x = this->s6;
-    XReg reg_src_id = this->s7;
+    XReg reg_x = this->s4;
+    XReg reg_src_id = this->s5;
     XReg reg_tmp = this->s1;
 
     reducer_2d_driver_f_s_32_t(int n_src, size_t src_ld, size_t src_step,
