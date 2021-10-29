@@ -992,6 +992,16 @@ public:
              const Xbyak_loongarch::VReg &vk) {
         vfcmp_cune_s(vd, vj, vk);
     }
+
+    void push_xreg(const Xbyak_loongarch::XReg &xreg) {
+        addi_d(sp, sp, -1 * xreg_len);
+        st_d(xreg, sp, 0);
+    }
+
+    void pop_xreg(const Xbyak_loongarch::XReg &xreg) {
+        ld_d(xreg, sp, 0);
+        addi_d(sp, sp, xreg_len);
+    }
     /*
       Saturation facility functions. enable to prepare the register
       holding the saturation upperbound and apply the saturation on
