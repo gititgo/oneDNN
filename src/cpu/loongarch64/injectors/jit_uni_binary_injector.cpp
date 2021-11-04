@@ -357,29 +357,19 @@ static void pop_vmm(jit_generator *host, const Vmm &vmm) {
     host->addi_d(host->sp, host->sp, injector_utils::vmm_size_t<Vmm>::bytes);
 }
 
-//static void push_opmask(jit_generator *host, const Xbyak::Opmask &k) {
-static void push_opmask(jit_generator *host, const Xbyak_loongarch::XReg &k) {
-    static constexpr int k_mask_size = 8;
-    //host->sub(host->rsp, k_mask_size);
-    //if (mayiuse(avx512_core))
-    //    host->kmovq(host->ptr[host->rsp], k);
-    //else
-    //    host->kmovw(host->ptr[host->rsp], k);
-    host->addi_d(host->sp, host->sp, -1 * k_mask_size);
-    host->st_d(k, host->sp, 0);
-}
+// unused function
+//static void push_opmask(jit_generator *host, const Xbyak_loongarch::XReg &k) {
+//    static constexpr int k_mask_size = 8;
+//    host->addi_d(host->sp, host->sp, -1 * k_mask_size);
+//    host->st_d(k, host->sp, 0);
+//}
 
-//static void pop_opmask(jit_generator *host, const Xbyak::Opmask &k) {
-static void pop_opmask(jit_generator *host, const Xbyak_loongarch::XReg &k) {
-    static constexpr int k_mask_size = 8;
-    //if (mayiuse(avx512_core))
-    //    host->kmovq(k, host->ptr[host->rsp]);
-    //else
-    //    host->kmovw(k, host->ptr[host->rsp]);
-    //host->add(host->rsp, k_mask_size);
-    host->ld_d(k, host->sp, 0);
-    host->addi_d(host->sp, host->sp, k_mask_size);
-}
+// unused function
+//static void pop_opmask(jit_generator *host, const Xbyak_loongarch::XReg &k) {
+//    static constexpr int k_mask_size = 8;
+//    host->ld_d(k, host->sp, 0);
+//    host->addi_d(host->sp, host->sp, k_mask_size);
+//}
 
 template <typename Vmm>
 static void restore_stack(jit_generator *host, const Vmm &vmm) {
@@ -1009,13 +999,14 @@ static void load_tail_avx(jit_generator *host, std::size_t ymm_idx,
     }
 }
 
-static void load_tail_avx(jit_generator *host, std::size_t ymm_idx,
-        std::size_t tail_size,
-        const std::function<void(int, bool)> &ymm_upper_half_op,
-        const std::function<void(int)> &ymm_lower_half_op) {
-    load_tail_avx(host, ymm_idx, tail_size, nullptr, ymm_upper_half_op,
-            ymm_lower_half_op);
-}
+// unused function
+//static void load_tail_avx(jit_generator *host, std::size_t ymm_idx,
+//        std::size_t tail_size,
+//        const std::function<void(int, bool)> &ymm_upper_half_op,
+//        const std::function<void(int)> &ymm_lower_half_op) {
+//    load_tail_avx(host, ymm_idx, tail_size, nullptr, ymm_upper_half_op,
+//            ymm_lower_half_op);
+//}
 
 //static Xbyak::uint8 MM_SHUFFLE(
 //        Xbyak::uint8 z, Xbyak::uint8 y, Xbyak::uint8 x, Xbyak::uint8 w) {

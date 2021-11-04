@@ -1120,6 +1120,12 @@ void CodeGenerator::vshuf4i_d(const VReg &vd, const VReg &vj, uint32_t ui8) { La
 void CodeGenerator::vbsll_v(const VReg &vd, const VReg &vj, uint32_t ui5) { LasxFormatI5(0b011100101000111, 0b00, ui5, vj, vd); }
 void CodeGenerator::vbsrl_v(const VReg &vd, const VReg &vj, uint32_t ui5) { LasxFormatI5(0b011100101000111, 0b01, ui5, vj, vd); }
 
+void CodeGenerator::vbitsel_v(const VReg &vd, const VReg &vj, const VReg &vk, const VReg &va)
+{ LasxFormat4R(0b0000110100, 0b01, va, vk, vj, vd);  }
+
+void CodeGenerator::vfmadd_s(const VReg &vd, const VReg &vj, const VReg &vk, const VReg &va) { LasxFormat4R(0b0000100100, FP_S, va, vk, vj, vd); }
+void CodeGenerator::vfmadd_d(const VReg &vd, const VReg &vj, const VReg &vk, const VReg &va) { LasxFormat4R(0b0000100100, FP_D, va, vk, vj, vd); }
+
 #define VFCMP_MN_FUNC(name, cond_code) \
   void CodeGenerator::vfcmp_##name##_s(const VReg &vd, const VReg &vj, const VReg &vk) \
   { LasxFormatCond(0b0000110001, FP_S, cond_code, vk, vj, vd); } \

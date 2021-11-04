@@ -125,6 +125,11 @@ void vshuf4i_d(const VReg &vd, const VReg &vj, uint32_t ui8);
 void vbsll_v(const VReg &vd, const VReg &vj, uint32_t ui5);
 void vbsrl_v(const VReg &vd, const VReg &vj, uint32_t ui5);
 
+void vbitsel_v(const VReg &vd, const VReg &vj, const VReg &vk, const VReg &va);
+
+void vfmadd_s(const VReg &vd, const VReg &vj, const VReg &vk, const VReg &va);
+void vfmadd_d(const VReg &vd, const VReg &vj, const VReg &vk, const VReg &va);
+
 #define VFCMP_MN_FUNC_DECLEAR(name) \
    void vfcmp_##name##_s(const VReg &vd, const VReg &vj, const VReg &vk); \
    void vfcmp_##name##_d(const VReg &vd, const VReg &vj, const VReg &vk);

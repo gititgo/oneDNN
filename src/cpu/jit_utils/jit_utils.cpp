@@ -76,7 +76,7 @@ void dump_jit_code(const void *code, size_t code_size, const char *code_name) {
 void register_jit_code_vtune(const void *code, size_t code_size,
         const char *code_name, const char *source_file_name) {
 #if DNNL_ENABLE_JIT_PROFILING
-    unsigned flags = get_jit_profiling_flags();
+    //unsigned flags = get_jit_profiling_flags();
 #if DNNL_X64
     if ((flags & DNNL_JIT_PROFILE_VTUNE)
             && iJIT_IsProfilingActive() == iJIT_SAMPLING_ON) {
