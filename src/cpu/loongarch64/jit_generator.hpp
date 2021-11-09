@@ -1504,12 +1504,14 @@ public:
         Xbyak_loongarch::Label l_case[simd_w_ymm];
 
         //mov(reg_tmp, label_tbl);
-        const uint32_t *label_addr = label_tbl.getAddress();
-        mov_imm(reg_tmp, (uint64_t)label_addr);
+        pcaddi(reg_tmp, label_tbl);
         //const Xbyak::Address label_address
         //        = ptr[reg_tmp + reg_tail * sizeof(void *)];
         //jmp(label_address);
-        jirl(reg_tmp, reg_tail, label_tbl);
+        mov_imm(X_TMP_0, sizeof(void*));
+        mul_d(X_TMP_0, reg_tail, X_TMP_0);
+        add_d(reg_tmp, reg_tmp, X_TMP_0);
+        jirl(zero, reg_tmp, 0);
 
         // create jump table
         L(label_tbl);
