@@ -763,6 +763,14 @@ public:
         vreplgr2vr_w(vd, rj);
     }
 
+    void uni_replgr2vr_b(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj) {
+        xvreplgr2vr_b(xd, rj);
+    }
+
+    void uni_replgr2vr_b(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj) {
+        vreplgr2vr_b(vd, rj);
+    }
+
     void uni_xvseq_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
              const Xbyak_loongarch::XVReg &xk) {
         xvseq_d(xd, xj, xk);
@@ -991,6 +999,56 @@ public:
     void uni_fcmp_cune_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
              const Xbyak_loongarch::VReg &vk) {
         vfcmp_cune_s(vd, vj, vk);
+    }
+
+    void uni_vpor(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+            const Xbyak_loongarch::VReg &vk) {
+        vor_v(vd, vj, vk);
+    }
+
+    void uni_vpor(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+            const Xbyak_loongarch::XVReg &xk) {
+        xvor_v(xd, xj, xk);
+    }
+
+    void uni_fmadd_s(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk, const Xbyak_loongarch::XVReg &xa) {
+        xvfmadd_s(xd, xj, xk, xa);
+    }
+
+    void uni_fmadd_s(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk, const Xbyak_loongarch::VReg &va) {
+        vfmadd_s(vd, vj, vk, va);
+    }
+
+    void uni_fmadd_d(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk, const Xbyak_loongarch::XVReg &xa) {
+        xvfmadd_d(xd, xj, xk, xa);
+    }
+
+    void uni_fmadd_d(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk, const Xbyak_loongarch::VReg &va) {
+        vfmadd_d(vd, vj, vk, va);
+    }
+
+    void uni_add_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvadd_w(xd, xj, xk);
+    }
+
+    void uni_add_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vadd_w(vd, vj, vk);
+    }
+
+    void uni_max_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj,
+             const Xbyak_loongarch::XVReg &xk) {
+        xvmax_w(xd, xj, xk);
+    }
+
+    void uni_max_w(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::VReg &vj,
+             const Xbyak_loongarch::VReg &vk) {
+        vmax_w(vd, vj, vk);
     }
 
     void push_xreg(const Xbyak_loongarch::XReg &xreg) {

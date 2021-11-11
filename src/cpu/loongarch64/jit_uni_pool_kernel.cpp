@@ -1128,8 +1128,8 @@ inline void jit_uni_pool_kernel<isa>::max_step_bwd(int ur_w, int ur_bc,
         //push(reg_output);
         push_xreg(reg_output);
         if (isa == lsx) {
-            // Save rdi since it is used in maskmovdqu
-            assert(dst_ptr == rdi);
+            // Save a0 since it is used in maskmovdqu
+            assert(dst_ptr == a0);
             //push(dst_ptr);
             push_xreg(dst_ptr);
         }
@@ -1283,8 +1283,8 @@ inline void jit_uni_pool_kernel<isa>::max_step_bwd(int ur_w, int ur_bc,
         //jg(kd_label, T_NEAR);
         blt(zero, ki, kd_label);
         if (isa == lsx) {
-            // Save rdi since it is used in maskmovdqu
-            assert(dst_ptr == rdi);
+            // Save a0 since it is used in maskmovdqu
+            assert(dst_ptr == a0);
             //pop(dst_ptr);
             pop_xreg(dst_ptr);
         }
