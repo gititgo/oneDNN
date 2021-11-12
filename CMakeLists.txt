@@ -99,6 +99,11 @@ if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "oneDNN supports 64 bit platforms only")
 endif()
 
+option(USE_CBLAS "option for use openblas" ON)
+if (USE_CBLAS)
+    add_definitions(-DUSE_CBLAS)
+endif()
+
 # Set the target architecture.
 if(NOT DNNL_TARGET_ARCH)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*|arm64.*|ARM64.*)")
