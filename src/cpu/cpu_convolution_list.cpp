@@ -56,7 +56,7 @@
 using namespace dnnl::impl::cpu::x64;
 #elif DNNL_LOONGARCH64
 #include "cpu/loongarch64/jit_uni_dw_convolution.hpp"
-//#include "cpu/loongarch64/jit_lasx_1x1_convolution.hpp"
+#include "cpu/loongarch64/jit_lasx_1x1_convolution.hpp"
 using namespace dnnl::impl::cpu::loongarch64;
 #elif DNNL_AARCH64
 #include "cpu/aarch64/jit_sve_512_1x1_convolution.hpp"
@@ -118,7 +118,7 @@ const std::map<conv_impl_key_t, std::vector<impl_list_item_t>> impl_list_map {
         CPU_INSTANCE_X64(jit_avx2_convolution_fwd_t)
         CPU_INSTANCE_X64(jit_sse41_convolution_fwd_t)
         CPU_INSTANCE_LOONGARCH64(jit_lasx_dw_convolution_fwd_t)
-        //CPU_INSTANCE_LOONGARCH64(jit_lasx_1x1_convolution_fwd_t)
+        CPU_INSTANCE_LOONGARCH64(jit_lasx_1x1_convolution_fwd_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_dw_convolution_fwd_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_1x1_convolution_fwd_f32_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_convolution_fwd_t<f32>)
@@ -169,7 +169,7 @@ const std::map<conv_impl_key_t, std::vector<impl_list_item_t>> impl_list_map {
         CPU_INSTANCE_X64(jit_sse41_dw_convolution_bwd_data_t)
         CPU_INSTANCE_X64(jit_avx2_convolution_bwd_data_t)
         CPU_INSTANCE_LOONGARCH64(jit_lasx_dw_convolution_bwd_data_t)
-        //CPU_INSTANCE_LOONGARCH64(jit_lasx_1x1_convolution_bwd_data_t)
+        CPU_INSTANCE_LOONGARCH64(jit_lasx_1x1_convolution_bwd_data_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_dw_convolution_bwd_data_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_1x1_convolution_bwd_data_f32_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_convolution_bwd_data_t<f32>)
@@ -210,7 +210,7 @@ const std::map<conv_impl_key_t, std::vector<impl_list_item_t>> impl_list_map {
         CPU_INSTANCE_X64(jit_sse41_dw_convolution_bwd_weights_t)
         CPU_INSTANCE_X64(jit_avx2_convolution_bwd_weights_t)
         CPU_INSTANCE_LOONGARCH64(jit_lasx_dw_convolution_bwd_weights_t)
-        //CPU_INSTANCE_LOONGARCH64(jit_lasx_1x1_convolution_bwd_weights_t)
+        CPU_INSTANCE_LOONGARCH64(jit_lasx_1x1_convolution_bwd_weights_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_dw_convolution_bwd_weights_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_1x1_convolution_bwd_weights_t)
         CPU_INSTANCE_AARCH64(jit_sve_512_convolution_bwd_weights_t<f32>)
