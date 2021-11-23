@@ -305,7 +305,7 @@ void jit_uni_subkernel_int_t<isa>::process_linear(
     //uni_vcvtdq2ps(vr_to, vr_from);
     xvffint_s_w(vr_to, vr_from);
     //uni_vfmadd213ps(vr_to, vmm_alpha, vmm_beta);
-    xvfmadd_s(vr_to, vmm_alpha, vmm_beta, vr_to);
+    xvfmadd_s(vr_to, vmm_alpha, vr_to, vmm_beta);
 
     // Saturate before converting from f32 to s32
     Vmm vmm_saturation_ubound = vmm_tmp;
