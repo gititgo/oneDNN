@@ -98,16 +98,17 @@ void jit_lasx_conv_fwd_kernel_f32::oh_step_unroll_kw(
                     //vmovups(ymm15,
                     //        make_safe_addr(aux_reg_kernel,
                     //                get_kernel_offset(ii, ki, ifm2), reg_long_offt));
-                    uni_xvld(XVReg(15), aux_reg_kernel, get_kernel_offset(ii, ki, ifm2));
+                    uni_xvld(xr15, aux_reg_kernel, get_kernel_offset(ii, ki, ifm2));
 
                     for (int jj = jj_start; jj < jj_end; jj++)
                         if (mayiuse(lasx)){
                             //vfmadd231ps(Ymm(ur_w * ii + jj), Ymm(oc_blocks * ur_w + jj), ymm15);
                             xvfmadd_s(XVReg(ur_w * ii + jj), 
                                         XVReg(oc_blocks * ur_w + jj), 
-                                        XVReg(15), 
+                                        xr15, 
                                         XVReg(ur_w * ii + jj));
                         }
+                        /*
                         else { // Intel(R) Advanced Vector Extensions (Intel(R) AVX) support
                             //vmulps(ytmp, ymm15, Ymm(oc_blocks * ur_w + jj));
                             xvfmul_s(ytmp, XVReg(15), XVReg(oc_blocks * ur_w + jj));
@@ -115,7 +116,7 @@ void jit_lasx_conv_fwd_kernel_f32::oh_step_unroll_kw(
                             //vaddps(Ymm(ur_w * ii + jj), Ymm(ur_w * ii + jj), ytmp);
                             xvfadd_s(XVReg(ur_w * ii + jj), 
                                         XVReg(ur_w * ii + jj), ytmp);
-                        }
+                        }*/
                 }
             }
         };
@@ -169,22 +170,23 @@ void jit_lasx_conv_fwd_kernel_f32::oh_step_nopad(
                 //vmovups(ymm15,
                 //        make_safe_addr(aux_reg_kernel,
                 //                get_kernel_offset(ii, 0, ifm2), reg_long_offt));
-                uni_xvld(XVReg(15), aux_reg_kernel, get_kernel_offset(ii, 0, ifm2));
+                uni_xvld(xr15, aux_reg_kernel, get_kernel_offset(ii, 0, ifm2));
 
                 for (int jj = jj_start; jj < jj_end; jj++)
                     if (mayiuse(lasx)){
                         //vfmadd231ps(Ymm(ur_w * ii + jj),
                         //        Ymm(oc_blocks * ur_w + jj), ymm15);
                         xvfmadd_s(XVReg(ur_w * ii + jj),
-                                XVReg(oc_blocks * ur_w + jj), XVReg(15), XVReg(ur_w * ii + jj));
+                                XVReg(oc_blocks * ur_w + jj), xr15, XVReg(ur_w * ii + jj));
                     }
+                    /*
                     else { // Intel AVX support
                         //vmulps(ytmp, ymm15, Ymm(oc_blocks * ur_w + jj));
                         xvfmul_s(ytmp, XVReg(15), XVReg(oc_blocks * ur_w + jj));
 
                         //vaddps(Ymm(ur_w * ii + jj), Ymm(ur_w * ii + jj), ytmp);
                         xvfadd_s(XVReg(ur_w * ii + jj), XVReg(ur_w * ii + jj), ytmp);
-                    }
+                    }*/
             }
         }
         //safe_add(aux_reg_kernel, get_kernel_offset(0, 1, 0), reg_long_offt);
@@ -1143,7 +1145,7 @@ void jit_lasx_conv_bwd_data_kernel_f32::compute_loop(
                         //vmovups(ymm15,
                         //        ptr[aux_reg_kernel
                         //                + get_kernel_offset(0, ii, ki, ofm2)]);
-                        uni_xvld(XVReg(15), aux_reg_kernel, get_kernel_offset(0, ii, ki, ofm2));
+                        uni_xvld(xr15, aux_reg_kernel, get_kernel_offset(0, ii, ki, ofm2));
 
                         for (int jj = jj_start; jj < jj_end; jj += stride_w){
                             //vfmadd231ps(Ymm(ur_w * ii + jj),
@@ -1151,7 +1153,7 @@ void jit_lasx_conv_bwd_data_kernel_f32::compute_loop(
                             //        ymm15);
                             xvfmadd_s(XVReg(ur_w * ii + jj),
                                     XVReg(nb_ic_block * ur_w + jj / stride_w),
-                                    XVReg(15),
+                                    xr15,
                                     XVReg(ur_w * ii + jj));
                         }
                     }
@@ -1268,17 +1270,17 @@ void jit_lasx_conv_bwd_data_kernel_f32::compute_loop(
                 if (is_tail && ii == nb_ic_block - 1){
                     //load_bytes(Ymm(15), reg_dsrc, get_dsrc_offset(ii, jj),
                     //        ic_tail * sizeof(float));
-                    load_bytes(XVReg(15), reg_dsrc, get_dsrc_offset(ii, jj),
+                    load_bytes(xr15, reg_dsrc, get_dsrc_offset(ii, jj),
                             ic_tail * sizeof(float));
                 }
                 else{
                     //vmovups(Ymm(15),
                     //        make_safe_addr(reg_dsrc, get_dsrc_offset(ii, jj),
                     //                reg_long_offt));
-                    uni_xvld(XVReg(15), reg_dsrc, get_dsrc_offset(ii, jj));
+                    uni_xvld(xr15, reg_dsrc, get_dsrc_offset(ii, jj));
                 }
                 //vaddps(Ymm(ur_w * ii + jj), Ymm(ur_w * ii + jj), Ymm(15));
-                xvfadd_s(XVReg(ur_w * ii + jj), XVReg(ur_w * ii + jj), XVReg(15));
+                xvfadd_s(XVReg(ur_w * ii + jj), XVReg(ur_w * ii + jj), xr15);
             }
 
         L(no_update_label);
@@ -2095,8 +2097,8 @@ inline void jit_lasx_conv_bwd_weights_kernel_f32::compute_oh_step_unroll_ow(
 
             //cmp(b_ic, ic_block_step);
             //jge(ic_block_loop, T_NEAR);
-            sub_imm(X_TMP_1, b_ic, ic_block_step, X_TMP_0);
-            bge(X_TMP_1, zero, ic_block_loop);
+            mov_imm(X_TMP_1, ic_block_step);
+            bge(b_ic, X_TMP_1, ic_block_loop);
         }
 
         L(ic_block_loop_done);
@@ -2369,13 +2371,13 @@ inline void jit_lasx_conv_bwd_weights_kernel_f32::compute_oh_loop_common() {
     }
     //cmp(reg_ih_count, jcp.ih + t_pad - jcp.kh + 1);
     //jge(oh_loop_end, T_NEAR);
-    sub_imm(X_TMP_1, reg_ih_count, jcp.ih + t_pad - jcp.kh + 1, X_TMP_0);
-    bge(X_TMP_1, zero, oh_loop_end);
+    mov_imm(X_TMP_1, jcp.ih + t_pad - jcp.kh + 1);
+    bge(reg_ih_count, X_TMP_1, oh_loop_end);
 
     //cmp(reg_oj, jcp.oh);
     //jge(oh_loop, T_NEAR);
-    sub_imm(X_TMP_1, reg_oj, jcp.oh, X_TMP_0);
-    bge(X_TMP_1, zero, oh_loop);
+    mov_imm(X_TMP_1, jcp.oh);
+    bge(reg_oj, X_TMP_1, oh_loop);
 
     //mov(reg_kh, jcp.kh);
     mov_imm(reg_kh, jcp.kh);
@@ -2395,8 +2397,8 @@ inline void jit_lasx_conv_bwd_weights_kernel_f32::compute_oh_loop_common() {
 
         //cmp(reg_ih_count, jcp.ih + t_pad - jcp.kh + 1);
         //jge(oh_loop_end, T_NEAR);
-        sub_imm(X_TMP_1, reg_ih_count, jcp.ih + t_pad - jcp.kh + 1, X_TMP_0);
-        bge(X_TMP_1, zero, oh_loop_end);
+        mov_imm(X_TMP_1, jcp.ih + t_pad - jcp.kh + 1);
+        bge(reg_ih_count, X_TMP_1, oh_loop_end);
 
         //cmp(reg_oj, jcp.oh);
         //jl(oh_loop, T_NEAR);
@@ -2408,8 +2410,8 @@ inline void jit_lasx_conv_bwd_weights_kernel_f32::compute_oh_loop_common() {
         Label oh_bpad_loop, oh_bpad_loop_end;
         //cmp(reg_oj, jcp.oh);
         //jge(oh_bpad_loop_end, T_NEAR);
-        sub_imm(X_TMP_1, reg_oj, jcp.oh, X_TMP_0);
-        bge(X_TMP_1, zero, oh_bpad_loop_end);
+        mov_imm(X_TMP_1, jcp.oh);
+        bge(reg_oj, X_TMP_1, oh_bpad_loop_end);
 
         //mov(reg_kh, jcp.ih + t_pad);
         mov_imm(reg_kh, jcp.ih + t_pad);
