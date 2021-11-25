@@ -2386,14 +2386,14 @@ inline void jit_lasx_conv_bwd_weights_kernel_f32::compute_oh_loop_common() {
     {
         compute_oh_step_disp();
         //add(reg_input, get_input_offset(0, stride_h * jcp.iw));
-        addi_d(reg_input, reg_input, get_input_offset(0, stride_h * jcp.iw));
+        add_imm(reg_input, reg_input, get_input_offset(0, stride_h * jcp.iw), X_TMP_0);
         //add(reg_output, get_output_offset(0, jcp.ow));
-        addi_d(reg_output, reg_output, get_output_offset(0, jcp.ow));
+        add_imm(reg_output, reg_output, get_output_offset(0, jcp.ow), X_TMP_0);
 
         //inc(reg_oj);
         addi_d(reg_oj, reg_oj, 1);
         //add(reg_ih_count, stride_h);
-        addi_d(reg_ih_count, reg_ih_count, stride_h);
+        add_imm(reg_ih_count, reg_ih_count, stride_h, X_TMP_0);
 
         //cmp(reg_ih_count, jcp.ih + t_pad - jcp.kh + 1);
         //jge(oh_loop_end, T_NEAR);
