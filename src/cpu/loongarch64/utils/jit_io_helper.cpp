@@ -523,7 +523,8 @@ void jit_io_helper_t<Vmm>::load(const Xbyak_loongarch::XReg &src_addr, const int
             && (isa_ == lasx || (!is_tail_load_for_i8_supported && is_i8));
 
     if (can_load_byte_by_byte) {
-        load_byte_by_byte(src_addr, offset, dst_vmm, tail_conf_->tail_size_);
+        load_byte_by_byte(src_addr, offset, dst_vmm, 
+                tail_conf_->tail_size_ * types::data_type_size(data_type_));
     } else {
         switch (data_type_) {
             case data_type::f32: load_f32(src_addr, offset, dst_vmm, tail); break;

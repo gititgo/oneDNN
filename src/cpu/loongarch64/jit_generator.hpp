@@ -283,6 +283,16 @@ public:
         ld_d(rd, rj, simm);
     }
 
+    void uni_preld(const uint32_t hint, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
+            mov_imm(X_TMP_2, simm);
+            preldx(hint, rj, X_TMP_2);
+            return;
+        }
+        preld(hint, rj, simm);
+    }
+
     void uni_fld_s(const Xbyak_loongarch::XReg &rd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm) {
         if (simm > IMM12_MAX_VALUE || simm < IMM12_MIN_VALUE) {
@@ -1268,24 +1278,85 @@ public:
                 uni_xvld(vreg, regaddr, offset);
                 break;
             case 17:
+                uni_xvld(vreg, regaddr, offset);
+                uni_ld_b(regvalue, regaddr, offset + 16);
+                xvinsgr2vr_w(xvreg, regvalue, 4);
+                break;
             case 18:
+                uni_xvld(vreg, regaddr, offset);
+                uni_ld_h(regvalue, regaddr, offset + 16);
+                xvinsgr2vr_w(xvreg, regvalue, 4);
+                break;
             case 19:
+                uni_ld_h(regvalue, regaddr, offset + 16);
+                vinsgr2vr_h(vreg, regvalue, 0);
+                uni_ld_b(regvalue, regaddr, offset + 18);
+                vinsgr2vr_b(vreg, regvalue, 2);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 20:
                 uni_xvld(vreg, regaddr, offset);
                 uni_ld_w(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_w(xvreg, regvalue, 4);
                 break;
             case 21:
+                uni_ld_w(regvalue, regaddr, offset + 16);
+                vinsgr2vr_w(vreg, regvalue, 0);
+                uni_ld_b(regvalue, regaddr, offset + 20);
+                vinsgr2vr_b(vreg, regvalue, 4);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 22:
+                uni_ld_w(regvalue, regaddr, offset + 16);
+                vinsgr2vr_w(vreg, regvalue, 0);
+                uni_ld_h(regvalue, regaddr, offset + 20);
+                vinsgr2vr_h(vreg, regvalue, 2);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 23:
+                uni_ld_w(regvalue, regaddr, offset + 16);
+                vinsgr2vr_w(vreg, regvalue, 0);
+                uni_ld_h(regvalue, regaddr, offset + 20);
+                vinsgr2vr_h(vreg, regvalue, 2);
+                uni_ld_b(regvalue, regaddr, offset + 22);
+                vinsgr2vr_b(vreg, regvalue, 6);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 24:
                 uni_xvld(vreg, regaddr, offset);
                 uni_ld_d(regvalue, regaddr, offset + 16);
                 xvinsgr2vr_d(xvreg, regvalue, 2);
                 break;
             case 25:
+                uni_ld_d(regvalue, regaddr, offset + 16);
+                vinsgr2vr_d(vreg, regvalue, 0);
+                uni_ld_b(regvalue, regaddr, offset + 24);
+                vinsgr2vr_b(vreg, regvalue, 8);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 26:
+                uni_ld_d(regvalue, regaddr, offset + 16);
+                vinsgr2vr_d(vreg, regvalue, 0);
+                uni_ld_h(regvalue, regaddr, offset + 24);
+                vinsgr2vr_h(vreg, regvalue, 4);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 27:
+                uni_ld_d(regvalue, regaddr, offset + 16);
+                vinsgr2vr_d(vreg, regvalue, 0);
+                uni_ld_h(regvalue, regaddr, offset + 24);
+                vinsgr2vr_h(vreg, regvalue, 4);
+                uni_ld_b(regvalue, regaddr, offset + 26);
+                vinsgr2vr_b(vreg, regvalue, 10);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 28:
                 uni_xvld(vreg, regaddr, offset);
                 uni_ld_d(regvalue, regaddr, offset + 16);
@@ -1294,8 +1365,37 @@ public:
                 xvinsgr2vr_w(xvreg, regvalue, 6);
                 break;
             case 29:
+                uni_ld_d(regvalue, regaddr, offset + 16);
+                vinsgr2vr_d(vreg, regvalue, 0);
+                uni_ld_w(regvalue, regaddr, offset + 24);
+                vinsgr2vr_w(vreg, regvalue, 2);
+                uni_ld_b(regvalue, regaddr, offset + 28);
+                vinsgr2vr_b(vreg, regvalue, 12);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 30:
+                uni_ld_d(regvalue, regaddr, offset + 16);
+                vinsgr2vr_d(vreg, regvalue, 0);
+                uni_ld_w(regvalue, regaddr, offset + 24);
+                vinsgr2vr_w(vreg, regvalue, 2);
+                uni_ld_h(regvalue, regaddr, offset + 28);
+                vinsgr2vr_h(vreg, regvalue, 6);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 31:
+                uni_ld_d(regvalue, regaddr, offset + 16);
+                vinsgr2vr_d(vreg, regvalue, 0);
+                uni_ld_w(regvalue, regaddr, offset + 24);
+                vinsgr2vr_w(vreg, regvalue, 2);
+                uni_ld_h(regvalue, regaddr, offset + 28);
+                vinsgr2vr_h(vreg, regvalue, 6);
+                uni_ld_b(regvalue, regaddr, offset + 30);
+                vinsgr2vr_b(vreg, regvalue, 14);
+                xvpermi_q(xvreg, xvreg, 0);
+                uni_xvld(vreg, regaddr, offset);
+                break;
             case 32:
                 uni_xvld(xvreg, regaddr, offset);
                 break;
@@ -1338,7 +1438,6 @@ public:
 
         auto xvreg = Xbyak_loongarch::XVReg(vmm.getIdx());
         auto vreg = Xbyak_loongarch::VReg(vmm.getIdx());
-        auto regvalue = X_TMP_0;
         auto regaddr = reg;
         //if (store_size > 0)
         //    add_imm(regaddr, reg, offset, regaddr);
@@ -1351,121 +1450,141 @@ public:
                 uni_xvstelm_h(vreg, regaddr, offset, 0);
                 break;
             case 3:
-                vpickve2gr_h(regvalue, vreg, 0);
-                uni_st_h(regvalue, regaddr, offset);
-                vpickve2gr_b(regvalue, vreg, 2);
-                uni_st_b(regvalue, regaddr, offset + 2);
+                uni_xvstelm_h(vreg, regaddr, offset, 0);
+                uni_xvstelm_b(vreg, regaddr, offset + 2, 2);
                 break;
             case 4:
                 uni_xvstelm_w(vreg, regaddr, offset, 0);
                 break;
             case 5:
-                vpickve2gr_w(regvalue, vreg, 0);
-                uni_st_w(regvalue, regaddr, offset);
-                vpickve2gr_b(regvalue, vreg, 4);
-                uni_st_b(regvalue, regaddr, offset + 4);
+                uni_xvstelm_w(vreg, regaddr, offset, 0);
+                uni_xvstelm_b(vreg, regaddr, offset + 4, 4);
                 break;
             case 6:
-                vpickve2gr_w(regvalue, vreg, 0);
-                uni_st_w(regvalue, regaddr, offset);
-                vpickve2gr_h(regvalue, vreg, 2);
-                uni_st_h(regvalue, regaddr, offset + 4);
+                uni_xvstelm_w(vreg, regaddr, offset, 0);
+                uni_xvstelm_h(vreg, regaddr, offset + 4, 2);
                 break;
             case 7:
-                vpickve2gr_w(regvalue, vreg, 0);
-                uni_st_w(regvalue, regaddr, offset);
-                vpickve2gr_h(regvalue, vreg, 2);
-                uni_st_h(regvalue, regaddr, offset);
-                vpickve2gr_b(regvalue, vreg, 6);
-                uni_st_b(regvalue, regaddr, offset);
+                uni_xvstelm_w(vreg, regaddr, offset, 0);
+                uni_xvstelm_h(vreg, regaddr, offset, 2);
+                uni_xvstelm_b(vreg, regaddr, offset, 6);
                 break;
             case 8:
                 uni_xvstelm_d(vreg, regaddr, offset, 0);
                 break;
             case 9:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
-                vpickve2gr_b(regvalue, vreg, 8);
-                uni_st_b(regvalue, regaddr, offset + 8);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_b(vreg, regaddr, offset + 8, 8);
                 break;
             case 10:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
-                vpickve2gr_h(regvalue, vreg, 4);
-                uni_st_h(regvalue, regaddr, offset + 8);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_h(vreg, regaddr, offset + 8, 4);
                 break;
             case 11:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
-                vpickve2gr_h(regvalue, vreg, 4);
-                uni_st_h(regvalue, regaddr, offset + 8);
-                vpickve2gr_b(regvalue, vreg, 10);
-                uni_st_b(regvalue, regaddr, offset + 10);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_h(vreg, regaddr, offset + 8, 4);
+                uni_xvstelm_b(vreg, regaddr, offset + 10, 10);
                 break;
             case 12:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
-                vpickve2gr_w(regvalue, vreg, 2);
-                uni_st_w(regvalue, regaddr, offset + 8);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_w(vreg, regaddr, offset + 8, 2);
                 break;
             case 13:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
-                vpickve2gr_w(regvalue, vreg, 2);
-                uni_st_h(regvalue, regaddr, offset + 8);
-                vpickve2gr_b(regvalue, vreg, 12);
-                uni_st_b(regvalue, regaddr, offset + 12);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_h(vreg, regaddr, offset + 8, 2);
+                uni_xvstelm_b(vreg, regaddr, offset + 12, 12);
                 break;
             case 14:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
-                vpickve2gr_w(regvalue, vreg, 2);
-                uni_st_w(regvalue, regaddr, offset + 8);
-                vpickve2gr_h(regvalue, vreg, 6);
-                uni_st_h(regvalue, regaddr, offset + 12);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_w(vreg, regaddr, offset + 8, 2);
+                uni_xvstelm_h(vreg, regaddr, offset + 12, 6);
                 break;
             case 15:
-                vpickve2gr_d(regvalue, vreg, 0);
-                uni_st_d(regvalue, regaddr, offset);
-                vpickve2gr_w(regvalue, vreg, 2);
-                uni_st_w(regvalue, regaddr, offset + 8);
-                vpickve2gr_h(regvalue, vreg, 6);
-                uni_st_h(regvalue, regaddr, offset + 12);
-                vpickve2gr_b(regvalue, vreg, 14);
-                uni_st_b(regvalue, regaddr, offset + 14);
+                uni_xvstelm_d(vreg, regaddr, offset, 0);
+                uni_xvstelm_w(vreg, regaddr, offset + 8, 2);
+                uni_xvstelm_h(vreg, regaddr, offset + 12, 6);
+                uni_xvstelm_b(vreg, regaddr, offset + 14, 14);
                 break;
             case 16:
                 uni_xvst(vreg, regaddr, offset);
                 break;
             case 17:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_b(xvreg, regaddr, offset + 16, 16);
+                break;
             case 18:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_h(xvreg, regaddr, offset + 16, 8);
+                break;
             case 19:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_h(xvreg, regaddr, offset + 16, 8);
+                uni_xvstelm_b(xvreg, regaddr, offset + 18, 18);
+                break;
             case 20:
                 uni_xvst(vreg, regaddr, offset);
-                xvpickve2gr_w(regvalue, xvreg, 4);
-                uni_st_w(regvalue, regaddr, offset + 16);
+                uni_xvstelm_w(xvreg, regaddr, offset + 16, 4);
                 break;
             case 21:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_w(xvreg, regaddr, offset + 16, 4);
+                uni_xvstelm_b(xvreg, regaddr, offset + 20, 20);
+                break;
             case 22:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_w(xvreg, regaddr, offset + 16, 4);
+                uni_xvstelm_h(xvreg, regaddr, offset + 20, 10);
+                break;
             case 23:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_w(xvreg, regaddr, offset + 16, 4);
+                uni_xvstelm_h(xvreg, regaddr, offset + 20, 10);
+                uni_xvstelm_b(xvreg, regaddr, offset + 22, 22);
+                break;
             case 24:
                 uni_xvst(vreg, regaddr, offset);
-                xvpickve2gr_d(regvalue, xvreg, 2);
-                uni_st_d(regvalue, regaddr, offset + 16);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
                 break;
             case 25:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
+                uni_xvstelm_b(xvreg, regaddr, offset + 24, 24);
+                break;
             case 26:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
+                uni_xvstelm_h(xvreg, regaddr, offset + 24, 12);
+                break;
             case 27:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
+                uni_xvstelm_h(xvreg, regaddr, offset + 24, 12);
+                uni_xvstelm_b(xvreg, regaddr, offset + 26, 26);
+                break;
             case 28:
                 uni_xvst(vreg, regaddr, offset);
-                xvpickve2gr_d(regvalue, xvreg, 2);
-                uni_st_d(regvalue, regaddr, offset + 16);
-                xvpickve2gr_w(regvalue, xvreg, 6);
-                uni_st_w(regvalue, regaddr, offset + 24);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
+                uni_xvstelm_w(xvreg, regaddr, offset + 24, 6);
                 break;
             case 29:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
+                uni_xvstelm_w(xvreg, regaddr, offset + 24, 6);
+                uni_xvstelm_b(xvreg, regaddr, offset + 28, 28);
+                break;
             case 30:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
+                uni_xvstelm_w(xvreg, regaddr, offset + 24, 6);
+                uni_xvstelm_h(xvreg, regaddr, offset + 28, 14);
+                break;
             case 31:
+                uni_xvst(vreg, regaddr, offset);
+                uni_xvstelm_d(xvreg, regaddr, offset + 16, 2);
+                uni_xvstelm_w(xvreg, regaddr, offset + 24, 6);
+                uni_xvstelm_h(xvreg, regaddr, offset + 28, 14);
+                uni_xvstelm_b(xvreg, regaddr, offset + 30, 30);
+                break;
             case 32:
                 uni_xvst(xvreg, regaddr, offset);
                 break;
