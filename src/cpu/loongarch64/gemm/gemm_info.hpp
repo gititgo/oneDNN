@@ -90,17 +90,17 @@ struct gemm_info_t {
             const a_t *, const dim_t *, const b_t *, const dim_t *, c_t *,
             const dim_t *);
 
-    using gemv_s8s8s32_fptr_t
-            = void (*)(const dim_t, const dim_t, const float, const int8_t *,
-                    const dim_t, const int8_t *, const float, int32_t *);
+    //using gemv_s8s8s32_fptr_t
+    //        = void (*)(const dim_t, const dim_t, const float, const int8_t *,
+    //                const dim_t, const int8_t *, const float, int32_t *);
 
-    using gemv_s8u8s32_fptr_t
-            = void (*)(const dim_t, const dim_t, const float, const int8_t *,
-                    const dim_t, const uint8_t *, const float, int32_t *);
+    //using gemv_s8u8s32_fptr_t
+    //        = void (*)(const dim_t, const dim_t, const float, const int8_t *,
+    //                const dim_t, const uint8_t *, const float, int32_t *);
 
-    using gemv_u8s8s32_fptr_t
-            = void (*)(const dim_t, const dim_t, const float, const uint8_t *,
-                    const dim_t, const int8_t *, const float, int32_t *);
+    //using gemv_u8s8s32_fptr_t
+    //        = void (*)(const dim_t, const dim_t, const float, const uint8_t *,
+    //                const dim_t, const int8_t *, const float, int32_t *);
 
     // gemm kernels
     copy_a_fptr_t copyA = nullptr;
@@ -109,9 +109,9 @@ struct gemm_info_t {
 
     // gemv kernels
     gemv_fptr_t gemv_kernel[2] = {nullptr};
-    gemv_s8s8s32_fptr_t gemv_s8s8s32_kernel = nullptr;
-    gemv_s8u8s32_fptr_t gemv_s8u8s32_kernel = nullptr;
-    gemv_u8s8s32_fptr_t gemv_u8s8s32_kernel = nullptr;
+    //gemv_s8s8s32_fptr_t gemv_s8s8s32_kernel = nullptr;
+    //gemv_s8u8s32_fptr_t gemv_s8u8s32_kernel = nullptr;
+    //gemv_u8s8s32_fptr_t gemv_u8s8s32_kernel = nullptr;
 
     // copyA[trans][sum]
     static copy_a_fptr_t copy_a_kern[2][2];
@@ -125,9 +125,9 @@ struct gemm_info_t {
     // gemv_kern[trans]
     static gemv_fptr_t gemv_kern[2];
 
-    static gemv_s8s8s32_fptr_t gemv_s8s8s32_kern;
-    static gemv_s8u8s32_fptr_t gemv_s8u8s32_kern;
-    static gemv_u8s8s32_fptr_t gemv_u8s8s32_kern;
+    //static gemv_s8s8s32_fptr_t gemv_s8s8s32_kern;
+    //static gemv_s8u8s32_fptr_t gemv_s8u8s32_kern;
+    //static gemv_u8s8s32_fptr_t gemv_u8s8s32_kern;
 
     template <bool is_trans>
     static void copy_a_sum_ref(const dim_t *p_k, const dim_t *p_m,
