@@ -881,8 +881,9 @@ bool gemm_info_t<a_t, b_t, c_t>::hasKernels(void) {
 
                 if (!this->copyA || !this->copyB) return false;
 
-                for (int isTrans : {no_trans, do_trans})
-                    if (!this->gemv_kernel[isTrans]) return false;
+                //for (int isTrans : {no_trans, do_trans})
+                //    if (!this->gemv_kernel[isTrans]) return false;
+                if (!this->gemv_kernel[do_trans]) return false; // because no_trans is nullptr
             }
             break;
     }

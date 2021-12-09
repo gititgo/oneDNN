@@ -209,8 +209,8 @@ void jit_lasx_f32_copy_bt_kern::generate() {
         //vmovups(xword[B - 0x50], xmm0);
         vst(vr0, B, -0x50);
         //lea(A1, ptr[A1 + LDA * 4]);
-        mov_imm(TM, 4);
-        mul_d(TM, TM, LDA);
+        add_d(TM, LDA, LDA);
+        add_d(TM, TM, TM);
         add_d(A1, A1, TM);
         //sub(B, -64);
         addi_d(B, B, 64);

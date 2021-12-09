@@ -1046,8 +1046,8 @@ struct xbyak_gemm_t : public jit_generator {
             add_imm(LDA4, sp, 256 + OFFSET * SIZE, X_TMP_0);
         } else {
             //lea(LDA4, ptr[LDA * 8 + (8 - 1 - OFFSET) * SIZE]);
-            slli_d(X_TMP_0, LDA, 3);
-            add_imm(LDA4, X_TMP_0, (8 - 1 - OFFSET) * SIZE, X_TMP_0);
+            slli_d(X_TMP_1, LDA, 3);
+            add_imm(LDA4, X_TMP_1, (8 - 1 - OFFSET) * SIZE, X_TMP_0);
         }
 
         if (isTransB) {
