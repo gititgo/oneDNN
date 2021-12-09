@@ -29,16 +29,16 @@ jit_lasx_f32_copy_at_kern::jit_lasx_f32_copy_at_kern()
 void jit_lasx_f32_copy_at_kern::generate() {
 
 #ifndef _WIN32
-#define M a3//rdi
-#define N a4//rsi
-#define A a7//rdx
-#define LDA t0//rcx
-#define ALPHA a6//r8
-#define B t2//r9
+#define M a0//rdi
+#define N a1//rsi
+#define A a2//rdx
+#define LDA a3//rcx
+#define ALPHA a4//r8
+#define B a5//r9
 
-#define I t3//rax
-#define A1 t4//r10
-#define A2 t5//r8
+#define I t4//rax
+#define A1 t5//r10
+#define A2 a4//r8
 #define LDA3 t6//r11
 #define TM s1
 #define TM0 s0
