@@ -647,6 +647,28 @@ public:
         vstelm_d(vd, rj, simm, idx);
     }
 
+    // we use the real offset(but the xvstelm.w use si8 << 2)
+    void uni_xvstelm_w0(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM10_MAX_VALUE || simm < IMM10_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vstelm_w(vd, X_TMP_2, 0, 0);
+            return;
+        }
+        vstelm_w(vd, rj, simm, 0);
+    }
+
+    // we use the real offset(but the xvstelm.d use si8 << 3)
+    void uni_xvstelm_d0(const Xbyak_loongarch::VReg &vd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM11_MAX_VALUE || simm < IMM11_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            vstelm_d(vd, X_TMP_2, 0, 0);
+            return;
+        }
+        vstelm_d(vd, rj, simm, 0);
+    }
+
     // we use the real offset
     void uni_xvstelm_b(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
             const int32_t simm, const uint32_t idx) {
@@ -689,6 +711,28 @@ public:
             return;
         }
         xvstelm_d(xd, rj, simm, idx);
+    }
+
+    // we use the real offset(but the xvstelm.w use si8 << 2)
+    void uni_xvstelm_w0(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM10_MAX_VALUE || simm < IMM10_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvstelm_w(xd, X_TMP_2, 0, 0);
+            return;
+        }
+        xvstelm_w(xd, rj, simm, 0);
+    }
+
+    // we use the real offset(but the xvstelm.d use si8 << 3)
+    void uni_xvstelm_d0(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XReg &rj,
+            const int32_t simm) {
+        if (simm > IMM11_MAX_VALUE || simm < IMM11_MIN_VALUE) {
+            add_imm(X_TMP_2, rj, simm, X_TMP_2);
+            xvstelm_d(xd, X_TMP_2, 0, 0);
+            return;
+        }
+        xvstelm_d(xd, rj, simm, 0);
     }
 
     void uni_xvreplve0_w(const Xbyak_loongarch::XVReg &xd, const Xbyak_loongarch::XVReg &xj) {
@@ -1590,6 +1634,31 @@ public:
                 break;
             default:
                 break;
+        }
+    }
+
+    void store_mask_words(const Xbyak_loongarch::XVReg &xvreg, const Xbyak_loongarch::XReg &regaddr,
+            int64_t offset, const Xbyak_loongarch::XVReg& xvmask) {
+        Xbyak_loongarch::Label cond_store[8];
+        for (int mi = 0; mi < 8; ++mi) {
+            xvpickve2gr_w(X_TMP_0, xvmask, mi);
+            beqz(X_TMP_0, cond_store[mi]);
+            uni_xvstelm_w(xvreg, regaddr, offset + mi * sizeof(float), mi);
+            L(cond_store[mi]);
+        }
+    }
+
+    void vgatherqps(const Xbyak_loongarch::VReg &vrdst, const Xbyak_loongarch::XReg &raddr,
+            const Xbyak_loongarch::XVReg &xvind, const int32_t offset, const Xbyak_loongarch::VReg &vrmask) {
+        Xbyak_loongarch::Label cond_load[4];
+        for (int j = 0; j < 4; ++j) {
+            vpickve2gr_w(X_TMP_0, vrmask, j);
+            beqz(X_TMP_0, cond_load[j]);
+            xvpickve2gr_d(X_TMP_1, xvind, j);
+            add_d(X_TMP_1, raddr, X_TMP_1);
+            uni_ld_w(X_TMP_0, X_TMP_1, offset);
+            vinsgr2vr_w(vrdst, X_TMP_0, j);
+            L(cond_load[j]);
         }
     }
 

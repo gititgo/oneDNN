@@ -1117,6 +1117,19 @@ void CodeGenerator::vshuf4i_h(const VReg &vd, const VReg &vj, uint32_t ui8) { La
 void CodeGenerator::vshuf4i_w(const VReg &vd, const VReg &vj, uint32_t ui8) { LasxFormatI8(0b01110011100110, ui8, vj, vd); }
 void CodeGenerator::vshuf4i_d(const VReg &vd, const VReg &vj, uint32_t ui8) { LasxFormatI8(0b01110011100111, ui8, vj, vd); }
 
+void CodeGenerator::vslli_b(const VReg &vd, const VReg &vj, uint32_t ui3) { LasxFormatBIT(0b01110011001011, TYPE_B, ui3, vj, vd); }
+void CodeGenerator::vslli_h(const VReg &vd, const VReg &vj, uint32_t ui4) { LasxFormatBIT(0b01110011001011, TYPE_H, ui4, vj, vd); }
+void CodeGenerator::vslli_w(const VReg &vd, const VReg &vj, uint32_t ui5) { LasxFormatBIT(0b01110011001011, TYPE_W, ui5, vj, vd); }
+void CodeGenerator::vslli_d(const VReg &vd, const VReg &vj, uint32_t ui6) { LasxFormatBIT(0b01110011001011, TYPE_D, ui6, vj, vd); }
+void CodeGenerator::vsrli_b(const VReg &vd, const VReg &vj, uint32_t ui3) { LasxFormatBIT(0b01110011001100, TYPE_B, ui3, vj, vd); }
+void CodeGenerator::vsrli_h(const VReg &vd, const VReg &vj, uint32_t ui4) { LasxFormatBIT(0b01110011001100, TYPE_H, ui4, vj, vd); }
+void CodeGenerator::vsrli_w(const VReg &vd, const VReg &vj, uint32_t ui5) { LasxFormatBIT(0b01110011001100, TYPE_W, ui5, vj, vd); }
+void CodeGenerator::vsrli_d(const VReg &vd, const VReg &vj, uint32_t ui6) { LasxFormatBIT(0b01110011001100, TYPE_D, ui6, vj, vd); }
+void CodeGenerator::vsrai_b(const VReg &vd, const VReg &vj, uint32_t ui3) { LasxFormatBIT(0b01110011001101, TYPE_B, ui3, vj, vd); }
+void CodeGenerator::vsrai_h(const VReg &vd, const VReg &vj, uint32_t ui4) { LasxFormatBIT(0b01110011001101, TYPE_H, ui4, vj, vd); }
+void CodeGenerator::vsrai_w(const VReg &vd, const VReg &vj, uint32_t ui5) { LasxFormatBIT(0b01110011001101, TYPE_W, ui5, vj, vd); }
+void CodeGenerator::vsrai_d(const VReg &vd, const VReg &vj, uint32_t ui6) { LasxFormatBIT(0b01110011001101, TYPE_D, ui6, vj, vd); }
+
 void CodeGenerator::vbsll_v(const VReg &vd, const VReg &vj, uint32_t ui5) { LasxFormatI5(0b011100101000111, 0b00, ui5, vj, vd); }
 void CodeGenerator::vbsrl_v(const VReg &vd, const VReg &vj, uint32_t ui5) { LasxFormatI5(0b011100101000111, 0b01, ui5, vj, vd); }
 

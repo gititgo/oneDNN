@@ -20,6 +20,8 @@
 
 #if DNNL_X64
 #include "cpu/x64/gemm/gemm_pack.hpp"
+#elif DNNL_LOONGARCH64
+#include "cpu/loongarch64/gemm/gemm_pack.hpp"
 #endif
 
 namespace dnnl {
@@ -29,6 +31,8 @@ namespace cpu {
 bool pack_sgemm_supported() {
 #if DNNL_X64
     return x64::pack_sgemm_supported();
+#elif DNNL_LOONGARCH64
+    return loongarch64::pack_sgemm_supported();
 #endif
     return false;
 }
@@ -44,6 +48,9 @@ dnnl_status_t sgemm_pack_get_size(const char *identifier, const char *transa,
         const dim_t *lda, const dim_t *ldb, size_t *size, bool *pack) {
 #if DNNL_X64
     return x64::sgemm_pack_get_size(
+            identifier, transa, transb, M, N, K, lda, ldb, size, pack);
+#elif DNNL_LOONGARCH64
+    return loongarch64::sgemm_pack_get_size(
             identifier, transa, transb, M, N, K, lda, ldb, size, pack);
 #endif
     return dnnl_unimplemented;
@@ -88,6 +95,9 @@ dnnl_status_t sgemm_pack(const char *identifier, const char *transa,
 #if DNNL_X64
     return x64::sgemm_pack(
             identifier, transa, transb, M, N, K, lda, ldb, src, dst);
+#elif DNNL_LOONGARCH64
+    return loongarch64::sgemm_pack(
+            identifier, transa, transb, M, N, K, lda, ldb, src, dst);
 #endif
     return dnnl_unimplemented;
 }
@@ -129,6 +139,9 @@ dnnl_status_t sgemm_compute(const char *transa, const char *transb,
         float *C, const dim_t *ldc) {
 #if DNNL_X64
     return x64::sgemm_compute(
+            transa, transb, M, N, K, A, lda, B, ldb, beta, C, ldc);
+#elif DNNL_LOONGARCH64
+    return loongarch64::sgemm_compute(
             transa, transb, M, N, K, A, lda, B, ldb, beta, C, ldc);
 #endif
     return dnnl_unimplemented;

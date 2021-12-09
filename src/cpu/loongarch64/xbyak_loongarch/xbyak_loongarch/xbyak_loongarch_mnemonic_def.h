@@ -122,6 +122,19 @@ void vshuf4i_h(const VReg &vd, const VReg &vj, uint32_t ui8);
 void vshuf4i_w(const VReg &vd, const VReg &vj, uint32_t ui8);
 void vshuf4i_d(const VReg &vd, const VReg &vj, uint32_t ui8);
 
+void vslli_b(const VReg &vd, const VReg &vj, uint32_t ui3);
+void vslli_h(const VReg &vd, const VReg &vj, uint32_t ui4);
+void vslli_w(const VReg &vd, const VReg &vj, uint32_t ui5);
+void vslli_d(const VReg &vd, const VReg &vj, uint32_t ui6);
+void vsrli_b(const VReg &vd, const VReg &vj, uint32_t ui3);
+void vsrli_h(const VReg &vd, const VReg &vj, uint32_t ui4);
+void vsrli_w(const VReg &vd, const VReg &vj, uint32_t ui5);
+void vsrli_d(const VReg &vd, const VReg &vj, uint32_t ui6);
+void vsrai_b(const VReg &vd, const VReg &vj, uint32_t ui3);
+void vsrai_h(const VReg &vd, const VReg &vj, uint32_t ui4);
+void vsrai_w(const VReg &vd, const VReg &vj, uint32_t ui5);
+void vsrai_d(const VReg &vd, const VReg &vj, uint32_t ui6);
+
 void vbsll_v(const VReg &vd, const VReg &vj, uint32_t ui5);
 void vbsrl_v(const VReg &vd, const VReg &vj, uint32_t ui5);
 
