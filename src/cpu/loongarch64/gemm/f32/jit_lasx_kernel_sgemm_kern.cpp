@@ -226,15 +226,15 @@ void jit_lasx_kernel_sgemm_kern::prefetchC_beforeKloop(int um) {
         addi_d(LL_, LL_, second_fetch_);
 
         //prefetcht2(ptr[AA_]);
-        preld(0, AA_, 0);
+        preld(2, AA_, 0);
     //}
 }
 
 void jit_lasx_kernel_sgemm_kern::generate() {
 
     int i, unroll_x, unroll_y, uy_bin, ux_bin;
-    int C_off = is_windows ? 56 : 8;
-    int LDC_off = is_windows ? 64 : 16;
+    //int C_off = is_windows ? 56 : 8;
+    //int LDC_off = is_windows ? 64 : 16;
     int sepload = 0;
 
     std::vector<Xbyak_loongarch::Label> unroll_x_label(MAX_UNROLL_M),
@@ -259,10 +259,8 @@ void jit_lasx_kernel_sgemm_kern::generate() {
         ld_d(K_, K_, 0);
     //}
 
-    //mov(C_, ptr[rsp + get_size_of_abi_save_regs() + C_off]);
-    uni_ld_d(C_, sp, get_size_of_abi_save_regs() + C_off);
-    //mov(LDC_, ptr[rsp + get_size_of_abi_save_regs() + LDC_off]);
-    uni_ld_d(LDC_, sp, get_size_of_abi_save_regs() + LDC_off);
+    //mov(C_, ptr[rsp + get_size_of_abi_save_regs() + C_off]); // in loongarch C_ is abi_param7
+    //mov(LDC_, ptr[rsp + get_size_of_abi_save_regs() + LDC_off]); // in loongarch LDC_ is abi_param8
 
     //if (mayiuse(avx512_core)) {
     //    for (i = zmm_acc_idx_; i < unroll_m_reg_ * unroll_n_ + zmm_acc_idx_;
@@ -321,8 +319,7 @@ void jit_lasx_kernel_sgemm_kern::generate() {
 
         //if ((unroll_x == unroll_m_) || (!mayiuse(avx512_core)))
         //    lea(CO2_, ptr[C_ + LDC_ * 2]);
-        mov_imm(X_TMP_1, 2);
-        mul_d(X_TMP_1, LDC_, X_TMP_1);
+        slli_d(X_TMP_1, LDC_, 1);
         add_d(CO2_, C_, X_TMP_1);
 
         //add(C_, unroll_x * elt_size_);

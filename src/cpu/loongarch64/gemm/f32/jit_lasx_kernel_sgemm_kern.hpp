@@ -54,11 +54,11 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
     Xbyak::Reg64 I_ = r12, J_ = r13, AA_ = rcx, KK_ = K_, BO_ = rbp, CO1_ = r14,
                  CO2_ = r15;
     Xbyak::Reg64 AO_ = rbx, LL_ = rax; */
-    Xbyak_loongarch::XReg M_ = a3, N_ = a4, K_ = a5, A_ = a6, B_ = a7, C_ = t3,
-                 LDC_ = t4;
-    Xbyak_loongarch::XReg I_ = t5, J_ = t6, AA_ = t7, KK_ = K_, BO_ = t8, CO1_ = t2,
-                 CO2_ = t1;
-    Xbyak_loongarch::XReg AO_ = a1, LL_ = a2;
+    Xbyak_loongarch::XReg M_ = abi_param1, N_ = abi_param2, K_ = abi_param3, 
+                          A_ = abi_param5, B_ = abi_param6, C_ = abi_param7, LDC_ = abi_param8;
+    Xbyak_loongarch::XReg I_ = t5, J_ = t6, AA_ = abi_param4, KK_ = K_, BO_ = t4, CO1_ = t7,
+                 CO2_ = t8;
+    Xbyak_loongarch::XReg AO_ = t2, LL_ = t1;
     //int zmm_a_idx_ = 0, zmm_b_idx_ = mayiuse(avx512_core) ? 6 : 3,
     //    zmm_acc_idx_ = mayiuse(avx512_core) ? 8 : 4;
     int zmm_a_idx_ = 0, zmm_b_idx_ = 3, zmm_acc_idx_ = 4;
