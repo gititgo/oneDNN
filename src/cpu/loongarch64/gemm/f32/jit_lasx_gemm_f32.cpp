@@ -2802,7 +2802,7 @@ struct xbyak_gemm_t : public jit_generator {
             vxor_v(vr0, vr0, vr0);
             vinsgr2vr_d(vr0, LDA, 0);
             //vpbroadcastq(xr1, vr0);
-            xvldrepl_d(xr1, LDA, 0);
+            xvreplgr2vr_d(xr1, LDA);
             //vinsertf128(xr0, xr0, vr0, 1);
             xvpermi_q(xr0, xr0, 0x02);
             //vpermilpd(xr0, xr0, 5);
@@ -3004,11 +3004,11 @@ private:
 
     const XReg ARG_B = abi_param7; // loongarch has 8 abi_params so ARG_B is abi_param7
     const XReg ARG_LDB = abi_param8; // loongarch has 8 abi_params so ARG_LDB is abi_param8
-    const Address ARG_BETA = ptr_a(sp, 8 + stackOffset); // from ARG_BETA the param in sp
-    const Address ARG_C = ptr_a(sp, 16 + stackOffset);
-    const Address ARG_LDC = ptr_a(sp, 24 + stackOffset);
-    const Address ARG_BIAS = ptr_a(sp, 32 + stackOffset);
-    const Address ARG_WS = ptr_a(sp, 40 + stackOffset);
+    const Address ARG_BETA = ptr_a(sp, stackOffset); // from ARG_BETA the param in sp
+    const Address ARG_C = ptr_a(sp, 8 + stackOffset);
+    const Address ARG_LDC = ptr_a(sp, 16 + stackOffset);
+    const Address ARG_BIAS = ptr_a(sp, 24 + stackOffset);
+    const Address ARG_WS = ptr_a(sp, 32 + stackOffset);
 
     const XReg B = ARG_B;
     const XReg LDB = ARG_LDB;
