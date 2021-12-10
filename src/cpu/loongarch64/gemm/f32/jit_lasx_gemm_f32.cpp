@@ -1234,24 +1234,24 @@ struct xbyak_gemm_t : public jit_generator {
         // handled
         switch (unroll_n) {
             //case 1: mov(rax, LDC); break;
-            case 1: add_d(t3, LDC, zero); break;
+            case 1: add_d(rax, LDC, zero); break;
             //case 2: lea(rax, ptr[LDC * 2]); break;
-            case 2: slli_d(t3, LDC, 1); break;
+            case 2: slli_d(rax, LDC, 1); break;
             //case 3: lea(rax, ptr[LDC + LDC * 2]); break;
-            case 3: { mov_imm(X_TMP_0, 3); mul_d(t3, LDC, X_TMP_0); } break;
+            case 3: { mov_imm(X_TMP_0, 3); mul_d(rax, LDC, X_TMP_0); } break;
             //case 4: lea(rax, ptr[LDC + LDC * 4]); break;
-            case 4: { mov_imm(X_TMP_0, 5); mul_d(t3, LDC, X_TMP_0); } break;
+            case 4: { mov_imm(X_TMP_0, 5); mul_d(rax, LDC, X_TMP_0); } break;
             case 5:
                 //lea(rax, ptr[LDC * 4]);
                 //add(rax, LDC);
                 mov_imm(X_TMP_0, 5);
-                mul_d(t3, LDC, X_TMP_0);
+                mul_d(rax, LDC, X_TMP_0);
                 break;
             case 6:
                 //lea(rax, ptr[LDC + LDC * 2]);
                 //add(rax, rax);
                 mov_imm(X_TMP_0, 6);
-                mul_d(t3, LDC, X_TMP_0);
+                mul_d(rax, LDC, X_TMP_0);
                 break;
         }
 
@@ -1577,16 +1577,15 @@ struct xbyak_gemm_t : public jit_generator {
                 }
             }
             //if (i == 2) add(CO1, rax);
-            if (i == 2) add_d(CO1, CO1, t3);
+            if (i == 2) add_d(CO1, CO1, rax);
         }
         //if (unroll_n >= 4) { add(CO2, rax); }
-        if (unroll_n >= 4) { add_d(CO2, CO2, t3); }
+        if (unroll_n >= 4) { add_d(CO2, CO2, rax); }
 
         // Compute next address of B
         if (!isTransB) {
             //lea(rax, ptr[K * SIZE]);
-            mov_imm(X_TMP_0, SIZE);
-            mul_d(t3, K, X_TMP_0);
+            slli_d(rax, K, 2);
             switch (unroll_n) {
                 case 1:
                     //add(BO1, LDB);
@@ -1636,16 +1635,16 @@ struct xbyak_gemm_t : public jit_generator {
                     break;
             }
             //sub(BO1, rax);
-            sub_d(BO1, BO1, t3);
+            sub_d(BO1, BO1, rax);
             //sub(BO2, rax);
-            sub_d(BO2, BO2, t3);
+            sub_d(BO2, BO2, rax);
         } else {
             //mov(rax, LDB);
-            add_d(t3, LDB, zero);
+            add_d(rax, LDB, zero);
             //imul(rax, K);
-            mul_d(t3, t3, K);
+            mul_d(rax, rax, K);
             //sub(BO1, rax);
-            sub_d(BO1, BO1, t3);
+            sub_d(BO1, BO1, rax);
             //add(BO1, unroll_n * SIZE);
             add_imm(BO1, BO1, unroll_n * SIZE, X_TMP_0);
         }
@@ -2687,12 +2686,12 @@ struct xbyak_gemm_t : public jit_generator {
             add_imm(A, A, unroll_m * SIZE, X_TMP_0);
         } else {
             //mov(rax, LDA);
-            add_d(t3, LDA, zero);
+            add_d(rax, LDA, zero);
             //imul(rax, rax, unroll_m);
             mov_imm(X_TMP_0, unroll_m);
-            mul_d(t3, t3, X_TMP_0);
+            mul_d(rax, rax, X_TMP_0);
             //add(A, rax);
-            add_d(A, A, t3);
+            add_d(A, A, rax);
         }
 
         // Compute next address of BIAS
@@ -2742,13 +2741,13 @@ struct xbyak_gemm_t : public jit_generator {
 
         // Create buffer and align to 4kB page
         //lea(rax, ptr[K * SIZE]);
-        slli_d(X_TMP_0, K, 2);
+        slli_d(rax, K, 2);
         //sal(rax, 4);
-        slli_d(X_TMP_0, X_TMP_0, 2);
+        slli_d(rax, X_TMP_0, 2);
         //add(rax, 256);
-        addi_d(X_TMP_0, X_TMP_0, 256);
+        addi_d(rax, X_TMP_0, 256);
         //sub(rsp, rax);
-        sub_d(sp, sp, X_TMP_0);
+        sub_d(sp, sp, rax);
         //and_(rsp, -PAGE_4K);
         mov_imm(X_TMP_1, -PAGE_4K);
         and_(sp, sp, X_TMP_1);
@@ -2821,13 +2820,13 @@ struct xbyak_gemm_t : public jit_generator {
         // Check A alignment and leading dimension; take copy-based path as
         // needed
         //mov(rax, LDA);
-        add_d(X_TMP_0, LDA, zero);
+        add_d(rax, LDA, zero);
         //or_(rax, A);
-        or_(X_TMP_0, X_TMP_0, A);
+        or_(rax, rax, A);
         //and_(rax, 0x1f);
-        andi(X_TMP_0, X_TMP_0, 0x1f);
+        andi(rax, rax, 0x1f);
         //mov(FLAG, rax);
-        st_d(X_TMP_0, FLAG.getXReg(), FLAG.getOffset());
+        st_d(rax, FLAG.getXReg(), FLAG.getOffset());
         std::vector<Label> labels(5);
 
         //cmp(M, UNROLL_M);
@@ -3012,6 +3011,7 @@ private:
 
     const XReg B = ARG_B;
     const XReg LDB = ARG_LDB;
+    const XReg rax = t1; // for calc in loongarch
     const XReg LDC = t2;
     const XReg LL = t3;
     const XReg AO1 = abi_param2;
