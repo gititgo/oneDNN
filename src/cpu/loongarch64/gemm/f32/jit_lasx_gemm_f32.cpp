@@ -1225,10 +1225,10 @@ struct xbyak_gemm_t : public jit_generator {
 
         L(labels[6]);
         //vbroadcastss(VALPHA, ALPHA);
-        xvldrepl_w(VALPHA, sp, 48);
+        xvldrepl_w(VALPHA, ALPHA.getXReg(), ALPHA.getOffset());
 
         //if (isBetaN) { vbroadcastss(VBETA, BETA); }
-        if (isBetaN) { xvldrepl_w(VBETA, sp, 64); }
+        if (isBetaN) { xvldrepl_w(VBETA, BETA.getXReg(), BETA.getOffset()); }
 
         // Write back the results; all beta and bias cases need to be
         // handled
@@ -1817,15 +1817,15 @@ struct xbyak_gemm_t : public jit_generator {
                     vld(vr0, reg, (0 * 8 - OFFSET) * SIZE);
 
                     //vmovups(vr1, ptr[reg + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
-                    add_d(X_TMP_0, reg, LDA);
-                    vld(vr1, X_TMP_0, (0 * 8 - OFFSET) * SIZE);
+                    add_d(X_TMP_1, reg, LDA);
+                    vld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
 
                     //lea(BO2, ptr[reg + LDA * 2]);
                     add_d(X_TMP_0, LDA, LDA);
                     add_d(BO2, reg, X_TMP_0);
 
                     //vunpcklps(vr4, vr0, vr1);
-                    vilvl_w(vr4, vr0, vr1);
+                    vilvl_w(vr4, vr1, vr0);
 
                     //vunpckhps(vr5, vr0, vr1);
                     vilvh_w(vr5, vr1, vr0);
@@ -1834,15 +1834,15 @@ struct xbyak_gemm_t : public jit_generator {
                     vld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
 
                     //vmovups(vr1, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
-                    add_d(X_TMP_0, BO2, LDA);
-                    vld(vr1, X_TMP_0, (0 * 8 - OFFSET) * SIZE);
+                    add_d(X_TMP_1, BO2, LDA);
+                    vld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
 
                     //lea(BO2, ptr[BO2 + LDA * 2]);
                     add_d(X_TMP_0, LDA, LDA);
                     add_d(BO2, BO2, X_TMP_0);
 
                     //vunpcklps(vr6, vr0, vr1);
-                    vilvl_w(vr6, vr0, vr1);
+                    vilvl_w(vr6, vr1, vr0);
 
                     //vunpckhps(vr2, vr0, vr1);
                     vilvh_w(vr2, vr1, vr0);
@@ -1999,15 +1999,15 @@ struct xbyak_gemm_t : public jit_generator {
                         uni_xvld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
 
                         //vmovups(vr1, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
-                        add_d(X_TMP_0, BO2, LDA);
-                        uni_xvld(vr1, X_TMP_0, (0 * 8 - OFFSET) * SIZE);
+                        add_d(X_TMP_1, BO2, LDA);
+                        uni_xvld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
 
                         //lea(BO2, ptr[BO2 + LDA * 2]);
                         add_d(X_TMP_0, LDA, LDA);
                         add_d(BO2, BO2, X_TMP_0);
 
                         //vunpcklps(vr4, vr0, vr1);
-                        vilvl_w(vr4, vr0, vr1);
+                        vilvl_w(vr4, vr1, vr0);
 
                         //vunpckhps(vr5, vr0, vr1);
                         vilvh_w(vr5, vr1, vr0);
@@ -2016,8 +2016,8 @@ struct xbyak_gemm_t : public jit_generator {
                         uni_xvld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
                         
                         //vmovups(vr1, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
-                        add_d(X_TMP_0, BO2, LDA);
-                        uni_xvld(vr1, X_TMP_0, (0 * 8 - OFFSET) * SIZE);
+                        add_d(X_TMP_1, BO2, LDA);
+                        uni_xvld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
 
                         if (i == 0){
                             //lea(BO2, ptr[BO2 + LDA * 2]);
@@ -2025,7 +2025,7 @@ struct xbyak_gemm_t : public jit_generator {
                             add_d(BO2, BO2, X_TMP_0);
                         }
                         //vunpcklps(vr6, vr0, vr1);
-                        vilvl_w(vr6, vr0, vr1);
+                        vilvl_w(vr6, vr1, vr0);
 
                         //vunpckhps(vr2, vr0, vr1);
                         vilvh_w(vr2, vr1, vr0);
@@ -2066,7 +2066,7 @@ struct xbyak_gemm_t : public jit_generator {
                         //vgatherqps(vr0,
                         //        ptr[BO2 + xr7 + ((2 * i) - OFFSET) * SIZE],
                         //        vr4);
-                        vgatherqps(vr1, BO2, xr7, ((2 * i) - OFFSET) * SIZE, vr4);
+                        vgatherqps(vr0, BO2, xr7, ((2 * i) - OFFSET) * SIZE, vr4);
 
                         //vmovaps(vr4, vr3);
                         vbsll_v(vr4, vr3, 0);
@@ -2136,9 +2136,9 @@ struct xbyak_gemm_t : public jit_generator {
         //mov(LL, K);
         add_d(LL, K, zero);
         //and_(LL, 3);
-        andi(LL, LL, 3);
+        andi(X_TMP_0, LL, 3);
         //jle(labels[3], T_NEAR);
-        bge(zero, LL, labels[3]);
+        bge(zero, X_TMP_0, labels[3]);
         //align(16);
 
         L(labels[2]);
@@ -2156,7 +2156,7 @@ struct xbyak_gemm_t : public jit_generator {
                     //vmovups(xr5, ptr[BO1 + (1 * 8 - OFFSET) * SIZE]);
                     uni_xvld(xr5, BO1, (1 * 8 - OFFSET) * SIZE);
                 } else {
-                    //vmaskmovps(xr5, VMASK, ptr[BO1 + (1 + 8 - OFFSET) * SIZE]);
+                    //vmaskmovps(xr5, VMASK, ptr[BO1 + (1 + 8 - OFFSET) * SIZE]); // 1+8 must be not correct 
                     uni_xvld(xr5, BO1, (1 * 8 - OFFSET) * SIZE);
                     xvand_v(xr5, xr5, VMASK);
                 }
@@ -2185,7 +2185,7 @@ struct xbyak_gemm_t : public jit_generator {
                     add_d(BO2, X_TMP_1, LDA);
 
                     //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
-                    vilvl_w(VReg(i + 1), VReg(i + 1), vr0);
+                    vilvl_w(VReg(i + 1), vr0, VReg(i + 1));
                 }
                 //vunpcklpd(vr1, vr1, vr2);
                 vilvl_d(vr1, vr2, vr1);
@@ -2204,7 +2204,7 @@ struct xbyak_gemm_t : public jit_generator {
                     add_d(BO2, X_TMP_1, LDA);
 
                     //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
-                    vilvl_w(VReg(i + 1), VReg(i + 1), vr0);
+                    vilvl_w(VReg(i + 1), vr0, VReg(i + 1));
                 }
                 //vunpcklpd(vr1, vr1, vr2);
                 vilvl_d(vr1, vr2, vr1);
@@ -2221,7 +2221,7 @@ struct xbyak_gemm_t : public jit_generator {
                 vgatherqps(vr1, BO1, xr7, (0 * 8 - OFFSET) * SIZE, vr4);
                 //lea(BO2, ptr[BO1 + LDA * 4]);
                 slli_d(X_TMP_0, LDA, 2);
-                add_d(BO1, BO1, X_TMP_0);
+                add_d(BO2, BO1, X_TMP_0);
 
                 //vmovups(ptr[AO1 + (unroll_m * 0 + 0 * 4 - OFFSET) * SIZE],
                 //        vr1);
@@ -2308,7 +2308,7 @@ struct xbyak_gemm_t : public jit_generator {
                         add_d(BO2, X_TMP_1, LDA);
 
                         //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
-                        vilvl_w(VReg(i + 1), VReg(i + 1), vr0);
+                        vilvl_w(VReg(i + 1), vr0, VReg(i + 1));
                     }
                     //vunpcklpd(vr1, vr1, vr2);
                     vilvl_d(vr1, vr2, vr1);
@@ -2360,7 +2360,7 @@ struct xbyak_gemm_t : public jit_generator {
         }
 
         //add(AO1, unroll_m * SIZE);
-        addi_d(AO1, AO1, unroll_m * SIZE);
+        add_imm(AO1, AO1, unroll_m * SIZE, X_TMP_0);
         //sub(LL, 1);
         addi_d(LL, LL, -1);
         //jg(labels[2], T_NEAR);

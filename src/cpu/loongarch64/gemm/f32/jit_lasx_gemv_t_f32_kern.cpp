@@ -342,10 +342,9 @@ void jit_lasx_gemv_t_f32_kern::generate() {
     //    mov(X_, arg_x_);
     //}
 
-    //mov(Y_, arg_y_);
-    ld_d(Y_, sp, get_size_of_abi_save_regs() + 8); // TODO
+    //mov(Y_, arg_y_); // Y_is abi_param8
     //mov(INCY_, arg_incy_);
-    ld_d(INCY_, sp, get_size_of_abi_save_regs() + 16); // TODO
+    ld_d(INCY_, sp, get_size_of_abi_save_regs() + 8); // INCY_ is 9 param in sp
 
     //sub(A_, -offset_a_ * size_);
     add_imm(A_, A_, offset_a_ * size_, X_TMP_0);

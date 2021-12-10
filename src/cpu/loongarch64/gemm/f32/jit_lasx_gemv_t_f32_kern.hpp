@@ -59,8 +59,9 @@ private:
     Xbyak_loongarch::XReg A_ = abi_param4;
     Xbyak_loongarch::XReg LDA_ = abi_param5;
     Xbyak_loongarch::XReg X_ = abi_param6;
-    Xbyak_loongarch::XReg INCY_ = abi_param7;
-    Xbyak_loongarch::XReg Y_ = abi_param8; 
+    Xbyak_loongarch::XReg INCX_ = abi_param7;
+    Xbyak_loongarch::XReg Y_ = abi_param8;
+    Xbyak_loongarch::XReg INCY_ = t8; // INCY_ is 9 param in sp 
     Xbyak_loongarch::XReg I_ = t2;
     Xbyak_loongarch::XReg J_ = t3;
     //Xbyak::Reg64 AO_, XO_, YO_, YO2_;
