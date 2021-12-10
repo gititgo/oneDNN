@@ -146,7 +146,7 @@ private:
             + vreg_len_preserve * vreg_to_preserve;
 
     const size_t size_of_abi_save_regs = num_abi_save_gpr_regs * xreg_len
-            + vreg_to_preserve * vreg_len_preserve;
+            + (2 + num_abi_save_fpr_regs) * vreg_len_preserve; // fp+ra+f24~f31
 
 public:
     enum {
