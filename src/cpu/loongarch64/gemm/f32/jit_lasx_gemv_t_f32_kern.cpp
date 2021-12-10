@@ -93,13 +93,15 @@ void jit_lasx_gemv_t_f32_kern::innerloop(int unroll_m, int unroll_n) {
     for (int i = 0; i < um_vecs; i++) {
         //auto x_mem = ptr[XO_ + size_ * (8 * i - offset_x_)];
         //v_load(x_regs_[i], x_mem, unroll_m);
-        load_bytes(x_regs_[i], XO_, size_ * (8 * i - offset_x_), (unroll_m > 8 ? 8 : unroll_m) * sizeof(float));
+        load_bytes(x_regs_[i], XO_, size_ * (8 * i - offset_x_), (unroll_m > 8 ? 8 : unroll_m) * size_);
     }
     //add(XO_, size_ * unroll_m);
     add_imm(XO_, XO_, size_ * unroll_m, X_TMP_0);
 
     //Reg64 LDA3 = rax;
     //lea(LDA3, ptr[LDA_ + LDA_ * 2]);
+    slli_d(t2, LDA_, 1);
+    add_d(t3, t2, LDA_);
 
     // Load A
     for (int j = 0; j < unroll_n; j++) {
@@ -110,11 +112,10 @@ void jit_lasx_gemv_t_f32_kern::innerloop(int unroll_m, int unroll_n) {
             //decltype(LDA_ * j) lda_mult = (j == 3) ? LDA3 : LDA_ * j;
 
             //auto a_mem = ptr[AO_ + lda_mult + size_ * (8 * i - offset_a_)];
-            addi_d(X_TMP_0, zero, j);
-            mul_d(X_TMP_0, LDA_, X_TMP_0);
-            add_d(X_TMP_1, AO_, X_TMP_0);
+            if (j > 0)
+                add_d(X_TMP_1, AO_, (j == 1 ? LDA_ : (j == 2 ? t2 : t3)));
             //v_load(a, a_mem, unroll_m);
-            load_bytes(a, X_TMP_1, size_ * (8 * i - offset_a_), (unroll_m > 8 ? 8 : unroll_m) * sizeof(float));
+            load_bytes(a, X_TMP_1, size_ * (8 * i - offset_a_), (unroll_m > 8 ? 8 : unroll_m) * size_);
         }
     }
 
@@ -152,9 +153,9 @@ void jit_lasx_gemv_t_f32_kern::outerloop(
         blt(I_, X_TMP_0, *cur_outerloop_label);
     } else {
         //test(I_, unroll_y);
-        andi(I_, I_, unroll_y);
+        andi(X_TMP_0, I_, unroll_y);
         //jle(*cur_outerloop_label, T_NEAR);
-        bge(zero, I_, *cur_outerloop_label);
+        bge(zero, X_TMP_0, *cur_outerloop_label);
     }
 
     L_aligned(label_n_loop);
@@ -361,10 +362,9 @@ void jit_lasx_gemv_t_f32_kern::generate() {
     ld_d(INCY_, INCY_, 0);
 
     //lea(LDA_, ptr[LDA_ * size_]);
-    mov_imm(X_TMP_0, size_);
-    mul_d(LDA_, LDA_, X_TMP_0);
+    slli_d(LDA_, LDA_, 2);
     //lea(INCY_, ptr[INCY_ * size_]);
-    mul_d(INCY_, INCY_, X_TMP_0);
+    slli_d(INCY_, INCY_, 2);
 
     Label outerloop_labels[4];
     Label *cur_outerloop_label = &outerloop_labels[0];

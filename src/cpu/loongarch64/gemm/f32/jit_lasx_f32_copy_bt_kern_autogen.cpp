@@ -29,16 +29,16 @@ jit_lasx_f32_copy_bt_kern::jit_lasx_f32_copy_bt_kern()
 void jit_lasx_f32_copy_bt_kern::generate() {
 
 #ifndef _WIN32
-#define M a3    //rdi
-#define N a4    //rsi
-#define A a5    //rdx
-#define LDA a6  //rcx
-#define ALPHA a7    //r8
-#define B t4    //r9
+#define M a0    //rdi
+#define N a1    //rsi
+#define A a2    //rdx
+#define LDA a3  //rcx
+#define ALPHA a4//r8
+#define B a5    //r9
 
 #define I t5    //rax
 #define A1 t6   //r10
-#define A2 a7   //r8
+#define A2 a4   //r8
 #define LDA3 t7 //r11
 #define TM s1
 #define TM0 s0
