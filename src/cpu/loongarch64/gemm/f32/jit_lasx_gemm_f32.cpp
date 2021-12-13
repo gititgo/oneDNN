@@ -2793,7 +2793,7 @@ struct xbyak_gemm_t : public jit_generator {
         for (int i = 0; i < 8; i++) {
             //mov(dword[rsp + 88 + i * 4], i);
             addi_d(X_TMP_0, zero, i);
-            st_d(X_TMP_0, sp, 88 + i * 4);
+            st_w(X_TMP_0, sp, 88 + i * 4);
         }
 
         if (isTransA && is_avx2) {
