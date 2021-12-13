@@ -88,20 +88,21 @@ void jit_lasx_gemv_t_f32_kern::innerloop(int unroll_m, int unroll_n) {
         return;
 
     int um_vecs = (unroll_m + 7) >> 3;
+    int load_size = (unroll_m > 8 ? 8 : unroll_m) * size_;
 
     // Load x.
     for (int i = 0; i < um_vecs; i++) {
         //auto x_mem = ptr[XO_ + size_ * (8 * i - offset_x_)];
         //v_load(x_regs_[i], x_mem, unroll_m);
-        load_bytes(x_regs_[i], XO_, size_ * (8 * i - offset_x_), (unroll_m > 8 ? 8 : unroll_m) * size_);
+        load_bytes(x_regs_[i], XO_, size_ * (8 * i - offset_x_), load_size);
     }
     //add(XO_, size_ * unroll_m);
     add_imm(XO_, XO_, size_ * unroll_m, X_TMP_0);
 
     //Reg64 LDA3 = rax;
     //lea(LDA3, ptr[LDA_ + LDA_ * 2]);
-    slli_d(t2, LDA_, 1);
-    add_d(t3, t2, LDA_);
+    slli_d(t0, LDA_, 1);
+    add_d(t1, t0, LDA_);
 
     // Load A
     for (int j = 0; j < unroll_n; j++) {
@@ -112,10 +113,12 @@ void jit_lasx_gemv_t_f32_kern::innerloop(int unroll_m, int unroll_n) {
             //decltype(LDA_ * j) lda_mult = (j == 3) ? LDA3 : LDA_ * j;
 
             //auto a_mem = ptr[AO_ + lda_mult + size_ * (8 * i - offset_a_)];
-            if (j > 0)
-                add_d(X_TMP_1, AO_, (j == 1 ? LDA_ : (j == 2 ? t2 : t3)));
             //v_load(a, a_mem, unroll_m);
-            load_bytes(a, X_TMP_1, size_ * (8 * i - offset_a_), (unroll_m > 8 ? 8 : unroll_m) * size_);
+            if (j > 0) {
+                add_d(X_TMP_1, AO_, (j == 1 ? LDA_ : (j == 2 ? t0 : t1)));
+                load_bytes(a, X_TMP_1, size_ * (8 * i - offset_a_), load_size);
+            } else
+                load_bytes(a, AO_, size_ * (8 * i - offset_a_), load_size);
         }
     }
 
