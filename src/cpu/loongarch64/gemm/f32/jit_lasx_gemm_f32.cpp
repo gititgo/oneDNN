@@ -1595,11 +1595,10 @@ struct xbyak_gemm_t : public jit_generator {
                     break;
                 case 2:
                     //lea(BO1, ptr[BO1 + LDB * 2]);
-                    add_d(BO1, BO1, LDB);
-                    add_d(BO1, BO1, LDB);
+                    slli_d(X_TMP_0, LDB, 1);
+                    add_d(BO1, BO1, X_TMP_0);
                     //lea(BO2, ptr[BO2 + LDB * 2]);
-                    add_d(BO2, BO2, LDB);
-                    add_d(BO2, BO2, LDB);
+                    add_d(BO2, BO2, X_TMP_0);
                     break;
                 case 3:
                     //lea(BO1, ptr[BO1 + LDB3]);
@@ -1616,22 +1615,20 @@ struct xbyak_gemm_t : public jit_generator {
                     break;
                 case 5:
                     //lea(BO1, ptr[BO1 + LDB * 4]);
-                    slli_d(X_TMP_0, LDB, 2);
-                    add_d(BO1, BO1, X_TMP_0);
                     //add(BO1, LDB);
-                    add_d(BO1, BO1, LDB);
                     //lea(BO2, ptr[BO2 + LDB * 4]);
-                    add_d(BO2, BO2, X_TMP_0);
                     //add(BO2, LDB);
-                    add_d(BO2, BO2, LDB);
+                    addi_d(X_TMP_0, zero, 5);
+                    mul_d(X_TMP_0, LDB, X_TMP_0);
+                    add_d(BO1, BO1, X_TMP_0);
+                    add_d(BO2, BO2, X_TMP_0);
                     break;
                 case 6:
                     //lea(BO1, ptr[BO1 + LDB3 * 2]);
-                    add_d(BO1, BO1, LDB3);
-                    add_d(BO1, BO1, LDB3);
+                    slli_d(X_TMP_0, LDB3, 1);
+                    add_d(BO1, BO1, X_TMP_0);
                     //lea(BO2, ptr[BO2 + LDB3 * 2]);
-                    add_d(BO2, BO2, LDB3);
-                    add_d(BO2, BO2, LDB3);
+                    add_d(BO2, BO2, X_TMP_0);
                     break;
             }
             //sub(BO1, rax);
@@ -1758,7 +1755,11 @@ struct xbyak_gemm_t : public jit_generator {
             add_d(BO2, BO1, rax);
             //lea(CO1, ptr[LDA + LDA * 2]);
             add_d(CO1, t0, LDA);
-            //vmovupd(ymm7, STRIDE); // no need because no vgatherqps
+            //vmovupd(ymm7, STRIDE); // make xr7={0,LDA,LDA2,LDA3}
+            xvinsgr2vr_d(xr7, zero, 0);
+            xvinsgr2vr_d(xr7, LDA, 1);
+            xvinsgr2vr_d(xr7, t0, 2);
+            xvinsgr2vr_d(xr7, CO1, 3);
         //}
 
         //mov(LL, K);
