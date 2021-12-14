@@ -40,6 +40,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
 #define A1 t6//r10
 #define A2 a4//r8
 #define LDA3 t7//r11
+#define LDA4 t4//new add
 #define LDA8 t8//new add
 #define TM s1
 #define TM0 s0
@@ -85,10 +86,9 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //shl(LDA, 0x2);
         slli_d(LDA, LDA, 0x2);
         //lea(LDA3, ptr[LDA + LDA * 2]);
-        addi_d(TM, zero, 3);
-        mul_d(LDA3, LDA, TM);
-        addi_d(TM, zero, 8);
-        mul_d(LDA8, LDA, TM);
+        slli_d(LDA4, LDA, 2);
+        sub_d(LDA3, LDA4, LDA);
+        add_d(LDA8, LDA4, LDA4);
         //vbroadcastss(xr6, dword[ALPHA]);
         xvldrepl_w(xr6, ALPHA, 0);
         //vpcmpeqb(vr3, vr3, vr3);
@@ -120,9 +120,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        mov_imm(TM, 4);
-        mul_d(TM, LDA, TM);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x60);
         addi_d(A, A, 0x60);
         //mov(I, M);
@@ -305,9 +303,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B + 0xe0], xr0);
         xvst(xr0, B, 0xe0);
         //lea(A1, ptr[A1 + LDA * 4]);
-        mov_imm(TM, 4);
-        mul_d(TM, TM, LDA);
-        add_d(A1, A1, TM);
+        add_d(A1, A1, LDA4);
         //sub(B, -384);
         addi_d(B, B, 384);
         //align(4);
@@ -386,9 +382,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        mov_imm(TM, 4);
-        mul_d(TM, TM, LDA);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x40);
         addi_d(A, A, 0x40);
         //mov(I, M);
@@ -523,7 +517,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B + 0x60], xr0);
         xvst(xr0, B, 0x60);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -256);
         addi_d(B, B, 256);
         //align(4);
@@ -586,9 +580,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        mov_imm(TM, 4);
-        mul_d(TM, TM, LDA);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x20);
         addi_d(A, A, 0x20);
         //mov(I, M);
@@ -675,7 +667,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B - 0x20], xr0);
         xvst(xr0, B, -0x20);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -128);
         addi_d(B, B, 128);
         //align(4);
@@ -726,8 +718,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        mul_d(TM, TM, LDA);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x10);
         addi_d(A, A, 0x10);
         //mov(I, M);
@@ -814,7 +805,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(xword[B - 0x50], vr0);
         vst(vr0, B, -0x50);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -64);
         addi_d(B, B, 64);
         //align(4);
@@ -865,9 +856,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        mov_imm(TM, 4);
-        mul_d(TM, TM, LDA);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x8);
         addi_d(A, A, 0x8);
         //mov(I, M);
@@ -954,7 +943,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovlps(qword[B - 0x68], vr0);
         st_d(TM0, B, -0x68);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -32);
         addi_d(B, B, 32);
         //align(4);
@@ -1005,9 +994,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        mov_imm(TM, 4);
-        mul_d(TM, TM, LDA);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x4);
         addi_d(A, A, 0x4);
         //mov(I, M);
@@ -1094,7 +1081,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovss(dword[B - 0x74], vr0);
         st_w(TM0, B, -0x74);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -16);
         addi_d(B, B, 16);
         //align(4);
@@ -1162,8 +1149,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x60);
         addi_d(A, A, 0x60);
         //mov(I, M);
@@ -1417,7 +1403,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B + 0xe0], xr0);
         xvst(xr0, B, 0xe0);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -384);
         addi_d(B, B, 384);
         //align(4);
@@ -1514,8 +1500,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x40);
         addi_d(A, A, 0x40);
         //mov(I, M);
@@ -1698,7 +1683,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B + 0x60], xr0);
         xvst(xr0, B, 0x60);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -256);
         addi_d(B, B, 256);
         //align(4);
@@ -1773,8 +1758,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x20);
         addi_d(A, A, 0x20);
         //mov(I, M);
@@ -1885,7 +1869,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B - 0x20], xr0);
         xvst(xr0, B, -0x20);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -128);
         addi_d(B, B, 128);
         //align(4);
@@ -1942,8 +1926,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        mul_d(TM, TM, LDA);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x10);
         addi_d(A, A, 0x10);
         //mov(I, M);
@@ -2054,7 +2037,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(xword[B - 0x50], vr0);
         vst(vr0, B, -0x50);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -64);
         addi_d(B, B, 64);
         //align(4);
@@ -2111,8 +2094,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x8);
         addi_d(A, A, 0x8);
         //mov(I, M);
@@ -2223,7 +2205,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovlps(qword[B - 0x68], vr0);
         vstelm_d(vr0, B, -0x68, 0);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -32);
         addi_d(B, B, 32);
         //align(4);
@@ -2280,8 +2262,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x4);
         addi_d(A, A, 0x4);
         //mov(I, M);
@@ -2392,7 +2373,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovss(dword[B - 0x74], vr0);
         vstelm_w(vr0, B, -0x74, 0);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -16);
         addi_d(B, B, 16);
         //align(4);
@@ -2457,8 +2438,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x60);
         addi_d(A, A, 0x60);
         //mov(I, M);
@@ -2713,7 +2693,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B + 0xe0], xr0);
         xvst(xr0, B, 0xe0);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -384);
         addi_d(B, B, 384);
         //align(4);
@@ -2810,8 +2790,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x40);
         addi_d(A, A, 0x40);
         //mov(I, M);
@@ -2994,7 +2973,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B + 0x60], xr0);
         xvst(xr0, B, 0x60);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -256);
         addi_d(B, B, 256);
         //align(4);
@@ -3069,8 +3048,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x20);
         addi_d(A, A, 0x20);
         //mov(I, M);
@@ -3181,7 +3159,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(yword[B - 0x20], xr0);
         xvst(xr0, B, -0x20);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -128);
         addi_d(B, B, 128);
         //align(4);
@@ -3238,8 +3216,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x10);
         addi_d(A, A, 0x10);
         //mov(I, M);
@@ -3350,7 +3327,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovups(xword[B - 0x50], vr0);
         vst(vr0, B, -0x50);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -64);
         addi_d(B, B, 64);
         //align(4);
@@ -3407,8 +3384,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x8);
         addi_d(A, A, 0x8);
         //mov(I, M);
@@ -3519,7 +3495,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovlps(qword[B - 0x68], vr0);
         vstelm_d(vr0, B, -0x68, 0);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(A1, TM, LDA);
+        add_d(A1, A1, LDA4);
         //sub(B, -32);
         addi_d(B, B, 32);
         //align(4);
@@ -3576,8 +3552,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //mov(A1, A);
         add_d(A1, A, zero);
         //lea(A2, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A2, A1, TM);
+        add_d(A2, A1, LDA4);
         //add(A, 0x4);
         addi_d(A, A, 0x4);
         //mov(I, M);
@@ -3688,8 +3663,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vmovss(dword[B - 0x74], vr0);
         vstelm_w(vr0, B, -0x74, 0);
         //lea(A1, ptr[A1 + LDA * 4]);
-        add_d(TM, LDA, LDA3);
-        add_d(A1, A1, TM);
+        add_d(A1, A1, LDA4);
         //sub(B, -16);
         addi_d(B, B, 16);
         //align(4);
@@ -3754,6 +3728,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
 #undef A1
 #undef A2
 #undef LDA3
+#undef LDA4
 #undef LDA8
 #undef TM
 #undef TM0
