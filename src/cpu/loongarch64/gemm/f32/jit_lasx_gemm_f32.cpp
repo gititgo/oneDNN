@@ -1903,10 +1903,10 @@ struct xbyak_gemm_t : public jit_generator {
                     //    src_addr = src_addr + CO1;
                     //src_addr = src_addr - OFFSET * SIZE;
                     XReg src_addr = section == 0 ? BO1 : BO2;
-                    add_d(src_addr, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
+                    add_d(X_TMP_1, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
 
                     //vmovups(Xmm(ld_step % 2), ptr[src_addr]);
-                    vld(VReg(ld_step % 2), src_addr, 0);
+                    vld(VReg(ld_step % 2), X_TMP_1, 0);
                     //RegExp dst_addr
                     //        = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
                     //for (int off = 0; off < 4; ++off)
@@ -2123,10 +2123,10 @@ struct xbyak_gemm_t : public jit_generator {
                 for (int i = 0; i < 2; i++) {
                     reg = (i % 2 == 0) ? BO1 : BO2;
                     //vmovss(Xmm(i + 1), ptr[reg + (0 * 8 - OFFSET) * SIZE]);
-                    vld(VReg(i + 1), reg, (0 * 8 - OFFSET) * SIZE);
+                    vldrepl_w(VReg(i + 1), reg, (0 * 8 - OFFSET) * SIZE);
                     //vmovss(xmm0, ptr[reg + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                     add_d(X_TMP_1, reg, LDA);
-                    vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                    vldrepl_w(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                     //lea(BO2, ptr[reg + LDA * 2]);
                     add_d(BO2, reg, t0);
                     //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
@@ -2140,10 +2140,10 @@ struct xbyak_gemm_t : public jit_generator {
 
                 for (int i = 0; i < 2; i++) {
                     //vmovss(Xmm(i + 1), ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                    vld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
+                    vldrepl_w(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
                     //vmovss(xmm0, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                     add_d(X_TMP_1, BO2, LDA);
-                    vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                    vldrepl_w(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                     //lea(BO2, ptr[BO2 + LDA * 2]);
                     add_d(BO2, BO2, t0);
                     //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
@@ -2182,10 +2182,10 @@ struct xbyak_gemm_t : public jit_generator {
                     //    src_addr = src_addr + CO1;
                     //src_addr = src_addr - OFFSET * SIZE;
                     XReg src_addr = section == 0 ? BO1 : BO2;
-                    add_d(src_addr, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
+                    add_d(X_TMP_1, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
 
                     //vmovss(xmm1, ptr[src_addr]);
-                    vld(vr1, src_addr, 0);
+                    vldrepl_w(vr1, X_TMP_1, 0);
                     //RegExp dst_addr
                     //        = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
                     //movss(ptr[dst_addr], xmm1);
@@ -2235,11 +2235,11 @@ struct xbyak_gemm_t : public jit_generator {
                 if (isLoad2Unmasked) {
                     for (int i = 0; i < 2; i++) {
                         //vmovss(Xmm(i + 1), ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                        vld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
+                        vldrepl_w(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
                         //vmovss(xmm0,
                         //        ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                         add_d(X_TMP_1, BO2, LDA);
-                        vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                        vldrepl_w(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                         //lea(BO2, ptr[BO2 + LDA * 2]);
                         add_d(BO2, BO2, t0);
                         //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
@@ -2263,11 +2263,11 @@ struct xbyak_gemm_t : public jit_generator {
                 if (isLoad2Unmasked) {
                     for (int i = 0; i < 2; i++) {
                         //vmovss(Xmm(i + 1), ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                        vld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
+                        vldrepl_w(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
                         //vmovss(xmm0,
                         //        ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                         add_d(X_TMP_1, BO2, LDA);
-                        vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                        vldrepl_w(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                         //lea(BO2, ptr[BO2 + LDA * 2]);
                         add_d(BO2, BO2, t0);
                         //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
@@ -2674,9 +2674,9 @@ struct xbyak_gemm_t : public jit_generator {
         //lea(rax, ptr[K * SIZE]);
         slli_d(rax, K, 2);
         //sal(rax, 4);
-        slli_d(rax, X_TMP_0, 2);
+        slli_d(rax, rax, 4);
         //add(rax, 256);
-        addi_d(rax, X_TMP_0, 256);
+        addi_d(rax, rax, 256);
         //sub(rsp, rax);
         sub_d(sp, sp, rax);
         //and_(rsp, -PAGE_4K);
