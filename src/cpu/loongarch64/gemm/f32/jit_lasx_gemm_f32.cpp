@@ -1741,7 +1741,6 @@ struct xbyak_gemm_t : public jit_generator {
     void do_pack(int unroll_m, bool isLoad1Unmasked, bool isLoad2Unmasked) {
         std::vector<Label> labels(6);
 
-        int regIdx;
         XReg reg(0);
 
         //mov(BO1, A);
@@ -1749,15 +1748,18 @@ struct xbyak_gemm_t : public jit_generator {
         //lea(AO1, ptr[rsp + 256 + OFFSET * SIZE]);
         addi_d(AO1, sp, 256 + OFFSET * SIZE);
 
-        if (isTransA) {
+        // do_pack exec only when isTransA is true
+        //if (isTransA) {
             //lea(BO2, ptr[BO1 + LDA * 4]);
-            slli_d(X_TMP_0, LDA, 2);
-            add_d(BO2, BO1, X_TMP_0);
+            // make t0 to LDA * 2
+            slli_d(t0, LDA, 1);
+            // make rax to LDA * 4
+            slli_d(rax, LDA, 2);
+            add_d(BO2, BO1, rax);
             //lea(CO1, ptr[LDA + LDA * 2]);
-            sub_d(CO1, X_TMP_0, LDA);
-            //vmovupd(xr7, STRIDE);
-            xvld(xr7, STRIDE.getXReg(), STRIDE.getOffset());
-        }
+            add_d(CO1, t0, LDA);
+            //vmovupd(ymm7, STRIDE); // no need because no vgatherqps
+        //}
 
         //mov(LL, K);
         add_d(LL, K, zero);
@@ -1768,363 +1770,318 @@ struct xbyak_gemm_t : public jit_generator {
         //align(16);
 
         L(labels[0]);
+        /* do_pack exec only when isTransA is true
         if (!isTransA) {
             for (int i = 0; i < 4; i++) {
                 regIdx = (i % 2 == 0) ? 4 : 6;
                 if (isLoad1Unmasked) {
-                    //vmovups(XVReg(regIdx), ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
-                    uni_xvld(XVReg(regIdx), BO1, (0 * 8 - OFFSET) * SIZE);
+                    vmovups(Ymm(regIdx), ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
                 } else {
-                    //vmaskmovps(XVReg(regIdx), VMASK,
-                    //        ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
-                    uni_xvld(XVReg(regIdx), BO1, (0 * 8 - OFFSET) * SIZE);
-                    xvand_v(XVReg(regIdx), XVReg(regIdx), VMASK);
+                    vmaskmovps(Ymm(regIdx), VMASK,
+                            ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
                 }
                 if (unroll_m > 8) {
                     if (isLoad2Unmasked) {
-                        //vmovups(XVReg(regIdx + 1),
-                        //        ptr[BO1 + (1 * 8 - OFFSET) * SIZE]);
-                        uni_xvld(XVReg(regIdx + 1),
-                                    BO1, (1 * 8 - OFFSET) * SIZE);
+                        vmovups(Ymm(regIdx + 1),
+                                ptr[BO1 + (1 * 8 - OFFSET) * SIZE]);
                     } else {
-                        //vmaskmovps(XVReg(regIdx + 1), VMASK,
-                        //        ptr[BO1 + (1 * 8 - OFFSET) * SIZE]);
-                        uni_xvld(XVReg(regIdx + 1), BO1, (1 * 8 - OFFSET) * SIZE);
-                        xvand_v(XVReg(regIdx + 1), XVReg(regIdx + 1), VMASK);
+                        vmaskmovps(Ymm(regIdx + 1), VMASK,
+                                ptr[BO1 + (1 * 8 - OFFSET) * SIZE]);
                     }
                 }
-                //add(BO1, LDA);
-                add_d(BO1, BO1, LDA);
+                add(BO1, LDA);
 
-                //vmovups(ptr[AO1 + (unroll_m * i + 0 * 8 - OFFSET) * SIZE],
-                //        XVReg(regIdx));
-                uni_xvst(XVReg(regIdx), AO1, (unroll_m * i + 0 * 8 - OFFSET) * SIZE);
-
+                vmovups(ptr[AO1 + (unroll_m * i + 0 * 8 - OFFSET) * SIZE],
+                        Ymm(regIdx));
                 if (unroll_m > 8) {
-                    //vmovups(ptr[AO1 + (unroll_m * i + 1 * 8 - OFFSET) * SIZE],
-                    //        XVReg(regIdx + 1));
-                    uni_xvst(XVReg(regIdx + 1),
-                                AO1, (unroll_m * i + 1 * 8 - OFFSET) * SIZE);
+                    vmovups(ptr[AO1 + (unroll_m * i + 1 * 8 - OFFSET) * SIZE],
+                            Ymm(regIdx + 1));
                 }
             }
 
-        } else {
+        } else { */
             if (isLoad1Unmasked) {
                 for (int i = 0; i < 2; i++) {
                     reg = (i % 2 == 0) ? BO1 : BO2;
                     //vmovups(vr0, ptr[reg + (0 * 8 - OFFSET) * SIZE]);
                     vld(vr0, reg, (0 * 8 - OFFSET) * SIZE);
-
                     //vmovups(vr1, ptr[reg + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                     add_d(X_TMP_1, reg, LDA);
                     vld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
-
                     //lea(BO2, ptr[reg + LDA * 2]);
-                    add_d(X_TMP_0, LDA, LDA);
-                    add_d(BO2, reg, X_TMP_0);
-
-                    //vunpcklps(vr4, vr0, vr1);
+                    add_d(BO2, reg, t0);
+                    //vunpcklps(xmm4, xmm0, xmm1);
                     vilvl_w(vr4, vr1, vr0);
-
-                    //vunpckhps(vr5, vr0, vr1);
+                    //vunpckhps(xmm5, xmm0, xmm1);
                     vilvh_w(vr5, vr1, vr0);
-
-                    //vmovups(vr0, ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
+                    //vmovups(xmm0, ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
                     vld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
-
-                    //vmovups(vr1, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
+                    //vmovups(xmm1, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                     add_d(X_TMP_1, BO2, LDA);
                     vld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
-
                     //lea(BO2, ptr[BO2 + LDA * 2]);
-                    add_d(X_TMP_0, LDA, LDA);
-                    add_d(BO2, BO2, X_TMP_0);
-
-                    //vunpcklps(vr6, vr0, vr1);
+                    add_d(BO2, BO2, t0);
+                    //vunpcklps(xmm6, xmm0, xmm1);
                     vilvl_w(vr6, vr1, vr0);
-
-                    //vunpckhps(vr2, vr0, vr1);
+                    //vunpckhps(xmm2, xmm0, xmm1);
                     vilvh_w(vr2, vr1, vr0);
 
-                    //vunpcklpd(vr0, vr4, vr6);
+                    //vunpcklpd(xmm0, xmm4, xmm6);
                     vilvl_d(vr0, vr6, vr4);
-
-                    //vunpckhpd(vr1, vr4, vr6);
+                    //vunpckhpd(xmm1, xmm4, xmm6);
                     vilvh_d(vr1, vr6, vr4);
-
                     //vmovups(ptr[AO1 + (unroll_m * 0 + i * 4 - OFFSET) * SIZE],
-                    //        vr0);
+                    //        xmm0);
                     vst(vr0, AO1, (unroll_m * 0 + i * 4 - OFFSET) * SIZE);
-
                     //vmovups(ptr[AO1 + (unroll_m * 1 + i * 4 - OFFSET) * SIZE],
-                    //        vr1);
+                    //        xmm1);
                     vst(vr1, AO1, (unroll_m * 1 + i * 4 - OFFSET) * SIZE);
-
-                    //vunpcklpd(vr0, vr5, vr2);
+                    //vunpcklpd(xmm0, xmm5, xmm2);
                     vilvl_d(vr0, vr2, vr5);
-
-                    //vunpckhpd(vr1, vr5, vr2);
+                    //vunpckhpd(xmm1, xmm5, xmm2);
                     vilvh_d(vr1, vr2, vr5);
-
                     //vmovups(ptr[AO1 + (unroll_m * 2 + i * 4 - OFFSET) * SIZE],
-                    //        vr0);
+                    //        xmm0);
                     vst(vr0, AO1, (unroll_m * 2 + i * 4 - OFFSET) * SIZE);
-
                     //vmovups(ptr[AO1 + (unroll_m * 3 + i * 4 - OFFSET) * SIZE],
-                    //        vr1);
+                    //        xmm1);
                     vst(vr1, AO1, (unroll_m * 3 + i * 4 - OFFSET) * SIZE);
                 }
-            } else if (is_avx2) {
+            } /* else if (is_avx2) {
                 for (int i = 0; i < 2; i++) {
-                    //vmovaps(vr4, vr3);
-                    vbsll_v(vr4, vr3, 0);
+                    vmovaps(xmm4, xmm3);
+                    vgatherqps(xmm0,
+                            ptr[BO1 + ymm7 + ((2 * i) - OFFSET) * SIZE], xmm4);
+                    vmovaps(xmm4, xmm3);
+                    vgatherqps(xmm1,
+                            ptr[BO1 + ymm7 + ((2 * i + 1) - OFFSET) * SIZE],
+                            xmm4);
 
-                    //vgatherqps(vr0,
-                    //        ptr[BO1 + xr7 + ((2 * i) - OFFSET) * SIZE], vr4);
-                    vgatherqps(vr0, BO1, xr7, ((2 * i) - OFFSET) * SIZE, vr4);
-
-                    //vmovaps(vr4, vr3);
-                    vbsll_v(vr4, vr3, 0);
-
-                    //vgatherqps(vr1,
-                    //        ptr[BO1 + xr7 + ((2 * i + 1) - OFFSET) * SIZE],
-                    //        vr4);
-                    vgatherqps(vr1, BO1, xr7, ((2 * i + 1) - OFFSET) * SIZE, vr4);
-
-                    //vmovups(ptr[AO1 + (unroll_m * (2 * i) + 0 * 4 - OFFSET) * SIZE],
-                    //        vr0);
-                    uni_xvst(vr0, AO1, (unroll_m * (2 * i) + 0 * 4 - OFFSET) * SIZE);
-
-                    //vmovups(ptr[AO1 + (unroll_m * (2 * i + 1) + 0 * 4 - OFFSET) * SIZE],
-                    //        vr1);
-                    uni_xvst(vr1, AO1, (unroll_m * (2 * i + 1) + 0 * 4 - OFFSET) * SIZE);
+                    vmovups(ptr[AO1
+                                    + (unroll_m * (2 * i) + 0 * 4 - OFFSET)
+                                            * SIZE],
+                            xmm0);
+                    vmovups(ptr[AO1
+                                    + (unroll_m * (2 * i + 1) + 0 * 4 - OFFSET)
+                                            * SIZE],
+                            xmm1);
                 }
 
-                //lea(BO2, ptr[BO1 + LDA * 4]);
-                slli_d(X_TMP_0, LDA, 2);
-                add_d(BO2, BO1, X_TMP_0);
+                lea(BO2, ptr[BO1 + LDA * 4]);
 
                 for (int i = 0; i < 2; i++) {
-                    //vextractf128(vr4, xr3, 1);
-                    xvpermi_q(xr4, xr3, 0x31);
+                    vextractf128(xmm4, ymm3, 1);
+                    vgatherqps(xmm0,
+                            ptr[BO2 + ymm7 + ((2 * i) - OFFSET) * SIZE], xmm4);
+                    vextractf128(xmm4, ymm3, 1);
+                    vgatherqps(xmm1,
+                            ptr[BO2 + ymm7 + ((2 * i + 1) - OFFSET) * SIZE],
+                            xmm4);
 
-                    //vgatherqps(vr0,
-                    //        ptr[BO2 + xr7 + ((2 * i) - OFFSET) * SIZE], vr4);
-                    vgatherqps(vr0, BO2, xr7, ((2 * i) - OFFSET) * SIZE, vr4);
-                    
-                    //vextractf128(vr4, xr3, 1);
-                    xvpermi_q(xr4, xr3, 0x31);
-                    
-                    //vgatherqps(vr1,
-                    //        ptr[BO2 + xr7 + ((2 * i + 1) - OFFSET) * SIZE],
-                    //        vr4);
-                    vgatherqps(vr1, BO2, xr7, ((2 * i + 1) - OFFSET) * SIZE, vr4);
-
-                    //vmovups(ptr[AO1 + (unroll_m * (2 * i) + 1 * 4 - OFFSET) * SIZE], vr0);
-                    uni_xvst(vr0, AO1, (unroll_m * (2 * i) + 1 * 4 - OFFSET) * SIZE);
-
-                    //vmovups(ptr[AO1 + (unroll_m * (2 * i + 1) + 1 * 4 - OFFSET) * SIZE], vr1);
-                    uni_xvst(vr1, AO1, (unroll_m * (2 * i + 1) + 1 * 4 - OFFSET) * SIZE);
+                    vmovups(ptr[AO1
+                                    + (unroll_m * (2 * i) + 1 * 4 - OFFSET)
+                                            * SIZE],
+                            xmm0);
+                    vmovups(ptr[AO1
+                                    + (unroll_m * (2 * i + 1) + 1 * 4 - OFFSET)
+                                            * SIZE],
+                            xmm1);
                 }
 
-                //lea(BO2, ptr[BO2 + LDA * 4]);
-                slli_d(X_TMP_0, LDA, 2);
-                add_d(BO2, BO2, X_TMP_0);
-
-            } /* else {
-                //vxorps(vr4, vr4, vr4);
+                lea(BO2, ptr[BO2 + LDA * 4]);
+            }*/ else {
+                //vxorps(xmm4, xmm4, xmm4);
+                vxor_v(vr4, vr4, vr4);
                 //lea(BO2, ptr[BO1 + LDA * 4]);
+                add_d(BO2, BO1, rax);
 
                 auto el_cp = [&](int section, int ld_step) {
-                    RegExp src_addr = section == 0 ? BO1 : BO2;
-                    if (ld_step == 1 || ld_step == 2)
-                        src_addr = src_addr + LDA * ld_step;
-                    else if (ld_step == 3)
-                        src_addr = src_addr + CO1;
-                    src_addr = src_addr - OFFSET * SIZE;
+                    //RegExp src_addr = section == 0 ? BO1 : BO2;
+                    //if (ld_step == 1 || ld_step == 2)
+                    //    src_addr = src_addr + LDA * ld_step;
+                    //else if (ld_step == 3)
+                    //    src_addr = src_addr + CO1;
+                    //src_addr = src_addr - OFFSET * SIZE;
+                    XReg src_addr = section == 0 ? BO1 : BO2;
+                    add_d(src_addr, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
 
                     //vmovups(Xmm(ld_step % 2), ptr[src_addr]);
-                    vld(VReg(ld_step % 2), zero, src_addr);
-
-                    RegExp dst_addr
-                            = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
-                    for (int off = 0; off < 4; ++off)
-                        pextrd(ptr[dst_addr + unroll_m * off * SIZE],
-                                Xmm(ld_step % 2), off);
+                    vld(VReg(ld_step % 2), src_addr, 0);
+                    //RegExp dst_addr
+                    //        = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
+                    //for (int off = 0; off < 4; ++off)
+                    //    pextrd(ptr[dst_addr + unroll_m * off * SIZE],
+                    //            Xmm(ld_step % 2), off);
+                    vstelm_w(VReg(ld_step % 2), AO1, (ld_step + section * 4 - OFFSET) * SIZE, 0);
+                    vstelm_w(VReg(ld_step % 2), AO1, unroll_m * SIZE + (ld_step + section * 4 - OFFSET) * SIZE, 1);
+                    vstelm_w(VReg(ld_step % 2), AO1, unroll_m * 2 * SIZE + (ld_step + section * 4 - OFFSET) * SIZE, 2);
+                    vstelm_w(VReg(ld_step % 2), AO1, unroll_m * 3 * SIZE + (ld_step + section * 4 - OFFSET) * SIZE, 3);
                 };
 
                 el_cp(0, 0);
                 //cmp(M, 4 * 0 + 0 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 0 + 1);
+                ld_d(X_TMP_0, M.getXReg(), M.getOffset());
+                mov_imm(X_TMP_1, 1);
                 //je(labels[4], T_NEAR);
-                beq(M, X_TMP_0, labels[4]);
+                beq(X_TMP_0, X_TMP_1, labels[4]);
                 el_cp(0, 1);
                 //cmp(M, 4 * 0 + 1 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 1 + 1);
+                mov_imm(X_TMP_1, 2);
                 //je(labels[4], T_NEAR);
-                beq(M, X_TMP_0, labels[4]);
+                beq(X_TMP_0, X_TMP_1, labels[4]);
                 el_cp(0, 2);
                 //cmp(M, 4 * 0 + 2 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 2 + 1);
+                mov_imm(X_TMP_1, 3);
                 //je(labels[4], T_NEAR);
-                beq(M, X_TMP_0, labels[4]);
+                beq(X_TMP_0, X_TMP_1, labels[4]);
                 el_cp(0, 3);
                 //cmp(M, 4 * 0 + 3 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 3 + 1);
+                mov_imm(X_TMP_1, 4);
                 //je(labels[4], T_NEAR);
-                beq(M, X_TMP_0, labels[4]);
+                beq(X_TMP_0, X_TMP_1, labels[4]);
                 el_cp(1, 0);
                 //cmp(M, 4 * 1 + 0 + 1);
-                mov_imm(X_TMP_0, 4 * 1 + 0 + 1);
+                mov_imm(X_TMP_1, 5);
                 //je(labels[4], T_NEAR);
-                beq(M, X_TMP_0, labels[4]);
+                beq(X_TMP_0, X_TMP_1, labels[4]);
                 el_cp(1, 1);
                 //cmp(M, 4 * 1 + 1 + 1);
-                mov_imm(X_TMP_0, 4 * 1 + 1 + 1);
+                mov_imm(X_TMP_1, 6);
                 //je(labels[4], T_NEAR);
-                beq(M, X_TMP_0, labels[4]);
+                beq(X_TMP_0, X_TMP_1, labels[4]);
                 el_cp(1, 2);
                 L(labels[4]);
 
                 //lea(BO2, ptr[BO2 + LDA * 4]);
-            }*/
+                add_d(BO2, BO2, rax);
+            }
 
             if (unroll_m >= 16) {
                 assert(is_avx2);
-
                 if (isLoad2Unmasked) {
                     for (int i = 0; i < 2; i++) {
-                        //vmovups(vr0, ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                        uni_xvld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
-
-                        //vmovups(vr1, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
+                        //vmovups(xmm0, ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
+                        vld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
+                        //vmovups(xmm1,
+                        //        ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                         add_d(X_TMP_1, BO2, LDA);
-                        uni_xvld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
-
+                        vld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                         //lea(BO2, ptr[BO2 + LDA * 2]);
-                        add_d(X_TMP_0, LDA, LDA);
-                        add_d(BO2, BO2, X_TMP_0);
-
-                        //vunpcklps(vr4, vr0, vr1);
+                        add_d(BO2, BO2, t0);
+                        //vunpcklps(xmm4, xmm0, xmm1);
                         vilvl_w(vr4, vr1, vr0);
-
-                        //vunpckhps(vr5, vr0, vr1);
+                        //vunpckhps(xmm5, xmm0, xmm1);
                         vilvh_w(vr5, vr1, vr0);
-                        
-                        //vmovups(vr0, ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                        uni_xvld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
-                        
-                        //vmovups(vr1, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
+                        //vmovups(xmm0, ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
+                        vld(vr0, BO2, (0 * 8 - OFFSET) * SIZE);
+                        //vmovups(xmm1,
+                        //        ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                         add_d(X_TMP_1, BO2, LDA);
-                        uni_xvld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
-
-                        if (i == 0){
-                            //lea(BO2, ptr[BO2 + LDA * 2]);
-                            add_d(X_TMP_0, LDA, LDA);
-                            add_d(BO2, BO2, X_TMP_0);
-                        }
-                        //vunpcklps(vr6, vr0, vr1);
+                        vld(vr1, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                        //if (i == 0) lea(BO2, ptr[BO2 + LDA * 2]);
+                        if (i == 0) add_d(BO2, BO2, t0);
+                        //vunpcklps(xmm6, xmm0, xmm1);
                         vilvl_w(vr6, vr1, vr0);
-
-                        //vunpckhps(vr2, vr0, vr1);
+                        //vunpckhps(xmm2, xmm0, xmm1);
                         vilvh_w(vr2, vr1, vr0);
 
-                        //vunpcklpd(vr0, vr4, vr6);
+                        //vunpcklpd(xmm0, xmm4, xmm6);
                         vilvl_d(vr0, vr6, vr4);
-
-                        //vunpckhpd(vr1, vr4, vr6);
+                        //vunpckhpd(xmm1, xmm4, xmm6);
                         vilvh_d(vr1, vr6, vr4);
-
-                        //vmovups(ptr[AO1 + (unroll_m * 0 + (i + 2) * 4 - OFFSET) * SIZE],
-                        //        vr0);
-                        uni_xvst(vr0, AO1, (unroll_m * 0 + (i + 2) * 4 - OFFSET) * SIZE);
-                        
-                        //vmovups(ptr[AO1 + (unroll_m * 1 + (i + 2) * 4 - OFFSET) * SIZE],
-                        //        vr1);
-                        uni_xvst(vr1, AO1, (unroll_m * 1 + (i + 2) * 4 - OFFSET) * SIZE);
-                        
-                        //vunpcklpd(vr0, vr5, vr2);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * 0 + (i + 2) * 4 - OFFSET)
+                        //                        * SIZE],
+                        //        xmm0);
+                        vst(vr0, AO1, (unroll_m * 0 + (i + 2) * 4 - OFFSET) * SIZE);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * 1 + (i + 2) * 4 - OFFSET)
+                        //                        * SIZE],
+                        //        xmm1);
+                        vst(vr1, AO1, (unroll_m * 1 + (i + 2) * 4 - OFFSET) * SIZE);
+                        //vunpcklpd(xmm0, xmm5, xmm2);
                         vilvl_d(vr0, vr2, vr5);
-
-                        //vunpckhpd(vr1, vr5, vr2);
+                        //vunpckhpd(xmm1, xmm5, xmm2);
                         vilvh_d(vr1, vr2, vr5);
-                        
-                        //vmovups(ptr[AO1 + (unroll_m * 2 + (i + 2) * 4 - OFFSET) * SIZE],
-                        //        vr0);
-                        uni_xvst(vr0, AO1, (unroll_m * 2 + (i + 2) * 4 - OFFSET) * SIZE);
-                        
-                        //vmovups(ptr[AO1 + (unroll_m * 3 + (i + 2) * 4 - OFFSET) * SIZE],
-                        //        vr1);
-                        uni_xvst(vr1, AO1, (unroll_m * 3 + (i + 2) * 4 - OFFSET) * SIZE);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * 2 + (i + 2) * 4 - OFFSET)
+                        //                        * SIZE],
+                        //        xmm0);
+                        vst(vr0, AO1, (unroll_m * 2 + (i + 2) * 4 - OFFSET) * SIZE);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * 3 + (i + 2) * 4 - OFFSET)
+                        //                        * SIZE],
+                        //        xmm1);
+                        vst(vr1, AO1, (unroll_m * 3 + (i + 2) * 4 - OFFSET) * SIZE);
                     }
                 } else {
                     for (int i = 0; i < 2; i++) {
-                        //vmovaps(vr4, vr3);
+                        //vmovaps(xmm4, xmm3);
                         vbsll_v(vr4, vr3, 0);
-
-                        //vgatherqps(vr0,
-                        //        ptr[BO2 + xr7 + ((2 * i) - OFFSET) * SIZE],
-                        //        vr4);
+                        //vgatherqps(xmm0,
+                        //        ptr[BO2 + ymm7 + ((2 * i) - OFFSET) * SIZE],
+                        //        xmm4);
                         vgatherqps(vr0, BO2, xr7, ((2 * i) - OFFSET) * SIZE, vr4);
-
-                        //vmovaps(vr4, vr3);
+                        //vmovaps(xmm4, xmm3);
                         vbsll_v(vr4, vr3, 0);
-
-                        //vgatherqps(vr1,
-                        //        ptr[BO2 + xr7 + ((2 * i + 1) - OFFSET) * SIZE],
-                        //        vr4);
+                        //vgatherqps(xmm1,
+                        //        ptr[BO2 + ymm7 + ((2 * i + 1) - OFFSET) * SIZE],
+                        //        xmm4);
                         vgatherqps(vr1, BO2, xr7, ((2 * i + 1) - OFFSET) * SIZE, vr4);
 
-                        //vmovups(ptr[AO1 + (unroll_m * (2 * i) + 2 * 4 - OFFSET) * SIZE],
-                        //        vr0);
-                        uni_xvst(vr0, AO1, (unroll_m * (2 * i) + 2 * 4 - OFFSET) * SIZE);
-
-                        //vmovups(ptr[AO1 + (unroll_m * (2 * i + 1) + 2 * 4 - OFFSET) * SIZE],
-                        //        vr1);
-                        uni_xvst(vr1, AO1, (unroll_m * (2 * i + 1) + 2 * 4 - OFFSET) * SIZE);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * (2 * i) + 2 * 4 - OFFSET)
+                        //                        * SIZE],
+                        //        xmm0);
+                        vst(vr0, AO1, (unroll_m * (2 * i) + 2 * 4 - OFFSET) * SIZE);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * (2 * i + 1) + 2 * 4
+                        //                          - OFFSET)
+                        //                        * SIZE],
+                        //        xmm1);
+                        vst(vr1, AO1, (unroll_m * (2 * i + 1) + 2 * 4 - OFFSET) * SIZE);
                     }
 
                     //lea(BO2, ptr[BO2 + LDA * 4]);
-                    slli_d(X_TMP_0, LDA, 2);
-                    add_d(BO2, BO2, X_TMP_0);
+                    add_d(BO2, BO2, rax);
 
                     for (int i = 0; i < 2; i++) {
-                        //vextractf128(vr4, xr3, 1);
+                        //vextractf128(xmm4, ymm3, 1);
                         xvpermi_q(xr4, xr3, 0x31);
-
-                        //vgatherqps(vr0,
-                        //        ptr[BO2 + xr7 + ((2 * i) - OFFSET) * SIZE],
-                        //        vr4);
+                        //vgatherqps(xmm0,
+                        //        ptr[BO2 + ymm7 + ((2 * i) - OFFSET) * SIZE],
+                        //        xmm4);
                         vgatherqps(vr0, BO2, xr7, ((2 * i) - OFFSET) * SIZE, vr4);
-                        
-                        //vextractf128(vr4, xr3, 1);
+                        //vextractf128(xmm4, ymm3, 1);
                         xvpermi_q(xr4, xr3, 0x31);
-
-                        //vgatherqps(vr1,
-                        //        ptr[BO2 + xr7 + ((2 * i + 1) - OFFSET) * SIZE],
-                        //        vr4);
+                        //vgatherqps(xmm1,
+                        //        ptr[BO2 + ymm7 + ((2 * i + 1) - OFFSET) * SIZE],
+                        //        xmm4);
                         vgatherqps(vr1, BO2, xr7, ((2 * i + 1) - OFFSET) * SIZE, vr4);
 
-                        //vmovups(ptr[AO1 + (unroll_m * (2 * i) + 3 * 4 - OFFSET) * SIZE],
-                        //        vr0);
-                        uni_xvst(vr0, AO1, (unroll_m * (2 * i) + 3 * 4 - OFFSET) * SIZE);
-
-                        //vmovups(ptr[AO1 + (unroll_m * (2 * i + 1) + 3 * 4 - OFFSET) * SIZE],
-                        //        vr1);
-                        uni_xvst(vr1, AO1, (unroll_m * (2 * i + 1) + 3 * 4 - OFFSET) * SIZE);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * (2 * i) + 3 * 4 - OFFSET)
+                        //                        * SIZE],
+                        //        xmm0);
+                        vst(vr0, AO1, (unroll_m * (2 * i) + 3 * 4 - OFFSET) * SIZE);
+                        //vmovups(ptr[AO1
+                        //                + (unroll_m * (2 * i + 1) + 3 * 4
+                        //                          - OFFSET)
+                        //                        * SIZE],
+                        //        xmm1);
+                        vst(vr1, AO1, (unroll_m * (2 * i + 1) + 3 * 4 - OFFSET) * SIZE);
                     }
 
                     //lea(BO2, ptr[BO2 + LDA * 4]);
-                    slli_d(X_TMP_0, LDA, 2);
-                    add_d(BO2, BO2, X_TMP_0);
+                    add_d(BO2, BO2, rax);
                 }
             }
             //add(BO1, (4 * SIZE));
-            addi_d(BO1, BO1, (4 * SIZE));
-        }
+            addi_d(BO1, BO1, 4 * SIZE);
+        //}
 
         //add(AO1, unroll_m * 4 * SIZE);
-        add_imm(AO1, AO1, unroll_m * 4 * SIZE, X_TMP_0);
+        addi_d(AO1, AO1, unroll_m * 4 * SIZE);
         //sub(LL, 1);
         addi_d(LL, LL, -1);
         //jg(labels[0], T_NEAR);
@@ -2135,231 +2092,206 @@ struct xbyak_gemm_t : public jit_generator {
         //mov(LL, K);
         add_d(LL, K, zero);
         //and_(LL, 3);
-        andi(X_TMP_0, LL, 3);
+        andi(LL, LL, 3);
         //jle(labels[3], T_NEAR);
-        bge(zero, X_TMP_0, labels[3]);
+        bge(zero, LL, labels[3]);
         //align(16);
 
         L(labels[2]);
+        /* do_pack exec only when isTransA is true
         if (!isTransA) {
             if (isLoad1Unmasked) {
-                //vmovups(xr4, ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
-                uni_xvld(xr4, BO1, (0 * 8 - OFFSET) * SIZE);
+                vmovups(ymm4, ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
             } else {
-                //vmaskmovps(xr4, VMASK, ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
-                uni_xvld(xr4, BO1, (0 * 8 - OFFSET) * SIZE);
-                xvand_v(xr4, xr4, VMASK);
+                vmaskmovps(ymm4, VMASK, ptr[BO1 + (0 * 8 - OFFSET) * SIZE]);
             }
             if (unroll_m > 8) {
                 if (isLoad2Unmasked) {
-                    //vmovups(xr5, ptr[BO1 + (1 * 8 - OFFSET) * SIZE]);
-                    uni_xvld(xr5, BO1, (1 * 8 - OFFSET) * SIZE);
+                    vmovups(ymm5, ptr[BO1 + (1 * 8 - OFFSET) * SIZE]);
                 } else {
-                    //vmaskmovps(xr5, VMASK, ptr[BO1 + (1 + 8 - OFFSET) * SIZE]); // 1+8 must be not correct 
-                    uni_xvld(xr5, BO1, (1 * 8 - OFFSET) * SIZE);
-                    xvand_v(xr5, xr5, VMASK);
+                    vmaskmovps(ymm5, VMASK, ptr[BO1 + (1 + 8 - OFFSET) * SIZE]);
                 }
             }
-
-            //add(BO1, LDA);
-            add_d(BO1, BO1, LDA);
-            //vmovups(ptr[AO1 + (unroll_m * 0 + 0 * 8 - OFFSET) * SIZE], xr4);
-            uni_xvst(xr4, AO1, (unroll_m * 0 + 0 * 8 - OFFSET) * SIZE);
-
+            add(BO1, LDA);
+            vmovups(ptr[AO1 + (unroll_m * 0 + 0 * 8 - OFFSET) * SIZE], ymm4);
             if (unroll_m > 8) {
-                //vmovups(ptr[AO1 + (unroll_m * 0 + 1 * 8 - OFFSET) * SIZE],
-                //        xr5);
-                uni_xvst(xr5, AO1, (unroll_m * 0 + 1 * 8 - OFFSET) * SIZE);
+                vmovups(ptr[AO1 + (unroll_m * 0 + 1 * 8 - OFFSET) * SIZE],
+                        ymm5);
             }
-        } else {
+        } else { */
             if (isLoad1Unmasked) {
                 for (int i = 0; i < 2; i++) {
                     reg = (i % 2 == 0) ? BO1 : BO2;
                     //vmovss(Xmm(i + 1), ptr[reg + (0 * 8 - OFFSET) * SIZE]);
-                    uni_xvld(VReg(i + 1), reg, (0 * 8 - OFFSET) * SIZE);
-                    //vmovss(vr0, ptr[reg + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
+                    vld(VReg(i + 1), reg, (0 * 8 - OFFSET) * SIZE);
+                    //vmovss(xmm0, ptr[reg + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                     add_d(X_TMP_1, reg, LDA);
-                    uni_xvld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                    vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                     //lea(BO2, ptr[reg + LDA * 2]);
-                    add_d(BO2, X_TMP_1, LDA);
-
+                    add_d(BO2, reg, t0);
                     //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
                     vilvl_w(VReg(i + 1), vr0, VReg(i + 1));
                 }
-                //vunpcklpd(vr1, vr1, vr2);
+                //vunpcklpd(xmm1, xmm1, xmm2);
                 vilvl_d(vr1, vr2, vr1);
-
                 //vmovups(ptr[AO1 + (unroll_m * 0 + 0 * 4 - OFFSET) * SIZE],
-                //        vr1);
+                //        xmm1);
                 vst(vr1, AO1, (unroll_m * 0 + 0 * 4 - OFFSET) * SIZE);
 
                 for (int i = 0; i < 2; i++) {
                     //vmovss(Xmm(i + 1), ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                    uni_xvld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
-                    //vmovss(vr0, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
+                    vld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
+                    //vmovss(xmm0, ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                     add_d(X_TMP_1, BO2, LDA);
-                    uni_xvld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                    vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                     //lea(BO2, ptr[BO2 + LDA * 2]);
-                    add_d(BO2, X_TMP_1, LDA);
-
+                    add_d(BO2, BO2, t0);
                     //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
                     vilvl_w(VReg(i + 1), vr0, VReg(i + 1));
                 }
-                //vunpcklpd(vr1, vr1, vr2);
+                //vunpcklpd(xmm1, xmm1, xmm2);
                 vilvl_d(vr1, vr2, vr1);
-
                 //vmovups(ptr[AO1 + (unroll_m * 0 + 1 * 4 - OFFSET) * SIZE],
-                //        vr1);
-                uni_xvst(vr1, AO1, (unroll_m * 0 + 1 * 4 - OFFSET) * SIZE);
-            } else if (is_avx2) {
-                //vmovaps(vr4, vr3);
-                vbsll_v(vr4, vr3, 0);
+                //        xmm1);
+                vst(vr1, AO1, (unroll_m * 0 + 1 * 4 - OFFSET) * SIZE);
+            } /*else if (is_avx2) {
+                vmovaps(xmm4, xmm3);
+                vgatherqps(
+                        xmm1, ptr[BO1 + ymm7 + (0 * 8 - OFFSET) * SIZE], xmm4);
+                lea(BO2, ptr[BO1 + LDA * 4]);
+                vmovups(ptr[AO1 + (unroll_m * 0 + 0 * 4 - OFFSET) * SIZE],
+                        xmm1);
 
-                //vgatherqps(
-                //        vr1, ptr[BO1 + xr7 + (0 * 8 - OFFSET) * SIZE], vr4);
-                vgatherqps(vr1, BO1, xr7, (0 * 8 - OFFSET) * SIZE, vr4);
+                vextractf128(xmm4, ymm3, 1);
+                vgatherqps(
+                        xmm1, ptr[BO2 + ymm7 + (0 * 8 - OFFSET) * SIZE], xmm4);
+                lea(BO2, ptr[BO2 + LDA * 4]);
+                vmovups(ptr[AO1 + (unroll_m * 0 + 1 * 4 - OFFSET) * SIZE],
+                        xmm1);
+            }*/ else {
+                //vxorps(xmm4, xmm4, xmm4);
+                vxor_v(vr4, vr4, vr4);
                 //lea(BO2, ptr[BO1 + LDA * 4]);
-                slli_d(X_TMP_0, LDA, 2);
-                add_d(BO2, BO1, X_TMP_0);
-
-                //vmovups(ptr[AO1 + (unroll_m * 0 + 0 * 4 - OFFSET) * SIZE],
-                //        vr1);
-                uni_xvst(vr1, AO1, (unroll_m * 0 + 0 * 4 - OFFSET) * SIZE);
-
-                //vextractf128(vr4, xr3, 1);
-                xvpermi_q(xr4, xr3, 0x31);
-
-                //vgatherqps(
-                //        vr1, ptr[BO2 + xr7 + (0 * 8 - OFFSET) * SIZE], vr4);
-                vgatherqps(vr1, BO2, xr7, (0 * 8 - OFFSET) * SIZE, vr4);
-                //lea(BO2, ptr[BO2 + LDA * 4]);
-                slli_d(X_TMP_0, LDA, 2);
-                add_d(BO2, BO2, X_TMP_0);
-                //vmovups(ptr[AO1 + (unroll_m * 0 + 1 * 4 - OFFSET) * SIZE],
-                //        vr1);
-                uni_xvst(vr1, AO1, (unroll_m * 0 + 1 * 4 - OFFSET) * SIZE);
-            } /*else {
-                //vxorps(vr4, vr4, vr4);
-                //lea(BO2, ptr[BO1 + LDA * 4]);
+                add_d(BO2, BO1, rax);
 
                 auto el_cp = [&](int section, int ld_step) {
-                    RegExp src_addr = section == 0 ? BO1 : BO2;
-                    if (ld_step == 1 || ld_step == 2)
-                        src_addr = src_addr + LDA * ld_step;
-                    else if (ld_step == 3)
-                        src_addr = src_addr + CO1;
-                    src_addr = src_addr - OFFSET * SIZE;
+                    //RegExp src_addr = section == 0 ? BO1 : BO2;
+                    //if (ld_step == 1 || ld_step == 2)
+                    //    src_addr = src_addr + LDA * ld_step;
+                    //else if (ld_step == 3)
+                    //    src_addr = src_addr + CO1;
+                    //src_addr = src_addr - OFFSET * SIZE;
+                    XReg src_addr = section == 0 ? BO1 : BO2;
+                    add_d(src_addr, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
 
-                    //vmovss(vr1, ptr[src_addr]);
-                    RegExp dst_addr
-                            = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
-                    //movss(ptr[dst_addr], vr1);
+                    //vmovss(xmm1, ptr[src_addr]);
+                    vld(vr1, src_addr, 0);
+                    //RegExp dst_addr
+                    //        = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
+                    //movss(ptr[dst_addr], xmm1);
+                    vstelm_w(vr1, AO1, (ld_step + section * 4 - OFFSET) * SIZE, 0);
                 };
 
                 el_cp(0, 0);
                 //cmp(M, 4 * 0 + 0 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 0 + 1);
+                ld_d(X_TMP_0, M.getXReg(), M.getOffset());
+                mov_imm(X_TMP_1, 1);
                 //je(labels[5], T_NEAR);
-                beq(M, X_TMP_0, labels[5]);
+                beq(X_TMP_0, X_TMP_1, labels[5]);
                 el_cp(0, 1);
                 //cmp(M, 4 * 0 + 1 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 1 + 1);
+                mov_imm(X_TMP_1, 2);
                 //je(labels[5], T_NEAR);
-                beq(M, X_TMP_0, labels[5]);
+                beq(X_TMP_0, X_TMP_1, labels[5]);
                 el_cp(0, 2);
                 //cmp(M, 4 * 0 + 2 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 2 + 1);
+                mov_imm(X_TMP_1, 3);
                 //je(labels[5], T_NEAR);
-                beq(M, X_TMP_0, labels[5]);
+                beq(X_TMP_0, X_TMP_1, labels[5]);
                 el_cp(0, 3);
                 //cmp(M, 4 * 0 + 3 + 1);
-                mov_imm(X_TMP_0, 4 * 0 + 3 + 1);
+                mov_imm(X_TMP_1, 4);
                 //je(labels[5], T_NEAR);
-                beq(M, X_TMP_0, labels[5]);
+                beq(X_TMP_0, X_TMP_1, labels[5]);
                 el_cp(1, 0);
                 //cmp(M, 4 * 1 + 0 + 1);
-                mov_imm(X_TMP_0, 4 * 1 + 0 + 1);
+                mov_imm(X_TMP_1, 5);
                 //je(labels[5], T_NEAR);
-                beq(M, X_TMP_0, labels[5]);
+                beq(X_TMP_0, X_TMP_1, labels[5]);
                 el_cp(1, 1);
                 //cmp(M, 4 * 1 + 1 + 1);
-                mov_imm(X_TMP_0, 4 * 1 + 1 + 1);
+                mov_imm(X_TMP_1, 6);
                 //je(labels[5], T_NEAR);
-                beq(M, X_TMP_0, labels[5]);
+                beq(X_TMP_0, X_TMP_1, labels[5]);
                 el_cp(1, 2);
                 L(labels[5]);
 
                 //lea(BO2, ptr[BO2 + LDA * 4]);
-            }*/
+                add_d(BO2, BO2, rax);
+            }
 
             if (unroll_m >= 16) {
                 assert(is_avx2);
-
                 if (isLoad2Unmasked) {
                     for (int i = 0; i < 2; i++) {
                         //vmovss(Xmm(i + 1), ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                        uni_xvld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
-                        //vmovss(vr0,
+                        vld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
+                        //vmovss(xmm0,
                         //        ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                         add_d(X_TMP_1, BO2, LDA);
-                        uni_xvld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                        vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                         //lea(BO2, ptr[BO2 + LDA * 2]);
-                        add_d(BO2, X_TMP_1, LDA);
-
+                        add_d(BO2, BO2, t0);
                         //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
                         vilvl_w(VReg(i + 1), vr0, VReg(i + 1));
                     }
-                    //vunpcklpd(vr1, vr1, vr2);
+                    //vunpcklpd(xmm1, xmm1, xmm2);
                     vilvl_d(vr1, vr2, vr1);
                 } else {
-                    //vmovaps(vr4, vr3);
+                    //vmovaps(xmm4, xmm3);
                     vbsll_v(vr4, vr3, 0);
-
-                    //vgatherqps(vr1, ptr[BO2 + xr7 + (0 * 8 - OFFSET) * SIZE],
-                    //        vr4);
+                    //vgatherqps(xmm1, ptr[BO2 + ymm7 + (0 * 8 - OFFSET) * SIZE],
+                    //        xmm4);
                     vgatherqps(vr1, BO2, xr7, (0 * 8 - OFFSET) * SIZE, vr4);
                     //lea(BO2, ptr[BO2 + LDA * 4]);
-                    slli_d(X_TMP_0, LDA, 2);
-                    add_d(BO2, BO2, X_TMP_0);
+                    add_d(BO2, BO2, rax);
                 }
                 //vmovups(ptr[AO1 + (unroll_m * 0 + 2 * 4 - OFFSET) * SIZE],
-                //        vr1);
-                uni_xvst(vr1, AO1, (unroll_m * 0 + 2 * 4 - OFFSET) * SIZE);
+                //        xmm1);
+                vst(vr1, AO1, (unroll_m * 0 + 2 * 4 - OFFSET) * SIZE);
 
                 if (isLoad2Unmasked) {
                     for (int i = 0; i < 2; i++) {
                         //vmovss(Xmm(i + 1), ptr[BO2 + (0 * 8 - OFFSET) * SIZE]);
-                        uni_xvld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
-                        //vmovss(vr0,
+                        vld(VReg(i + 1), BO2, (0 * 8 - OFFSET) * SIZE);
+                        //vmovss(xmm0,
                         //        ptr[BO2 + LDA * 1 + (0 * 8 - OFFSET) * SIZE]);
                         add_d(X_TMP_1, BO2, LDA);
-                        uni_xvld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
+                        vld(vr0, X_TMP_1, (0 * 8 - OFFSET) * SIZE);
                         //lea(BO2, ptr[BO2 + LDA * 2]);
-                        add_d(BO2, X_TMP_1, LDA);
-
+                        add_d(BO2, BO2, t0);
                         //vunpcklps(Xmm(i + 1), Xmm(i + 1), Xmm(0));
                         vilvl_w(VReg(i + 1), vr0, VReg(i + 1));
                     }
-                    //vunpcklpd(vr1, vr1, vr2);
+                    //vunpcklpd(xmm1, xmm1, xmm2);
                     vilvl_d(vr1, vr2, vr1);
                 } else {
-                    //vextractf128(vr4, xr3, 1);
+                    //vextractf128(xmm4, ymm3, 1);
                     xvpermi_q(xr4, xr3, 0x31);
-
-                    //vgatherqps(vr1, ptr[BO2 + xr7 + (0 * 8 - OFFSET) * SIZE],
-                    //        vr4);
+                    //vgatherqps(xmm1, ptr[BO2 + ymm7 + (0 * 8 - OFFSET) * SIZE],
+                    //        xmm4);
                     vgatherqps(vr1, BO2, xr7, (0 * 8 - OFFSET) * SIZE, vr4);
                 }
                 //vmovups(ptr[AO1 + (unroll_m * 0 + 3 * 4 - OFFSET) * SIZE],
-                //        vr1);
-                uni_xvst(vr1, AO1, (unroll_m * 0 + 3 * 4 - OFFSET) * SIZE);
+                //        xmm1);
+                vst(vr1, AO1, (unroll_m * 0 + 3 * 4 - OFFSET) * SIZE);
             }
             //add(BO1, SIZE);
             addi_d(BO1, BO1, SIZE);
-        }
+        //}
 
         //add(AO1, unroll_m * SIZE);
-        add_imm(AO1, AO1, unroll_m * SIZE, X_TMP_0);
+        addi_d(AO1, AO1, unroll_m * SIZE);
         //sub(LL, 1);
         addi_d(LL, LL, -1);
         //jg(labels[2], T_NEAR);
@@ -2368,7 +2300,6 @@ struct xbyak_gemm_t : public jit_generator {
 
         L(labels[3]);
     }
-
 
     // High-level subroutine; does packing if needed, then splits C matrix.
     // Operates on chunks of 16 rows, 6 columns at a time (handling tail
@@ -2796,26 +2727,19 @@ struct xbyak_gemm_t : public jit_generator {
             st_w(X_TMP_0, sp, 88 + i * 4);
         }
 
+        /* this code make xr7={0,LDA,LDA2,LDA3} for vgatherqps
+         * but in loongarch donot have vgatherqps, so this will
+         * make instruction numbers increase.
         if (isTransA && is_avx2) {
-            //movq(vr0, LDA);
-            vxor_v(vr0, vr0, vr0);
-            vinsgr2vr_d(vr0, LDA, 0);
-            //vpbroadcastq(xr1, vr0);
-            xvreplgr2vr_d(xr1, LDA);
-            //vinsertf128(xr0, xr0, vr0, 1);
-            xvpermi_q(xr0, xr0, 0x02);
-            //vpermilpd(xr0, xr0, 5);
-            xvpermi_d(xr0, xr0, 0b10110001);
-            //vpaddq(xr1, xr1, xr1);
-            xvadd_d(xr1, xr1, xr1);
-            //vperm2f128(xr1, xr1, xr1, 8);
-            xvpermi_q(xr1, xr1, 8);
-            vxor_v(vr1, vr1, vr1); // vperm2f128 make the low 128bit to 0
-            //vpaddq(xr0, xr0, xr1);
-            xvadd_d(xr0, xr0, xr1);
-            //vmovups(STRIDE, xr0);
-            xvst(xr0, STRIDE.getXReg(), STRIDE.getOffset());
-        }
+            movq(vr0, LDA);
+            vpbroadcastq(xr1, vr0);
+            vinsertf128(xr0, xr0, vr0, 1);
+            vpermilpd(xr0, xr0, 5);
+            vpaddq(xr1, xr1, xr1);
+            vperm2f128(xr1, xr1, xr1, 8);
+            vpaddq(xr0, xr0, xr1);
+            vmovups(STRIDE, xr0);
+        } */
 
         // Check A alignment and leading dimension; take copy-based path as
         // needed
@@ -3034,7 +2958,7 @@ private:
     const Address BETA = ptr_a(sp, 64);
     const Address ORIG_A = ptr_a(sp, 80);
     const Address MASK = ptr_a(sp, 88);
-    const Address STRIDE = ptr_a(sp, 120);
+    //const Address STRIDE = ptr_a(sp, 120); no need
     const Address ORIG_SP = ptr_a(sp, 152);
 
     const XVReg VALPHA = xr1;
