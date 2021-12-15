@@ -227,7 +227,7 @@ struct xbyak_gemm_t : public jit_generator {
 
             if (i == 7) {
                 //if (!isTransB) { sub(BO1, -8 * SIZE); }
-                if (!isTransB) { add_imm(BO1, BO1, 8 * SIZE, X_TMP_0); }
+                if (!isTransB) { addi_d(BO1, BO1, 8 * SIZE); }
             }
 
             if (unroll_n >= 4) {
@@ -516,7 +516,7 @@ struct xbyak_gemm_t : public jit_generator {
 
             if (i == 7) {
                 //if (!isTransB) { sub(BO1, -8 * SIZE); }
-                if (!isTransB) { add_imm(BO1, BO1, 8 * SIZE, X_TMP_0); }
+                if (!isTransB) { addi_d(BO1, BO1, 8 * SIZE); }
             }
 
             if (unroll_n >= 4) {
@@ -617,9 +617,9 @@ struct xbyak_gemm_t : public jit_generator {
             if (i == 3) {
                 if (!isTransB) {
                     //sub(BO1, -4 * SIZE);
-                    add_imm(BO1, BO1, 4 * SIZE, X_TMP_0);
+                    addi_d(BO1, BO1, 4 * SIZE);
                     //if (unroll_n >= 4) { sub(BO2, -4 * SIZE); }
-                    if (unroll_n >= 4) { add_imm(BO2, BO2, 4 * SIZE, X_TMP_0); }
+                    if (unroll_n >= 4) { addi_d(BO2, BO2, 4 * SIZE); }
                 }
             }
 
@@ -854,9 +854,9 @@ struct xbyak_gemm_t : public jit_generator {
 
             if (!isTransB) {
                 //sub(BO1, -SIZE);
-                add_imm(BO1, BO1, SIZE, X_TMP_0);
+                addi_d(BO1, BO1, SIZE);
                 //if (unroll_n >= 4) { sub(BO2, -SIZE); }
-                if (unroll_n >= 4) { add_imm(BO2, BO2, SIZE, X_TMP_0); }
+                if (unroll_n >= 4) { addi_d(BO2, BO2, SIZE); }
             } else {
                 //add(BO1, LDB);
                 add_d(BO1, BO1, LDB);
@@ -1011,9 +1011,9 @@ struct xbyak_gemm_t : public jit_generator {
 
         if (!isTransB) {
             //sub(BO1, -SIZE);
-            add_imm(BO1, BO1, SIZE, X_TMP_0);
+            addi_d(BO1, BO1, SIZE);
             //if (unroll_n >= 4) { sub(BO2, -SIZE); }
-            if (unroll_n >= 4) { add_imm(BO2, BO2, SIZE, X_TMP_0); }
+            if (unroll_n >= 4) { addi_d(BO2, BO2, SIZE); }
         } else {
             //add(BO1, LDB);
             add_d(BO1, BO1, LDB);
@@ -1035,7 +1035,7 @@ struct xbyak_gemm_t : public jit_generator {
             const XVReg &reg21, const XVReg &reg22, const XVReg &reg23) {
         if (!isDirect) {
             //lea(AO1, ptr[rsp + 256 + OFFSET * SIZE]);
-            add_imm(AO1, sp, 256 + OFFSET * SIZE, X_TMP_0);
+            addi_d(AO1, sp, 256 + OFFSET * SIZE);
         } else {
             //mov(AO1, A);
             add_d(AO1, A, zero);
@@ -1043,20 +1043,20 @@ struct xbyak_gemm_t : public jit_generator {
 
         if (isCopy) {
             //lea(LDA4, ptr[rsp + 256 + OFFSET * SIZE]);
-            add_imm(LDA4, sp, 256 + OFFSET * SIZE, X_TMP_0);
+            addi_d(LDA4, sp, 256 + OFFSET * SIZE);
         } else {
             //lea(LDA4, ptr[LDA * 8 + (8 - 1 - OFFSET) * SIZE]);
             slli_d(X_TMP_1, LDA, 3);
-            add_imm(LDA4, X_TMP_1, (8 - 1 - OFFSET) * SIZE, X_TMP_0);
+            addi_d(LDA4, X_TMP_1, (8 - 1 - OFFSET) * SIZE);
         }
 
         if (isTransB) {
             //lea(BO2, ptr[LDB * 4 + (8 - 1 - OFFSET) * SIZE]);
-            slli_d(X_TMP_0, LDB, 2);
-            add_imm(BO2, X_TMP_0, (8 - 1 - OFFSET) * SIZE, X_TMP_1);
+            slli_d(X_TMP_1, LDB, 2);
+            addi_d(BO2, X_TMP_1, (8 - 1 - OFFSET) * SIZE);
             //lea(BO2, ptr[BO2 + LDB * 2]);
-            slli_d(X_TMP_0, LDB, 1);
-            add_d(BO2, BO2, X_TMP_0);
+            slli_d(X_TMP_1, LDB, 1);
+            add_d(BO2, BO2, X_TMP_1);
         }
 
         if (!isDirect) {
@@ -1092,9 +1092,8 @@ struct xbyak_gemm_t : public jit_generator {
         }
 
         //mov(LL, K);
-        add_d(LL, K, zero);
         //sar(LL, 3);
-        srai_d(LL, LL, 3);
+        srai_d(LL, K, 3);
 
         std::vector<Label> labels(8);
 
@@ -2384,7 +2383,7 @@ struct xbyak_gemm_t : public jit_generator {
 
         //sub(I, UNROLL_N);
         ld_d(X_TMP_1, I.getXReg(), I.getOffset());
-        add_imm(X_TMP_1, X_TMP_1, -1 * UNROLL_N, X_TMP_0);
+        addi_d(X_TMP_1, X_TMP_1, -1 * UNROLL_N);
         st_d(X_TMP_1, I.getXReg(), I.getOffset());
         //cmp(I, UNROLL_N);
         mov_imm(X_TMP_0, UNROLL_N);
@@ -2403,7 +2402,7 @@ struct xbyak_gemm_t : public jit_generator {
         }
         //sub(I, UNROLL_N);
         ld_d(X_TMP_1, I.getXReg(), I.getOffset());
-        add_imm(X_TMP_1, X_TMP_1, -1 * UNROLL_N, X_TMP_0);
+        addi_d(X_TMP_1, X_TMP_1, -1 * UNROLL_N);
         st_d(X_TMP_1, I.getXReg(), I.getOffset());
         //cmp(I, UNROLL_N);
         mov_imm(X_TMP_0, UNROLL_N);
@@ -2516,7 +2515,7 @@ struct xbyak_gemm_t : public jit_generator {
             }
             //sub(I, UNROLL_N);
             ld_d(X_TMP_1, I.getXReg(), I.getOffset());
-            add_imm(X_TMP_1, X_TMP_1, -1 * UNROLL_N, X_TMP_0);
+            addi_d(X_TMP_1, X_TMP_1, -1 * UNROLL_N);
             st_d(X_TMP_1, I.getXReg(), I.getOffset());
             //cmp(I, UNROLL_N);
             mov_imm(X_TMP_0, UNROLL_N);
