@@ -1901,10 +1901,13 @@ struct xbyak_gemm_t : public jit_generator {
                     //    src_addr = src_addr + CO1;
                     //src_addr = src_addr - OFFSET * SIZE;
                     XReg src_addr = section == 0 ? BO1 : BO2;
-                    add_d(X_TMP_1, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
+                    if (ld_step > 0) {
+                        add_d(X_TMP_1, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
+                        vld(VReg(ld_step % 2), X_TMP_1, -OFFSET * SIZE);
+                    } else
+                        vld(VReg(ld_step % 2), src_addr, -OFFSET * SIZE);
 
                     //vmovups(Xmm(ld_step % 2), ptr[src_addr]);
-                    vld(VReg(ld_step % 2), X_TMP_1, 0);
                     //RegExp dst_addr
                     //        = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
                     //for (int off = 0; off < 4; ++off)
@@ -2180,10 +2183,13 @@ struct xbyak_gemm_t : public jit_generator {
                     //    src_addr = src_addr + CO1;
                     //src_addr = src_addr - OFFSET * SIZE;
                     XReg src_addr = section == 0 ? BO1 : BO2;
-                    add_d(X_TMP_1, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
+                    if (ld_step > 0) {
+                        add_d(X_TMP_1, src_addr, ld_step == 1 ? LDA : (ld_step == 2 ? t0 : CO1));
+                        vldrepl_w(vr1, X_TMP_1, -OFFSET * SIZE);
+                    } else
+                        vldrepl_w(vr1, src_addr, -OFFSET * SIZE);
 
                     //vmovss(xmm1, ptr[src_addr]);
-                    vldrepl_w(vr1, X_TMP_1, 0);
                     //RegExp dst_addr
                     //        = AO1 + (ld_step + section * 4 - OFFSET) * SIZE;
                     //movss(ptr[dst_addr], xmm1);
