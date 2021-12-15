@@ -310,7 +310,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //vmovlps(qword[B - 0x80], vr0);
         vstelm_d(vr0, B, -0x80, 0);
         //vmovhps(qword[B - 0x78], vr0);
-        vstelm_d(vr0, B, -0x78, 0);
+        vstelm_d(vr0, B, -0x78, 1);
         //lea(A2, ptr[A1 + LDA * 2]);
         add_d(A2, A1, LDA2);
         //sub(A1, -8);
@@ -642,7 +642,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //vmovlps(qword[B - 0x70], vr1);
         vstelm_d(vr1, B, -0x70, 0);
         //vmovhps(qword[B - 0x68], vr1);
-        vstelm_d(vr1, B, -0x68, 0);
+        vstelm_d(vr1, B, -0x68, 1);
         //lea(A2, ptr[A1 + LDA * 2]);
         add_d(A2, A1, LDA2);
         //sub(A1, -16);
