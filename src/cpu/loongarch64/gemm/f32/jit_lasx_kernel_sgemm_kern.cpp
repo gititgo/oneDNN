@@ -430,7 +430,7 @@ void jit_lasx_kernel_sgemm_kern::generate() {
                             //&Xbyak::CodeGenerator::vmovlps,
                             &jit_generator::uni_xvstelm_d0,
                             //&Xbyak::CodeGenerator::vmovsd);
-                            &jit_generator::uni_xvld);
+                            &jit_generator::uni_xvldrepl_d);
                     break;
                 case 1:
                     //if (mayiuse(avx512_core)) {

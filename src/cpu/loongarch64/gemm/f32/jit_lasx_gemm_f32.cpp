@@ -1637,9 +1637,8 @@ struct xbyak_gemm_t : public jit_generator {
             sub_d(BO2, BO2, rax);
         } else {
             //mov(rax, LDB);
-            add_d(rax, LDB, zero);
             //imul(rax, K);
-            mul_d(rax, rax, K);
+            mul_d(rax, LDB, K);
             //sub(BO1, rax);
             sub_d(BO1, BO1, rax);
             //add(BO1, unroll_n * SIZE);
@@ -1763,9 +1762,8 @@ struct xbyak_gemm_t : public jit_generator {
         //}
 
         //mov(LL, K);
-        add_d(LL, K, zero);
         //sar(LL, 2);
-        srai_d(LL, LL, 2);
+        srai_d(LL, K, 2);
         //jle(labels[1], T_NEAR);
         bge(zero, LL, labels[1]);
         //align(16);
@@ -2385,8 +2383,8 @@ struct xbyak_gemm_t : public jit_generator {
         }
 
         //sub(I, UNROLL_N);
-        ld_d(X_TMP_0, I.getXReg(), I.getOffset());
-        add_imm(X_TMP_1, X_TMP_0, -1 * UNROLL_N, X_TMP_1);
+        ld_d(X_TMP_1, I.getXReg(), I.getOffset());
+        add_imm(X_TMP_1, X_TMP_1, -1 * UNROLL_N, X_TMP_0);
         st_d(X_TMP_1, I.getXReg(), I.getOffset());
         //cmp(I, UNROLL_N);
         mov_imm(X_TMP_0, UNROLL_N);
@@ -2404,8 +2402,8 @@ struct xbyak_gemm_t : public jit_generator {
                     false, false);
         }
         //sub(I, UNROLL_N);
-        ld_d(X_TMP_0, I.getXReg(), I.getOffset());
-        add_imm(X_TMP_1, X_TMP_0, -1 * UNROLL_N, X_TMP_1);
+        ld_d(X_TMP_1, I.getXReg(), I.getOffset());
+        add_imm(X_TMP_1, X_TMP_1, -1 * UNROLL_N, X_TMP_0);
         st_d(X_TMP_1, I.getXReg(), I.getOffset());
         //cmp(I, UNROLL_N);
         mov_imm(X_TMP_0, UNROLL_N);
@@ -2517,8 +2515,8 @@ struct xbyak_gemm_t : public jit_generator {
                         true, false);
             }
             //sub(I, UNROLL_N);
-            ld_d(X_TMP_0, I.getXReg(), I.getOffset());
-            add_imm(X_TMP_1, X_TMP_0, -1 * UNROLL_N, X_TMP_1);
+            ld_d(X_TMP_1, I.getXReg(), I.getOffset());
+            add_imm(X_TMP_1, X_TMP_1, -1 * UNROLL_N, X_TMP_0);
             st_d(X_TMP_1, I.getXReg(), I.getOffset());
             //cmp(I, UNROLL_N);
             mov_imm(X_TMP_0, UNROLL_N);
@@ -2618,10 +2616,9 @@ struct xbyak_gemm_t : public jit_generator {
             add_imm(A, A, unroll_m * SIZE, X_TMP_0);
         } else {
             //mov(rax, LDA);
-            add_d(rax, LDA, zero);
             //imul(rax, rax, unroll_m);
             mov_imm(X_TMP_0, unroll_m);
-            mul_d(rax, rax, X_TMP_0);
+            mul_d(rax, LDA, X_TMP_0);
             //add(A, rax);
             add_d(A, A, rax);
         }
@@ -2788,6 +2785,7 @@ struct xbyak_gemm_t : public jit_generator {
             bge(X_TMP_1, X_TMP_0, labels[2]);
 
             //sub(M, 8);
+            ld_d(X_TMP_0, M.getXReg(), M.getOffset());
             addi_d(X_TMP_0, X_TMP_0, -8);
             st_d(X_TMP_0, M.getXReg(), M.getOffset());
             //vbroadcastss(VMASK, M);
@@ -2960,7 +2958,7 @@ private:
     const Address ORIG_A = ptr_a(sp, 80);
     const Address MASK = ptr_a(sp, 88);
     //const Address STRIDE = ptr_a(sp, 120); no need
-    const Address ORIG_SP = ptr_a(sp, 152);
+    const Address ORIG_SP = ptr_a(sp, 120);
 
     const XVReg VALPHA = xr1;
     const XVReg VBETA = xr2;
