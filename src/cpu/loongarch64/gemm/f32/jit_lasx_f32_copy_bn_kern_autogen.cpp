@@ -56,7 +56,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 //#define A1 rsi
 //#define A2 r10
 //#define LDA3 r11
- 
+
 //#define ARG_ALPHA 40 + stacksize + rsp
 //#define ARG_B 48 + stacksize + rsp
 
@@ -367,19 +367,16 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //vmovups(vr0, xword[A1]);
         vld(vr0, A1, 0);
         //vpshufd(vr1, vr0, 0x55);
-        vshuf4i_w(vr1, vr0, 0x55);
         //vpshufd(vr2, vr0, 0xaa);
-        vshuf4i_w(vr2, vr0, 0xaa);
         //vpshufd(vr3, vr0, 0xff);
-        vshuf4i_w(vr3, vr0, 0xff);
         //vmovss(dword[B - 0x80], vr0);
         vstelm_w(vr0, B, -0x80, 0);
         //vmovss(dword[B - 0x7c], vr1);
-        vstelm_w(vr1, B, -0x7c, 0);
+        vstelm_w(vr0, B, -0x7c, 1);
         //vmovss(dword[B - 0x78], vr2);
-        vstelm_w(vr2, B, -0x78, 0);
+        vstelm_w(vr0, B, -0x78, 2);
         //vmovss(dword[B - 0x74], vr3);
-        vstelm_w(vr3, B, -0x74, 0);
+        vstelm_w(vr0, B, -0x74, 3);
         //lea(A2, ptr[A1 + LDA * 1]);
         add_d(A2, A1, LDA);
         //sub(A1, -16);
@@ -398,13 +395,12 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[39], T_NEAR);
         bge(zero, TM, labels[39]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vpshufd(vr1, vr0, 0x55);
-        vshuf4i_w(vr1, vr0, 0x55);
         //vmovss(dword[B - 0x80], vr0);
         vstelm_w(vr0, B, -0x80, 0);
         //vmovss(dword[B - 0x7c], vr1);
-        vstelm_w(vr1, B, -0x7c, 0);
+        vstelm_w(vr0, B, -0x7c, 1);
         //lea(A2, ptr[A1 + LDA * 1]);
         add_d(A2, A1, LDA);
         //sub(A1, -8);
@@ -732,19 +728,16 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //vxorps(vr0, vr6, vr0);
         vxor_v(vr0, vr6, vr0);
         //vpshufd(vr1, vr0, 0x55);
-        vshuf4i_w(vr1, vr0, 0x55);
         //vpshufd(vr2, vr0, 0xaa);
-        vshuf4i_w(vr2, vr0, 0xaa);
         //vpshufd(vr3, vr0, 0xff);
-        vshuf4i_w(vr3, vr0, 0xff);
         //vmovss(dword[B - 0x80], vr0);
         vstelm_w(vr0, B, -0x80, 0);
         //vmovss(dword[B - 0x7c], vr1);
-        vstelm_w(vr1, B, -0x7c, 0);
+        vstelm_w(vr0, B, -0x7c, 1);
         //vmovss(dword[B - 0x78], vr2);
-        vstelm_w(vr2, B, -0x78, 0);
+        vstelm_w(vr0, B, -0x78, 2);
         //vmovss(dword[B - 0x74], vr3);
-        vstelm_w(vr3, B, -0x74, 0);
+        vstelm_w(vr0, B, -0x74, 3);
         //lea(A2, ptr[A1 + LDA * 1]);
         add_d(A2, A1, LDA);
         //sub(A1, -16);
@@ -763,15 +756,14 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[21], T_NEAR);
         bge(zero, TM, labels[21]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vxorps(vr0, vr6, vr0);
         vxor_v(vr0, vr6, vr0);
         //vpshufd(vr1, vr0, 0x55);
-        vshuf4i_w(vr1, vr0, 0x55);
         //vmovss(dword[B - 0x80], vr0);
         vstelm_w(vr0, B, -0x80, 0);
         //vmovss(dword[B - 0x7c], vr1);
-        vstelm_w(vr1, B, -0x7c, 0);
+        vstelm_w(vr0, B, -0x7c, 1);
         //lea(A2, ptr[A1 + LDA * 1]);
         add_d(A2, A1, LDA);
         //sub(A1, -8);
@@ -1092,19 +1084,16 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //vmulps(vr0, vr6, vr0);
         vfmul_s(vr0, vr6, vr0);
         //vpshufd(vr1, vr0, 0x55);
-        vshuf4i_w(vr1, vr0, 0x55);
         //vpshufd(vr2, vr0, 0xaa);
-        vshuf4i_w(vr2, vr0, 0xaa);
         //vpshufd(vr3, vr0, 0xff);
-        vshuf4i_w(vr3, vr0, 0xff);
         //vmovss(dword[B - 0x80], vr0);
         vstelm_w(vr0, B, -0x80, 0);
         //vmovss(dword[B - 0x7c], vr1);
-        vstelm_w(vr1, B, -0x7c, 0);
+        vstelm_w(vr0, B, -0x7c, 1);
         //vmovss(dword[B - 0x78], vr2);
-        vstelm_w(vr2, B, -0x78, 0);
+        vstelm_w(vr0, B, -0x78, 2);
         //vmovss(dword[B - 0x74], vr3);
-        vstelm_w(vr3, B, -0x74, 0);
+        vstelm_w(vr0, B, -0x74, 3);
         //lea(A2, ptr[A1 + LDA * 1]);
         add_d(A2, A1, LDA);
         //sub(A1, -16);
@@ -1123,15 +1112,14 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[3], T_NEAR);
         bge(zero, TM, labels[3]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmulps(vr0, vr6, vr0);
         vfmul_s(vr0, vr6, vr0);
         //vpshufd(vr1, vr0, 0x55);
-        vshuf4i_w(vr1, vr0, 0x55);
         //vmovss(dword[B - 0x80], vr0);
         vstelm_w(vr0, B, -0x80, 0);
         //vmovss(dword[B - 0x7c], vr1);
-        vstelm_w(vr1, B, -0x7c, 0);
+        vstelm_w(vr0, B, -0x7c, 1);
         //lea(A2, ptr[A1 + LDA * 1]);
         add_d(A2, A1, LDA);
         //sub(A1, -8);
@@ -1146,7 +1134,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[2], T_NEAR);
         bge(zero, TM, labels[2]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_w(vr0, A1, 0);
         //vmulps(vr0, vr6, vr0);
         vfmul_s(vr0, vr6, vr0);
         //vmovss(dword[B - 0x80], vr0);
