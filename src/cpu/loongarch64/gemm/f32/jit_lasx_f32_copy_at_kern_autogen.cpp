@@ -801,7 +801,7 @@ void jit_lasx_f32_copy_at_kern::generate() {
         //vunpcklpd(xr0, xr4, xr1);
         xvilvl_d(xr0, xr1, xr4);
         //vunpckhpd(xr1, xr4, xr1);
-        xvilvh_d(xr0, xr4, xr1);
+        xvilvh_d(xr0, xr1, xr4);
         //vmovups(yword[B - 0x60], xr0);
         xvst(xr0, B, -0x60);
         //vmovups(yword[B - 0x20], xr1);
