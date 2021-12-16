@@ -894,10 +894,10 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         vldx(vr1, A1, LDA);
         //vmovhps(vr0, vr0, qword[A1 + LDA * 2]);
         ldx_d(TM0, A1, LDA2);
-        vinsgr2vr_w(vr0, TM0, 1);
+        vinsgr2vr_d(vr0, TM0, 1);
         //vmovhps(vr1, vr1, qword[A1 + LDA3 * 1]);
         ldx_d(TM0, A1, LDA3);
-        vinsgr2vr_w(vr1, TM0, 1);
+        vinsgr2vr_d(vr1, TM0, 1);
         //vunpcklps(vr4, vr0, vr1);
         vilvl_w(vr4, vr1, vr0);
         //vunpckhps(vr1, vr0, vr1);
