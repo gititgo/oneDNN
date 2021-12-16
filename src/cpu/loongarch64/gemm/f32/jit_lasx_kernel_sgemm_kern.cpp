@@ -198,29 +198,29 @@ void jit_lasx_kernel_sgemm_kern::prefetchC_beforeKloop(int um) {
     //    }
     //} else {
         //prefetcht2(ptr[AA_ - 16 * elt_size_]);
-        uni_preld(2, AA_, -16 * elt_size_);
+        preld(2, AA_, -16 * elt_size_);
 
         //prefetcht0(ptr[CO1_ + 7 * elt_size_]);
-        uni_preld(0, CO1_, 7 * elt_size_);
+        preld(0, CO1_, 7 * elt_size_);
         //prefetcht0(ptr[CO1_ + LDC_ + 7 * elt_size_]);
         add_d(X_TMP_1, CO1_, LDC_);
-        uni_preld(0, X_TMP_1, 7 * elt_size_);
+        preld(0, X_TMP_1, 7 * elt_size_);
         //prefetcht0(ptr[CO2_ + 7 * elt_size_]);
-        uni_preld(0, CO2_, 7 * elt_size_);
+        preld(0, CO2_, 7 * elt_size_);
         //prefetcht0(ptr[CO2_ + LDC_ + 7 * elt_size_]);
         add_d(X_TMP_1, CO2_, LDC_);
-        uni_preld(0, X_TMP_1, 7 * elt_size_);
+        preld(0, X_TMP_1, 7 * elt_size_);
 
         //prefetcht0(ptr[CO1_ + 23 * elt_size_]);
-        uni_preld(0, CO1_, 23 * elt_size_);
+        preld(0, CO1_, 23 * elt_size_);
         //prefetcht0(ptr[CO1_ + LDC_ + 23 * elt_size_]);
         add_d(X_TMP_1, CO1_, LDC_);
-        uni_preld(0, X_TMP_1, 23 * elt_size_);
+        preld(0, X_TMP_1, 23 * elt_size_);
         //prefetcht0(ptr[CO2_ + 23 * elt_size_]);
-        uni_preld(0, CO2_, 23 * elt_size_);
+        preld(0, CO2_, 23 * elt_size_);
         //prefetcht0(ptr[CO2_ + LDC_ + 23 * elt_size_]);
         add_d(X_TMP_1, CO2_, LDC_);
-        uni_preld(0, X_TMP_1, 23 * elt_size_);
+        preld(0, X_TMP_1, 23 * elt_size_);
 
         //add(LL_, second_fetch_);
         addi_d(LL_, LL_, second_fetch_);
@@ -332,9 +332,8 @@ void jit_lasx_kernel_sgemm_kern::generate() {
 
             if (unroll_y == unroll_n_) {
                 //mov(I_, N_);
-                add_d(I_, N_, zero);
                 //sar(I_, uy_bin);
-                srai_d(I_, I_, uy_bin);
+                srai_d(I_, N_, uy_bin);
                 //jle(unroll_y_label[i * (unroll_n_bin_ + 1) + uy_bin - 1],
                 //        T_NEAR);
                 bge(zero, I_, unroll_y_label[i * (unroll_n_bin_ + 1) + uy_bin - 1]);
@@ -498,13 +497,13 @@ void jit_lasx_kernel_sgemm_kern::generate() {
                 if ((unroll_y != unroll_n_) || (unroll_x <= 4)) {
                     if (unroll_x == unroll_m_)
                         //sub(AA_, -16 * elt_size_);
-                        add_imm(AA_, AA_, 16 * elt_size_, X_TMP_0);
+                        addi_d(AA_, AA_, 16 * elt_size_);
                     else
                         //sub(AA_, -32 * elt_size_);
-                        add_imm(AA_, AA_, 32 * elt_size_, X_TMP_0);
+                        addi_d(AA_, AA_, 32 * elt_size_);
                 } else
                     //sub(AA_, -48 * elt_size_);
-                    add_imm(AA_, AA_, 48 * elt_size_, X_TMP_0);
+                    addi_d(AA_, AA_, 48 * elt_size_);
             //}
 
             if (unroll_y == unroll_n_) {

@@ -58,7 +58,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
                           A_ = abi_param5, B_ = abi_param6, C_ = abi_param7, LDC_ = abi_param8;
     Xbyak_loongarch::XReg I_ = t5, J_ = t6, AA_ = abi_param4, KK_ = K_, BO_ = t4, CO1_ = t7,
                  CO2_ = t8;
-    Xbyak_loongarch::XReg AO_ = t2, LL_ = t1;
+    Xbyak_loongarch::XReg AO_ = t2, LL_ = t3;
     //int zmm_a_idx_ = 0, zmm_b_idx_ = mayiuse(avx512_core) ? 6 : 3,
     //    zmm_acc_idx_ = mayiuse(avx512_core) ? 8 : 4;
     int zmm_a_idx_ = 0, zmm_b_idx_ = 3, zmm_acc_idx_ = 4;
@@ -502,7 +502,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
                     acc_idx++;
                 }
                 //prefetcht0(ptr[CO1_ + elt_size_ * ((um - 1) % 16)]);
-                uni_preld(0, CO1_, elt_size_ * ((um - 1) % 16));
+                preld(0, CO1_, elt_size_ * ((um - 1) % 16));
                 if ((un < unroll_n_) && (um == unroll_m_)) {
                     acc_idx = next_acc(acc_idx, um, un);
                     uni_vpxor(T_reg(zmm_acc_idx_ + acc_idx),
@@ -517,7 +517,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
                 }
                 //prefetcht0(ptr[CO1_ + LDC_ + elt_size_ * ((um - 1) % 16)]);
                 add_d(X_TMP_1, CO1_, LDC_);
-                uni_preld(0, X_TMP_1, elt_size_ * ((um - 1) % 16));
+                preld(0, X_TMP_1, elt_size_ * ((um - 1) % 16));
                 if (un == unroll_n_) {
                     if ((um == unroll_m_)
                             || ((um <= nelt_per_vecreg_) && (un == unroll_n_)
@@ -529,7 +529,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
                         acc_idx++;
                     }
                     //prefetcht0(ptr[CO2_ + elt_size_ * ((um - 1) % 16)]);
-                    uni_preld(0, CO2_, elt_size_ * ((um - 1) % 16));
+                    preld(0, CO2_, elt_size_ * ((um - 1) % 16));
                     if ((um == unroll_m_)
                             || ((um <= nelt_per_vecreg_) && (un == unroll_n_)
                                     && (um > 1))) {
@@ -541,14 +541,14 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
                     }
                     //prefetcht0(ptr[CO2_ + LDC_ + elt_size_ * ((um - 1) % 16)]);
                     add_d(X_TMP_1, CO2_, LDC_);
-                    uni_preld(0, X_TMP_1, elt_size_ * ((um - 1) % 16));
+                    preld(0, X_TMP_1, elt_size_ * ((um - 1) % 16));
                 }
 
             } else {
                 //prefetcht0(ptr[CO1_ + ((um - 1) % 16) * elt_size_]);
-                uni_preld(0, CO1_, ((um - 1) % 16) * elt_size_);
+                preld(0, CO1_, ((um - 1) % 16) * elt_size_);
                 //if (um == unroll_m_) prefetcht0(ptr[CO1_ + 23 * elt_size_]);
-                if (um == unroll_m_) uni_preld(0, CO1_, 23 * elt_size_);
+                if (um == unroll_m_) preld(0, CO1_, 23 * elt_size_);
             }
 
             for (i = zmm_acc_idx_ + acc_idx;
@@ -567,9 +567,8 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
             add_d(AO_, A_, zero);
 
         //mov(LL_, KK_);
-        add_d(LL_, KK_, zero);
         //sar(LL_, unroll_k_bin_);
-        srai_d(LL_, LL_, unroll_k_bin_);
+        srai_d(LL_, KK_, unroll_k_bin_);
         //jle(end_main_K_loop_label, T_NEAR);
         bge(zero, LL_, end_main_K_loop_label);
 
@@ -622,14 +621,13 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
         {
             if ((un == unroll_n_) && ((um == 16) || (um == 8))) {
                 //prefetcht2(ptr[AA_ - 16 * elt_size_]);
-                uni_preld(2, AA_, -1 * 16 * elt_size_);
+                preld(2, AA_, -1 * 16 * elt_size_);
             }
         }
 
         //mov(LL_, KK_);
-        add_d(LL_, KK_, zero);
         //and_(LL_, 3);
-        andi(LL_, LL_, 3);
+        andi(LL_, KK_, 3);
         //je(end_K_loop_label, T_NEAR);
         beq(LL_, zero, end_K_loop_label);
 
@@ -659,7 +657,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
         //else {
             if ((um == nelt_per_vecreg_) && (un == unroll_n_)) {
                 //prefetcht2(ptr[AA_ + elt_size_ * offAA]);
-                uni_preld(2, AA_, elt_size_ * offAA);
+                preld(2, AA_, elt_size_ * offAA);
                 offAA += 16;
             }
         //}
@@ -717,7 +715,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
             {
                 if (j > 0) {
                     //prefetcht2(ptr[AA_ + elt_size_ * offAA]);
-                    uni_preld(2, AA_, elt_size_ * offAA);
+                    preld(2, AA_, elt_size_ * offAA);
                     offAA += 16;
                 }
             }
@@ -750,7 +748,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
             {
                 if ((um == unroll_m_) && (un == 1)) {
                     //prefetcht2(ptr[AA_ + elt_size_ * offAA]);
-                    uni_preld(2, AA_, elt_size_ * offAA);
+                    preld(2, AA_, elt_size_ * offAA);
                     offAA += 16;
                 }
             }
@@ -788,7 +786,7 @@ class jit_lasx_kernel_sgemm_kern : public jit_generator {
         {
             if ((um >= nelt_per_vecreg_) && (un < unroll_n_)) {
                 //prefetcht2(ptr[AA_ + elt_size_ * offAA]);
-                uni_preld(2, AA_, elt_size_ * offAA);
+                preld(2, AA_, elt_size_ * offAA);
                 offAA += 16;
             }
         }
