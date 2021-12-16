@@ -2209,7 +2209,7 @@ void jit_lasx_f32_copy_at_kern::generate() {
         //vunpcklps(vr2, vr2, vr3);
         vilvl_w(vr2, vr3, vr2);
         //vunpcklpd(vr4, vr0, vr2);
-        vilvh_w(vr4, vr2, vr0);
+        vilvl_d(vr4, vr2, vr0);
         //lea(A2, ptr[A1 + LDA * 4]);
         add_d(A2, A1, LDA4);
         //vmovss(vr0, dword[A2]);
