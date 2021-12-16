@@ -719,7 +719,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //sar(I, 0x2);
         srai_d(I, M, 0x2);
         //jle(labels[22], T_NEAR);
-        bge(zero, I, labels[23]);
+        bge(zero, I, labels[22]);
         //align(4);
 
         L(labels[24]);
