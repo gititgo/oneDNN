@@ -180,7 +180,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[49], T_NEAR);
         bge(zero, TM, labels[49]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovsd(vr1, qword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vmovhps(vr0, vr0, qword[A1 + LDA * 2]);
@@ -302,7 +302,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[44], T_NEAR);
         bge(zero, TM, labels[44]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovsd(vr1, qword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -525,7 +525,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[32], T_NEAR);
         bge(zero, TM, labels[32]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovsd(vr1, qword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vmovhps(vr0, vr0, qword[A1 + LDA * 2]);
@@ -657,7 +657,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[27], T_NEAR);
         bge(zero, TM, labels[27]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovsd(vr1, qword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -881,7 +881,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[13], T_NEAR);
         bge(zero, TM, labels[13]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovsd(vr1, qword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vmovhps(vr0, vr0, qword[A1 + LDA * 2]);
@@ -1013,7 +1013,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[8], T_NEAR);
         bge(zero, TM, labels[8]);
         //vmovsd(vr0, qword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovsd(vr1, qword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
