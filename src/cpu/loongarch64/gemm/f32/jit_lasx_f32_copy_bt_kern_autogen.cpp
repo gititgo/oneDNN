@@ -126,7 +126,7 @@ void jit_lasx_f32_copy_bt_kern::generate() {
         addi_d(A, A, 0x10);
         //mov(I, M);
         //sar(I, 0x3);
-        srli_d(I, M, 0x3);
+        srai_d(I, M, 0x3);
         //jle(labels[0], T_NEAR);
         bge(zero, I, labels[0]);
         //align(4);

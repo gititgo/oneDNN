@@ -517,7 +517,7 @@ void jit_lasx_f32_copy_at_kern::generate() {
         //lea(A2, ptr[A2 + LDA * 4]);
         add_d(A2, A2, LDA4);
         //vmovss(vr0, dword[A2]);
-        ld_w(vr0, A2, 0);
+        ld_w(TM0, A2, 0);
         vinsgr2vr_w(vr0, TM0, 0);
         //vmovss(vr1, dword[A2 + LDA * 1]);
         ldx_w(TM0, A2, LDA);
@@ -2543,7 +2543,7 @@ void jit_lasx_f32_copy_at_kern::generate() {
         //vunpcklps(vr0, vr0, vr1);
         vilvl_w(vr0, vr1, vr0);
         //vmovss(vr2, dword[A1 + LDA * 2]);
-        ldx_w(TM0, A1, LD2);
+        ldx_w(TM0, A1, LDA2);
         vinsgr2vr_w(vr2, TM0, 0);
         //vmovss(vr3, dword[A1 + LDA3 * 1]);
         ldx_w(TM0, A1, LDA3);
