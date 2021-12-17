@@ -131,7 +131,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[14]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovups(vr1, xword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vmovups(vr2, xword[A1 + LDA * 2]);
@@ -215,7 +215,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[48], T_NEAR);
         bge(zero, TM, labels[48]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovss(vr1, dword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -267,7 +267,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[46]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovups(vr1, xword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr4, vr0, vr1);
@@ -325,7 +325,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[43], T_NEAR);
         bge(zero, TM, labels[43]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovss(vr1, dword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -365,7 +365,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[41]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vpshufd(vr1, vr0, 0x55);
         //vpshufd(vr2, vr0, 0xaa);
         //vpshufd(vr3, vr0, 0xff);
@@ -415,7 +415,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[38], T_NEAR);
         bge(zero, TM, labels[38]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovss(dword[B - 0x80], vr0);
         vstelm_w(vr0, B, -0x80, 0);
         //lea(A2, ptr[A1 + LDA * 1]);
@@ -468,7 +468,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[34]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovups(vr1, xword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vmovups(vr2, xword[A1 + LDA * 2]);
@@ -564,7 +564,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[31], T_NEAR);
         bge(zero, TM, labels[31]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovss(vr1, dword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -618,7 +618,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[29]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovups(vr1, xword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr4, vr0, vr1);
@@ -682,7 +682,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[26], T_NEAR);
         bge(zero, TM, labels[26]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovss(vr1, dword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -724,7 +724,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[24]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vxorps(vr0, vr6, vr0);
         vxor_v(vr0, vr6, vr0);
         //vpshufd(vr1, vr0, 0x55);
@@ -778,7 +778,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[20], T_NEAR);
         bge(zero, TM, labels[20]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vxorps(vr0, vr6, vr0);
         vxor_v(vr0, vr6, vr0);
         //vmovss(dword[B - 0x80], vr0);
@@ -824,7 +824,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[16]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovups(vr1, xword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vmovups(vr2, xword[A1 + LDA * 2]);
@@ -920,7 +920,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[12], T_NEAR);
         bge(zero, TM, labels[12]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovss(vr1, dword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -974,7 +974,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[10]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovups(vr1, xword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr4, vr0, vr1);
@@ -1038,7 +1038,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //jle(labels[7], T_NEAR);
         bge(zero, TM, labels[7]);
         //vmovss(vr0, dword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmovss(vr1, dword[A1 + LDA * 1]);
         vldx(vr1, A1, LDA);
         //vunpcklps(vr0, vr0, vr1);
@@ -1080,7 +1080,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
 
         L(labels[5]);
         //vmovups(vr0, xword[A1]);
-        vld(vr0, A1, 0);
+        vldrepl_d(vr0, A1, 0);
         //vmulps(vr0, vr6, vr0);
         vfmul_s(vr0, vr6, vr0);
         //vpshufd(vr1, vr0, 0x55);
