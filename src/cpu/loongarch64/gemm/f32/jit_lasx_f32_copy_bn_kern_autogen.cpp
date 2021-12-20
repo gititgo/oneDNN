@@ -105,7 +105,7 @@ void jit_lasx_f32_copy_bn_kern::generate() {
         //vperm2f128(xr4, xr4, xr4, 0x20);
         xvpermi_q(xr4, xr4, 0x20);
         //vucomiss(vr6, vr3);
-        vfcmp_cne_s(vr31, vr6, vr3);
+        vfcmp_cne_s(vr31, vr3, vr6);
         vpickve2gr_w(TM, vr31, 0);
         //jne(labels[36], T_NEAR);
         bnez(TM, labels[36]);
