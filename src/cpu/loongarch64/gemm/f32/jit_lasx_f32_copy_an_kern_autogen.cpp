@@ -106,7 +106,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vperm2f128(xr4, xr4, xr4, 0x20);
         xvpermi_q(xr4, xr4, 0x20);
         //vucomiss(vr6, vr3);
-        vfcmp_cne_s(vr31, vr6, vr3);
+        vfcmp_cle_s(vr31, vr3, vr6);
         vpickve2gr_w(TM, vr31, 0);
         //jne(labels[102], T_NEAR);
         bnez(TM, labels[102]);
@@ -1127,7 +1127,7 @@ void jit_lasx_f32_copy_an_kern::generate() {
         //vxorps(vr3, vr3, vr4);
         vxor_v(vr3, vr3, vr4);
         //vucomiss(vr6, vr3);
-        vfcmp_cne_s(vr31, vr6, vr3);
+        vfcmp_cle_s(vr31, vr3, vr6);
         vpickve2gr_w(TM, vr31, 0);
         //jne(labels[27], T_NEAR);
         bnez(TM, labels[27]);
