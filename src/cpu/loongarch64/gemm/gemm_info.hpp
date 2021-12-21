@@ -122,8 +122,8 @@ struct gemm_info_t {
     // kern[beta0][alpha1][col_off][row_off]
     static gemm_fptr_t kern[2][2][2][2];
 
-    // gemv_kern[trans]
-    static gemv_fptr_t gemv_kern[2];
+    // gemv do not has performance improve in loongarch
+    //static gemv_fptr_t gemv_kern[2];
 
     //static gemv_s8s8s32_fptr_t gemv_s8s8s32_kern;
     //static gemv_s8u8s32_fptr_t gemv_s8u8s32_kern;

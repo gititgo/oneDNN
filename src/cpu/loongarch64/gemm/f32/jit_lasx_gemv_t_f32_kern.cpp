@@ -168,14 +168,15 @@ void jit_lasx_gemv_t_f32_kern::outerloop(
         add_d(YO_, Y_, zero);
         //lea(Y_, ptr[YO_ + INCY_ * unroll_y]);
         mov_imm(X_TMP_0, unroll_y);
-        mul_d(X_TMP_1, INCY_, X_TMP_0);
-        add_d(Y_, YO_, X_TMP_1);
+        mul_d(X_TMP_0, INCY_, X_TMP_0);
+        add_d(Y_, YO_, X_TMP_0);
 
         //mov(AO_, A_);
         add_d(AO_, A_, zero);
         //lea(A_, ptr[AO_ + LDA_ * unroll_y]);
-        mul_d(X_TMP_1, LDA_, X_TMP_0);
-        add_d(A_, AO_, X_TMP_1);
+        mov_imm(X_TMP_0, unroll_y);
+        mul_d(X_TMP_0, LDA_, X_TMP_0);
+        add_d(A_, AO_, X_TMP_0);
 
         //mov(XO_, X_);
         add_d(XO_, X_, zero);
@@ -339,7 +340,7 @@ void jit_lasx_gemv_t_f32_kern::generate() {
     preamble();
 
     //movss(make_xmm(alpha_), qword[ALPHA_]);
-    vldrepl_d(make_xmm(alpha_), ALPHA_, 0);
+    vldrepl_w(make_xmm(alpha_), ALPHA_, 0);
 
     //if (is_windows) {
     //    mov(LDA_, arg_lda_);

@@ -185,11 +185,11 @@ typename gemm_info_t<a_t, b_t, c_t>::gemm_fptr_t
         = {{{{nullptr}}}};
 
 
-// gemv_kern[trans]
-template <typename a_t, typename b_t, typename c_t>
-typename gemm_info_t<a_t, b_t, c_t>::gemv_fptr_t
-        gemm_info_t<a_t, b_t, c_t>::gemv_kern[2]
-        = {nullptr};
+// gemv do not has performance improve in loongarch
+//template <typename a_t, typename b_t, typename c_t>
+//typename gemm_info_t<a_t, b_t, c_t>::gemv_fptr_t
+//        gemm_info_t<a_t, b_t, c_t>::gemv_kern[2]
+//        = {nullptr};
 
 /* loongarch do not support gemv_s8s8s32
 template <typename a_t, typename b_t, typename c_t>
@@ -668,13 +668,12 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
             default: break;
         }
 
+        /* gemv do not has performance improve in loongarch
         static jit_generator *gemv_kernel[2] = {nullptr};
-        /* loongarch do not support gemv s8s8s32
         static jit_generator *gemv_s8s8s32_kernel = nullptr;
         static jit_generator *gemv_s8u8s32_kernel = nullptr;
-        static jit_generator *gemv_u8s8s32_kernel = nullptr; */
+        static jit_generator *gemv_u8s8s32_kernel = nullptr;
         switch (data_traits<a_t>::data_type) {
-            /* loongarch do not support gemv s8 bf16
             case data_type::s8:
                 if (mayiuse(avx512_core)) {
                     gemv_s8s8s32_kernel = new jit_avx512_core_gemv_s8x8s32_kern(
@@ -693,19 +692,18 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
                                 = new jit_avx512_core_gemv_bf16bf16f32_kern(
                                         isTrans);
                 }
-                break; */
+                break;
 
             case data_type::f32:
                 if (mayiuse(lasx)) {
-                    //gemv_kernel[no_trans] = new jit_sse41_gemv_n_f32_kern();
-                    gemv_kernel[no_trans] = nullptr;
-                    gemv_kernel[do_trans] = new jit_lasx_gemv_t_f32_kern();
-                } //else if (mayiuse(sse41)) {
-                //    gemv_kernel[no_trans] = new jit_sse41_gemv_n_f32_kern();
-                //    gemv_kernel[do_trans] = new jit_sse41_gemv_t_f32_kern();
-                //}
+                    gemv_kernel[no_trans] = new jit_sse41_gemv_n_f32_kern();
+                    gemv_kernel[do_trans] = new jit_avx_gemv_t_f32_kern();
+                } else if (mayiuse(sse41)) {
+                    gemv_kernel[no_trans] = new jit_sse41_gemv_n_f32_kern();
+                    gemv_kernel[do_trans] = new jit_sse41_gemv_t_f32_kern();
+                }
                 break;
-        }
+        } */
 
         // Set copy kernels function pointer table
         for (int isTrans : {no_trans, do_trans})
@@ -761,6 +759,7 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
                         }
         }
 
+        /* gemv do not has performance improve in loongarch
         // Set gemv floating point kernels
         if (utils::one_of(data_traits<a_t>::data_type, data_type::f32)) {
             for (int isTrans : {no_trans, do_trans}) {
@@ -773,7 +772,6 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
             }
         }
 
-        /* loongarch do not support gemv s8 u8 s32
         // Set gemv integer gemm kernels
         if (data_traits<a_t>::data_type == data_type::s8) {
             if (gemv_s8s8s32_kernel != nullptr) {
@@ -820,10 +818,10 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
                 this->kernel[isBeta0][doColSum][doRowSum]
                         = kern[isBeta0][doAlpha1][doColSum][doRowSum];
 
+    /* gemv do not has performance improve in loongarch
     for (int isTrans : {no_trans, do_trans})
         this->gemv_kernel[isTrans] = gemv_kern[isTrans];
 
-    /* loongarch do not support gemv s8 u8 s32
     this->gemv_s8s8s32_kernel = nullptr;
     this->gemv_s8u8s32_kernel = nullptr;
     this->gemv_u8s8s32_kernel = nullptr;
@@ -881,9 +879,9 @@ bool gemm_info_t<a_t, b_t, c_t>::hasKernels(void) {
 
                 if (!this->copyA || !this->copyB) return false;
 
+                // gemv do not has performance improve in loongarch
                 //for (int isTrans : {no_trans, do_trans})
                 //    if (!this->gemv_kernel[isTrans]) return false;
-                if (!this->gemv_kernel[do_trans]) return false; // because no_trans is nullptr
             }
             break;
     }
