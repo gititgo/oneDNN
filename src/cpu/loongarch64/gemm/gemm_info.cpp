@@ -40,8 +40,8 @@
 //#include "cpu/loongarch64/gemm/f32/jit_sse41_gemv_n_f32_kern.hpp"
 //#include "cpu/loongarch64/gemm/f32/jit_sse41_gemv_t_f32_kern.hpp"
 
-//#include "cpu/loongarch64/gemm/s8x8s32/common_u8.hpp"
-//#include "cpu/loongarch64/gemm/s8x8s32/jit_avx2_gemm_s8u8s32_kern.hpp"
+#include "cpu/loongarch64/gemm/s8x8s32/common_u8.hpp"
+#include "cpu/loongarch64/gemm/s8x8s32/jit_lasx_gemm_s8u8s32_kern.hpp"
 //#include "cpu/loongarch64/gemm/s8x8s32/jit_avx512_core_gemm_s8u8s32_kern.hpp"
 //#include "cpu/loongarch64/gemm/s8x8s32/jit_avx512_core_kernel_gemv_s8x8s32_kern.hpp"
 
@@ -66,17 +66,17 @@ void prepare_bo(int32_t &bo_gemm_info, const b_t *bo_orig) {
     UNUSED(bo_orig);
     bo_gemm_info = 0;
 }
-//template <>
-//void prepare_bo(int32_t &bo_gemm_info, const uint8_t *bo_orig) {
-//    bo_gemm_info = bo_orig ? *bo_orig : 0;
-//}
-//template <>
-//void prepare_bo(int32_t &bo_gemm_info, const int8_t *bo_orig) {
-//    int bo_s32 = bo_orig ? *bo_orig : 0;
+template <>
+void prepare_bo(int32_t &bo_gemm_info, const uint8_t *bo_orig) {
+    bo_gemm_info = bo_orig ? *bo_orig : 0;
+}
+template <>
+void prepare_bo(int32_t &bo_gemm_info, const int8_t *bo_orig) {
+    int bo_s32 = bo_orig ? *bo_orig : 0;
     //if (!mayiuse(avx512_core_bf16_amx_int8)) bo_s32 += 128;
-//    bo_s32 += 128;
-//    bo_gemm_info = bo_s32;
-//}
+    bo_s32 += 128;
+    bo_gemm_info = bo_s32;
+}
 
 } // namespace
 
@@ -260,7 +260,7 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
                 this->bk_traditional = 256;
                 this->blocking_small_k = 48;
                 this->bn_small_k = 24;
-            //} else if (mayiuse(avx)) {
+            } //else if (mayiuse(avx)) {
             //    this->um = 16;
             //    this->un = 2;
             //    this->uk = 1;
@@ -272,18 +272,17 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
             //    this->blocking_small_k = 48;
             //    this->bn_small_k = 24;
             //} else if (mayiuse(sse41)) {
-            } else if (mayiuse(lsx)) {
-                this->um = 16;
-                this->un = 2;
-                this->uk = 1;
-                this->bm = 4096;
-                this->bn = 256;
-                this->bk = 256;
+            //     this->um = 16;
+            //     this->un = 2;
+            //     this->uk = 1;
+            //     this->bm = 4096;
+            //     this->bn = 256;
+            //     this->bk = 256;
 
-                this->bk_traditional = 256;
-                this->blocking_small_k = 48;
-                this->bn_small_k = 24;
-            }
+            //     this->bk_traditional = 256;
+            //     this->blocking_small_k = 48;
+            //     this->bn_small_k = 24;
+            // }
             break;
 
         /* loongarch do not support bf16
@@ -385,109 +384,112 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
         static jit_generator *copy_b[2][2] = {{nullptr}};
 
         switch (data_traits<a_t>::data_type) {
-            /* loongarch do not support s8 bf16 data_type
+            // loongarch do not support s8 bf16 data_type
             case data_type::s8:
-                if (mayiuse(amx_int8)) {
-                    for (int isTrans : {no_trans, do_trans}) {
-                        copy_a[isTrans][no_sum]
-                                = new jit_avx512_core_amx_copy_kern(
-                                        true, !isTrans, sizeof(a_t));
+                // if (mayiuse(amx_int8)) {
+                //     for (int isTrans : {no_trans, do_trans}) {
+                //         copy_a[isTrans][no_sum]
+                //                 = new jit_avx512_core_amx_copy_kern(
+                //                         true, !isTrans, sizeof(a_t));
 
-                        copy_b[isTrans][no_sum]
-                                = new jit_avx512_core_amx_copy_kern(
-                                        false, isTrans, sizeof(b_t));
-                    }
-                } else if (mayiuse(avx512_core)) {
-                    copy_a[no_trans][no_sum]
-                            = new jit_avx512_core_u8_copy_an_kern();
-                    copy_a[do_trans][no_sum]
-                            = new jit_avx512_core_u8_copy_at_kern();
+                //         copy_b[isTrans][no_sum]
+                //                 = new jit_avx512_core_amx_copy_kern(
+                //                         false, isTrans, sizeof(b_t));
+                //     }
+                // } else if (mayiuse(avx512_core)) {
+                //     copy_a[no_trans][no_sum]
+                //             = new jit_avx512_core_u8_copy_an_kern();
+                //     copy_a[do_trans][no_sum]
+                //             = new jit_avx512_core_u8_copy_at_kern();
 
-                    copy_b[no_trans][no_sum]
-                            = new jit_avx512_core_u8_copy_bn_kern(b_is_s8);
-                    copy_b[do_trans][no_sum]
-                            = new jit_avx512_core_u8_copy_bt_kern(b_is_s8);
+                //     copy_b[no_trans][no_sum]
+                //             = new jit_avx512_core_u8_copy_bn_kern(b_is_s8);
+                //     copy_b[do_trans][no_sum]
+                //             = new jit_avx512_core_u8_copy_bt_kern(b_is_s8);
 
-                    copy_a[no_trans][do_sum]
-                            = new jit_avx512_core_u8_copy_sum_an_kern();
-                    copy_a[do_trans][do_sum]
-                            = new jit_avx512_core_u8_copy_sum_at_kern();
+                //     copy_a[no_trans][do_sum]
+                //             = new jit_avx512_core_u8_copy_sum_an_kern();
+                //     copy_a[do_trans][do_sum]
+                //             = new jit_avx512_core_u8_copy_sum_at_kern();
 
-                    copy_b[no_trans][do_sum]
-                            = new jit_avx512_core_u8_copy_sum_bn_kern(b_is_s8);
-                    copy_b[do_trans][do_sum]
-                            = new jit_avx512_core_u8_copy_sum_bt_kern(b_is_s8);
-                } else if (mayiuse(avx2_vnni)) {
-                    copy_a[no_trans][no_sum]
-                            = new jit_avx2_vnni_u8_copy_an_kern();
-                    copy_a[do_trans][no_sum]
-                            = new jit_avx2_vnni_u8_copy_at_kern();
+                //     copy_b[no_trans][do_sum]
+                //             = new jit_avx512_core_u8_copy_sum_bn_kern(b_is_s8);
+                //     copy_b[do_trans][do_sum]
+                //             = new jit_avx512_core_u8_copy_sum_bt_kern(b_is_s8);
+                // } else if (mayiuse(avx2_vnni)) {
+                //     copy_a[no_trans][no_sum]
+                //             = new jit_avx2_vnni_u8_copy_an_kern();
+                //     copy_a[do_trans][no_sum]
+                //             = new jit_avx2_vnni_u8_copy_at_kern();
 
-                    copy_b[no_trans][no_sum]
-                            = new jit_avx2_vnni_u8_copy_bn_kern();
-                    copy_b[do_trans][no_sum]
-                            = new jit_avx2_vnni_u8_copy_bt_kern();
+                //     copy_b[no_trans][no_sum]
+                //             = new jit_avx2_vnni_u8_copy_bn_kern();
+                //     copy_b[do_trans][no_sum]
+                //             = new jit_avx2_vnni_u8_copy_bt_kern();
 
-                    copy_a[no_trans][do_sum]
-                            = new jit_avx2_vnni_u8_copy_sum_an_kern();
-                    copy_a[do_trans][do_sum]
-                            = new jit_avx2_vnni_u8_copy_sum_at_kern();
+                //     copy_a[no_trans][do_sum]
+                //             = new jit_avx2_vnni_u8_copy_sum_an_kern();
+                //     copy_a[do_trans][do_sum]
+                //             = new jit_avx2_vnni_u8_copy_sum_at_kern();
 
-                    copy_b[no_trans][do_sum]
-                            = new jit_avx2_vnni_u8_copy_sum_bn_kern();
-                    copy_b[do_trans][do_sum]
-                            = new jit_avx2_vnni_u8_copy_sum_bt_kern();
-                } else if (mayiuse(avx2)) {
-                    copy_a[no_trans][no_sum] = new jit_avx2_u8_copy_an_kern();
-                    copy_a[do_trans][no_sum] = new jit_avx2_u8_copy_at_kern();
+                //     copy_b[no_trans][do_sum]
+                //             = new jit_avx2_vnni_u8_copy_sum_bn_kern();
+                //     copy_b[do_trans][do_sum]
+                //             = new jit_avx2_vnni_u8_copy_sum_bt_kern();
+                // } else if (mayiuse(avx2)) {
+                if (mayiuse(lasx)) {
+                    copy_a[no_trans][no_sum] = new jit_lasx_u8_copy_an_kern();
+                    copy_a[do_trans][no_sum] = new jit_lasx_u8_copy_at_kern();
 
-                    copy_b[no_trans][no_sum] = new jit_avx2_u8_copy_bn_kern();
-                    copy_b[do_trans][no_sum] = new jit_avx2_u8_copy_bt_kern();
-
-                    copy_a[no_trans][do_sum]
-                            = new jit_avx2_u8_copy_sum_an_kern();
-                    copy_a[do_trans][do_sum]
-                            = new jit_avx2_u8_copy_sum_at_kern();
-
-                    copy_b[no_trans][do_sum]
-                            = new jit_avx2_u8_copy_sum_bn_kern();
-                    copy_b[do_trans][do_sum]
-                            = new jit_avx2_u8_copy_sum_bt_kern();
-                } else if (mayiuse(avx)) {
-                    copy_a[no_trans][no_sum] = new jit_avx_u8_copy_an_kern();
-                    copy_a[do_trans][no_sum] = new jit_avx_u8_copy_at_kern();
-
-                    copy_b[no_trans][no_sum] = new jit_avx_u8_copy_bn_kern();
-                    copy_b[do_trans][no_sum] = new jit_avx_u8_copy_bt_kern();
+                    copy_b[no_trans][no_sum] = new jit_lasx_u8_copy_bn_kern();
+                    copy_b[do_trans][no_sum] = new jit_lasx_u8_copy_bt_kern();
 
                     copy_a[no_trans][do_sum]
-                            = new jit_avx_u8_copy_sum_an_kern();
+                            = new jit_lasx_u8_copy_sum_an_kern();
                     copy_a[do_trans][do_sum]
-                            = new jit_avx_u8_copy_sum_at_kern();
+                            = new jit_lasx_u8_copy_sum_at_kern();
 
                     copy_b[no_trans][do_sum]
-                            = new jit_avx_u8_copy_sum_bn_kern();
+                            = new jit_lasx_u8_copy_sum_bn_kern();
                     copy_b[do_trans][do_sum]
-                            = new jit_avx_u8_copy_sum_bt_kern();
-                } else if (mayiuse(sse41)) {
-                    copy_a[no_trans][no_sum] = new jit_sse41_u8_copy_an_kern();
-                    copy_a[do_trans][no_sum] = new jit_sse41_u8_copy_at_kern();
-
-                    copy_b[no_trans][no_sum] = new jit_sse41_u8_copy_bn_kern();
-                    copy_b[do_trans][no_sum] = new jit_sse41_u8_copy_bt_kern();
-
-                    copy_a[no_trans][do_sum]
-                            = new jit_sse41_u8_copy_sum_an_kern();
-                    copy_a[do_trans][do_sum]
-                            = new jit_sse41_u8_copy_sum_at_kern();
-
-                    copy_b[no_trans][do_sum]
-                            = new jit_sse41_u8_copy_sum_bn_kern();
-                    copy_b[do_trans][do_sum]
-                            = new jit_sse41_u8_copy_sum_bt_kern();
+                            = new jit_lasx_u8_copy_sum_bt_kern();
                 }
+                // } else if (mayiuse(avx)) {
+                //     copy_a[no_trans][no_sum] = new jit_avx_u8_copy_an_kern();
+                //     copy_a[do_trans][no_sum] = new jit_avx_u8_copy_at_kern();
+
+                //     copy_b[no_trans][no_sum] = new jit_avx_u8_copy_bn_kern();
+                //     copy_b[do_trans][no_sum] = new jit_avx_u8_copy_bt_kern();
+
+                //     copy_a[no_trans][do_sum]
+                //             = new jit_avx_u8_copy_sum_an_kern();
+                //     copy_a[do_trans][do_sum]
+                //             = new jit_avx_u8_copy_sum_at_kern();
+
+                //     copy_b[no_trans][do_sum]
+                //             = new jit_avx_u8_copy_sum_bn_kern();
+                //     copy_b[do_trans][do_sum]
+                //             = new jit_avx_u8_copy_sum_bt_kern();
+                // } else if (mayiuse(sse41)) {
+                //     copy_a[no_trans][no_sum] = new jit_sse41_u8_copy_an_kern();
+                //     copy_a[do_trans][no_sum] = new jit_sse41_u8_copy_at_kern();
+
+                //     copy_b[no_trans][no_sum] = new jit_sse41_u8_copy_bn_kern();
+                //     copy_b[do_trans][no_sum] = new jit_sse41_u8_copy_bt_kern();
+
+                //     copy_a[no_trans][do_sum]
+                //             = new jit_sse41_u8_copy_sum_an_kern();
+                //     copy_a[do_trans][do_sum]
+                //             = new jit_sse41_u8_copy_sum_at_kern();
+
+                //     copy_b[no_trans][do_sum]
+                //             = new jit_sse41_u8_copy_sum_bn_kern();
+                //     copy_b[do_trans][do_sum]
+                //             = new jit_sse41_u8_copy_sum_bt_kern();
+                // }
                 break;
 
+            /* loongarch do not support bf16 data_type
             case data_type::bf16:
                 if (mayiuse(amx_bf16)) {
                     for (int isTrans : {no_trans, do_trans}) {
@@ -564,70 +566,71 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
 
         static jit_generator *kernel[2][2][2][2] = {{{{nullptr}}}};
         switch (data_traits<a_t>::data_type) {
-            /* loongarch do not support s8 bf16 datatype
             case data_type::s8:
-                if (mayiuse(avx512_core_bf16_amx_int8)) {
-                    for (int isBeta0 : {no_beta0, do_beta0}) {
-                        kernel[isBeta0][do_alpha1][no_sum][no_sum]
-                                = new jit_avx512_core_amx_gemm_kern(
-                                        is_a_s8, is_b_s8, is_c_s32, isBeta0);
-                    }
-                } else if (mayiuse(avx512_core)) {
+                // if (mayiuse(avx512_core_bf16_amx_int8)) {
+                //     for (int isBeta0 : {no_beta0, do_beta0}) {
+                //         kernel[isBeta0][do_alpha1][no_sum][no_sum]
+                //                 = new jit_avx512_core_amx_gemm_kern(
+                //                         is_a_s8, is_b_s8, is_c_s32, isBeta0);
+                //     }
+                // } else if (mayiuse(avx512_core)) {
+                //     for (int isBeta0 : {no_beta0, do_beta0})
+                //         for (int doColSum : {no_sum, do_sum})
+                //             for (int doRowSum : {no_sum, do_sum}) {
+                //                 kernel[isBeta0][do_alpha1][doColSum][doRowSum]
+                //                         = new jit_avx512_core_gemm_s8u8s32_kern(
+                //                                 isBeta0, doColSum, doRowSum);
+                //             }
+                // } else if (mayiuse(avx2)) {
+                if (mayiuse(lasx)) {
                     for (int isBeta0 : {no_beta0, do_beta0})
                         for (int doColSum : {no_sum, do_sum})
                             for (int doRowSum : {no_sum, do_sum}) {
                                 kernel[isBeta0][do_alpha1][doColSum][doRowSum]
-                                        = new jit_avx512_core_gemm_s8u8s32_kern(
-                                                isBeta0, doColSum, doRowSum);
-                            }
-                } else if (mayiuse(avx2)) {
-                    for (int isBeta0 : {no_beta0, do_beta0})
-                        for (int doColSum : {no_sum, do_sum})
-                            for (int doRowSum : {no_sum, do_sum}) {
-                                kernel[isBeta0][do_alpha1][doColSum][doRowSum]
-                                        = new jit_avx2_gemm_s8u8s32_kern(
+                                        = new jit_lasx_gemm_s8u8s32_kern(
                                                 isBeta0, doColSum, doRowSum,
                                                 um);
                             }
-                } else if (mayiuse(avx)) {
-                    kernel[no_beta0][do_alpha1][no_sum][no_sum]
-                            = new jit_avx_kernel_gemm_s8u8s32_kern();
-                    kernel[no_beta0][do_alpha1][do_sum][no_sum]
-                            = new jit_avx_kernel_c_gemm_s8u8s32_kern();
-                    kernel[no_beta0][do_alpha1][no_sum][do_sum]
-                            = new jit_avx_kernel_r_gemm_s8u8s32_kern();
-                    kernel[no_beta0][do_alpha1][do_sum][do_sum]
-                            = new jit_avx_kernel_b_gemm_s8u8s32_kern();
-
-                    kernel[do_beta0][do_alpha1][no_sum][no_sum]
-                            = new jit_avx_kernel_b0_gemm_s8u8s32_kern();
-                    kernel[do_beta0][do_alpha1][do_sum][no_sum]
-                            = new jit_avx_kernel_b0_c_gemm_s8u8s32_kern();
-                    kernel[do_beta0][do_alpha1][no_sum][do_sum]
-                            = new jit_avx_kernel_b0_r_gemm_s8u8s32_kern();
-                    kernel[do_beta0][do_alpha1][do_sum][do_sum]
-                            = new jit_avx_kernel_b0_b_gemm_s8u8s32_kern();
-                } else if (mayiuse(sse41)) {
-                    kernel[no_beta0][do_alpha1][no_sum][no_sum]
-                            = new jit_sse41_kernel_gemm_s8u8s32_kern();
-                    kernel[no_beta0][do_alpha1][do_sum][no_sum]
-                            = new jit_sse41_kernel_c_gemm_s8u8s32_kern();
-                    kernel[no_beta0][do_alpha1][no_sum][do_sum]
-                            = new jit_sse41_kernel_r_gemm_s8u8s32_kern();
-                    kernel[no_beta0][do_alpha1][do_sum][do_sum]
-                            = new jit_sse41_kernel_b_gemm_s8u8s32_kern();
-
-                    kernel[do_beta0][do_alpha1][no_sum][no_sum]
-                            = new jit_sse41_kernel_b0_gemm_s8u8s32_kern();
-                    kernel[do_beta0][do_alpha1][do_sum][no_sum]
-                            = new jit_sse41_kernel_b0_c_gemm_s8u8s32_kern();
-                    kernel[do_beta0][do_alpha1][no_sum][do_sum]
-                            = new jit_sse41_kernel_b0_r_gemm_s8u8s32_kern();
-                    kernel[do_beta0][do_alpha1][do_sum][do_sum]
-                            = new jit_sse41_kernel_b0_b_gemm_s8u8s32_kern();
                 }
-                break;
+                // } else if (mayiuse(avx)) {
+                //     kernel[no_beta0][do_alpha1][no_sum][no_sum]
+                //             = new jit_avx_kernel_gemm_s8u8s32_kern();
+                //     kernel[no_beta0][do_alpha1][do_sum][no_sum]
+                //             = new jit_avx_kernel_c_gemm_s8u8s32_kern();
+                //     kernel[no_beta0][do_alpha1][no_sum][do_sum]
+                //             = new jit_avx_kernel_r_gemm_s8u8s32_kern();
+                //     kernel[no_beta0][do_alpha1][do_sum][do_sum]
+                //             = new jit_avx_kernel_b_gemm_s8u8s32_kern();
 
+                //     kernel[do_beta0][do_alpha1][no_sum][no_sum]
+                //             = new jit_avx_kernel_b0_gemm_s8u8s32_kern();
+                //     kernel[do_beta0][do_alpha1][do_sum][no_sum]
+                //             = new jit_avx_kernel_b0_c_gemm_s8u8s32_kern();
+                //     kernel[do_beta0][do_alpha1][no_sum][do_sum]
+                //             = new jit_avx_kernel_b0_r_gemm_s8u8s32_kern();
+                //     kernel[do_beta0][do_alpha1][do_sum][do_sum]
+                //             = new jit_avx_kernel_b0_b_gemm_s8u8s32_kern();
+                // } else if (mayiuse(sse41)) {
+                //     kernel[no_beta0][do_alpha1][no_sum][no_sum]
+                //             = new jit_sse41_kernel_gemm_s8u8s32_kern();
+                //     kernel[no_beta0][do_alpha1][do_sum][no_sum]
+                //             = new jit_sse41_kernel_c_gemm_s8u8s32_kern();
+                //     kernel[no_beta0][do_alpha1][no_sum][do_sum]
+                //             = new jit_sse41_kernel_r_gemm_s8u8s32_kern();
+                //     kernel[no_beta0][do_alpha1][do_sum][do_sum]
+                //             = new jit_sse41_kernel_b_gemm_s8u8s32_kern();
+
+                //     kernel[do_beta0][do_alpha1][no_sum][no_sum]
+                //             = new jit_sse41_kernel_b0_gemm_s8u8s32_kern();
+                //     kernel[do_beta0][do_alpha1][do_sum][no_sum]
+                //             = new jit_sse41_kernel_b0_c_gemm_s8u8s32_kern();
+                //     kernel[do_beta0][do_alpha1][no_sum][do_sum]
+                //             = new jit_sse41_kernel_b0_r_gemm_s8u8s32_kern();
+                //     kernel[do_beta0][do_alpha1][do_sum][do_sum]
+                //             = new jit_sse41_kernel_b0_b_gemm_s8u8s32_kern();
+                // }
+                break;
+            /* loongarch do not support bf16 datatype
             case data_type::bf16:
                 if (mayiuse(avx512_core_bf16_amx_bf16)) {
                     for (int isBeta0 : {no_beta0, do_beta0}) {
@@ -724,13 +727,14 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
                 }
             }
 
+        /* Doesn't need in Loongarch
         // AMX copy kernels don't support row/column sum. Use wrappers for now.
         if (is_int8_amx) {
             copy_a_kern[no_trans][do_sum] = &copy_a_sum_ref<no_trans>;
             copy_a_kern[do_trans][do_sum] = &copy_a_sum_ref<do_trans>;
             copy_b_kern[no_trans][do_sum] = &copy_b_sum_ref<no_trans>;
             copy_b_kern[do_trans][do_sum] = &copy_b_sum_ref<do_trans>;
-        }
+        } */
 
         // Set compute kernel function pointer table
         for (int isBeta0 : {no_beta0, do_beta0})
@@ -799,11 +803,27 @@ void gemm_info_t<a_t, b_t, c_t>::jit_init(void) {
 
     if (st != dnnl_success) return;
 
-    int doSumA = this->bo != 0 ? do_sum : no_sum;
-    int doSumB = this->ao != 0 ? do_sum : no_sum;
+    //int doSumA = this->bo != 0 ? do_sum : no_sum;
+    //int doSumB = this->ao != 0 ? do_sum : no_sum;
+    int doSumA = no_sum;
+    int doSumB = no_sum;
+    if(this->bo != 0){
+        doSumA = do_sum;
+    }
+    if(this->ao != 0){
+        doSumB = do_sum;
+    }
 
-    int copy_trans_a = (this->transa == do_trans) ? do_trans : no_trans;
-    int copy_trans_b = (this->transb == do_trans) ? do_trans : no_trans;
+    //int copy_trans_a = (this->transa == do_trans) ? do_trans : no_trans;
+    //int copy_trans_b = (this->transb == do_trans) ? do_trans : no_trans;
+    int copy_trans_a = no_trans;
+    if(this->transa == do_trans){
+        copy_trans_a = do_trans;
+    }
+    int copy_trans_b = no_trans;
+    if(this->transb == do_trans){
+        copy_trans_b = do_trans;
+    }
 
     this->copyA = copy_a_kern[copy_trans_a][doSumA];
     this->copyB = copy_b_kern[copy_trans_b][doSumB];
@@ -841,9 +861,9 @@ template <typename a_t, typename b_t, typename c_t>
 bool gemm_info_t<a_t, b_t, c_t>::hasKernels(void) {
 
     switch (data_traits<a_t>::data_type) {
-        /* loongarch do not support s8 bf16
         case data_type::s8:
-            if (mayiuse(sse41)) {
+            // if (mayiuse(sse41)) {
+            if (mayiuse(lasx)) {
                 for (int isBeta0 : {no_beta0, do_beta0})
                     for (int doColSum : {no_sum, do_sum})
                         for (int doRowSum : {no_sum, do_sum})
@@ -852,13 +872,14 @@ bool gemm_info_t<a_t, b_t, c_t>::hasKernels(void) {
 
                 if (!this->copyA || !this->copyB) return false;
 
-                if (mayiuse(avx512_core))
-                    if (!this->gemv_s8u8s32_kernel || !this->gemv_u8s8s32_kernel
-                            || !this->gemv_s8s8s32_kernel)
-                        return false;
+                // if (mayiuse(avx512_core))
+                //     if (!this->gemv_s8u8s32_kernel || !this->gemv_u8s8s32_kernel
+                //             || !this->gemv_s8s8s32_kernel)
+                //         return false;
             }
             break;
 
+        /* loongarch do not support bf16
         case data_type::bf16:
             if (mayiuse(avx512_core)) {
                 for (int isBeta0 : {no_beta0, do_beta0})
@@ -902,11 +923,11 @@ void gemm_info_t<a_t, b_t, c_t>::update_blocking(
 }
 
 // Instantiate the gemm_info_t templates needed.
-//template // For gemm_s8u8s32
-//        struct gemm_info_t<int8_t, uint8_t, int32_t>;
+template // For gemm_s8u8s32
+        struct gemm_info_t<int8_t, uint8_t, int32_t>;
 
-//template // For gemm_s8s8s32
-//        struct gemm_info_t<int8_t, int8_t, int32_t>;
+template // For gemm_s8s8s32
+        struct gemm_info_t<int8_t, int8_t, int32_t>;
 
 //template // For gemm_bf16bf16f32
 //        struct gemm_info_t<bfloat16_t, bfloat16_t, float>;

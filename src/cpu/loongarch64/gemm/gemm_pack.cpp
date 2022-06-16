@@ -200,7 +200,7 @@ dnnl_status_t sgemm_pack_get_size(const char *identifier, const char *transa,
     return dnnl_success;
 }
 
-/* loongarch do not support bf16 s8 data type
+/* loongarch do not support bf16 data type
 dnnl_status_t gemm_bf16bf16f32_pack_get_size(const char *identifier,
         const char *transa, const char *transb, const dim_t *M, const dim_t *N,
         const dim_t *K, const dim_t *lda, const dim_t *ldb, size_t *size,
@@ -228,6 +228,7 @@ dnnl_status_t gemm_bf16bf16f32_pack_get_size(const char *identifier,
 
     return dnnl_success;
 }
+*/
 
 template <typename a_dt, typename b_dt>
 dnnl_status_t gemm_x8x8s32_pack_get_size(const char *identifier,
@@ -302,7 +303,7 @@ dnnl_status_t gemm_s8s8s32_pack_get_size(const char *identifier,
 
     return gemm_x8x8s32_pack_get_size<int8_t, int8_t>(
             identifier, transa, transb, M, N, K, lda, ldb, size, pack);
-} */
+} 
 
 dnnl_status_t sgemm_pack(const char *identifier, const char *transa,
         const char *transb, const dim_t *M, const dim_t *N, const dim_t *K,
@@ -330,7 +331,7 @@ dnnl_status_t sgemm_pack(const char *identifier, const char *transa,
 #endif
 }
 
-/* loongarch do not support bf16 s8 data type
+/* loongarch do not support bf16 data type
 dnnl_status_t gemm_bf16bf16f32_pack(const char *identifier, const char *transa,
         const char *transb, const dim_t *M, const dim_t *N, const dim_t *K,
         const dim_t *lda, const dim_t *ldb, const bfloat16_t *src,
@@ -348,6 +349,7 @@ dnnl_status_t gemm_bf16bf16f32_pack(const char *identifier, const char *transa,
     return gemm_pack_driver<bfloat16_t, bfloat16_t, float>(identifier, transa,
             transb, M, N, K, alpha, lda, ldb, src, &pack_dst, false);
 }
+*/
 
 template <typename a_dt, typename b_dt>
 dnnl_status_t gemm_x8x8s32_pack(const char *identifier, const char *transa,
@@ -415,7 +417,7 @@ dnnl_status_t gemm_s8s8s32_pack(const char *identifier, const char *transa,
 
     return gemm_x8x8s32_pack<int8_t, int8_t>(
             identifier, transa, transb, M, N, K, lda, ldb, src, dst);
-} */
+} 
 
 dnnl_status_t sgemm_compute(const char *transa, const char *transb,
         const dim_t *M, const dim_t *N, const dim_t *K, const float *A,
@@ -439,7 +441,7 @@ dnnl_status_t sgemm_compute(const char *transa, const char *transb,
 #endif
 }
 
-/* loongarch do not support bf16 s8 data type
+/* loongarch do not support bf16 data type
 dnnl_status_t gemm_bf16bf16f32_compute(const char *transa, const char *transb,
         const dim_t *M, const dim_t *N, const dim_t *K, const bfloat16_t *A,
         const dim_t *lda, const bfloat16_t *B, const dim_t *ldb,
@@ -451,7 +453,7 @@ dnnl_status_t gemm_bf16bf16f32_compute(const char *transa, const char *transb,
 
     return gemm_bf16bf16f32(
             transa, transb, M, N, K, &one, A, lda, B, ldb, beta, C, ldc);
-}
+}*/
 
 template <typename a_dt, typename b_dt>
 dnnl_status_t gemm_x8x8s32_compute(const char *transa, const char *transb,
@@ -528,7 +530,7 @@ dnnl_status_t gemm_s8s8s32_compute(const char *transa, const char *transb,
 
     return gemm_x8x8s32_compute(
             transa, transb, offsetc, M, N, K, A, lda, B, ldb, beta, C, ldc, co);
-} */
+} 
 
 } // namespace loongarch64
 } // namespace cpu

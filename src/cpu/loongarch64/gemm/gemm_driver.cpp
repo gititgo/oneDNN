@@ -1993,7 +1993,7 @@ dnnl_status_t gemm_driver(const char *transA, const char *transB,
     return gemm_threading_driver(&args);
 }
 
-/* loongarch do not support bf16 s8 datatype
+/* loongarch do not support bf16 datatype
 template // Instantiate gemm_bf16bf16f32
         dnnl_status_t
         gemm_driver<bfloat16_t, bfloat16_t, float>(const char *transA,
@@ -2004,6 +2004,7 @@ template // Instantiate gemm_bf16bf16f32
                 const float *beta, float *c, const dim_t *ldc, const float *oc,
                 const bool force_nocopy, pack_type packing,
                 gemm_pack_storage_t *pack_dst, bool measure_only);
+*/
 
 template // Instantiate gemm_s8s8s32
         dnnl_status_t
@@ -2025,7 +2026,7 @@ template // Instantiate gemm_s8u8s32
                 const uint8_t *b, const dim_t *ldb, const uint8_t *ob,
                 const float *beta, int32_t *c, const dim_t *ldc,
                 const int32_t *oc, const bool force_nocopy, pack_type packing,
-                gemm_pack_storage_t *pack_dst, bool measure_only); */
+                gemm_pack_storage_t *pack_dst, bool measure_only); 
 
 template // Instantiate sgemm
         dnnl_status_t

@@ -43,11 +43,12 @@ dnnl_status_t sgemm_compute(const char *transa, const char *transb,
         const dim_t *lda, const float *B, const dim_t *ldb, const float *beta,
         float *C, const dim_t *ldc);
 
-/* loongarch do not support bf16 s8 data type
+/* loongarch do not support bf16 data type
 dnnl_status_t gemm_bf16bf16f32_pack_get_size(const char *identifier,
         const char *transa, const char *transb, const dim_t *M, const dim_t *N,
         const dim_t *K, const dim_t *lda, const dim_t *ldb, size_t *size,
         bool *pack);
+*/
 
 dnnl_status_t gemm_s8u8s32_pack_get_size(const char *identifier,
         const char *transa, const char *transb, const dim_t *M, const dim_t *N,
@@ -59,10 +60,12 @@ dnnl_status_t gemm_s8s8s32_pack_get_size(const char *identifier,
         const dim_t *K, const dim_t *lda, const dim_t *ldb, size_t *size,
         bool *pack);
 
+/*
 dnnl_status_t gemm_bf16bf16f32_pack(const char *identifier, const char *transa,
         const char *transb, const dim_t *M, const dim_t *N, const dim_t *K,
         const dim_t *lda, const dim_t *ldb, const bfloat16_t *src,
         bfloat16_t *dst);
+*/
 
 dnnl_status_t gemm_s8u8s32_pack(const char *identifier, const char *transa,
         const char *transb, const dim_t *M, const dim_t *N, const dim_t *K,
@@ -72,10 +75,12 @@ dnnl_status_t gemm_s8s8s32_pack(const char *identifier, const char *transa,
         const char *transb, const dim_t *M, const dim_t *N, const dim_t *K,
         const dim_t *lda, const dim_t *ldb, const void *src, void *dst);
 
+/*
 dnnl_status_t gemm_bf16bf16f32_compute(const char *transa, const char *transb,
         const dim_t *M, const dim_t *N, const dim_t *K, const bfloat16_t *A,
         const dim_t *lda, const bfloat16_t *B, const dim_t *ldb,
         const float *beta, float *C, const dim_t *ldc);
+*/
 
 dnnl_status_t gemm_s8u8s32_compute(const char *transa, const char *transb,
         const char *offsetc, const dim_t *M, const dim_t *N, const dim_t *K,
@@ -85,7 +90,7 @@ dnnl_status_t gemm_s8u8s32_compute(const char *transa, const char *transb,
 dnnl_status_t gemm_s8s8s32_compute(const char *transa, const char *transb,
         const char *offsetc, const dim_t *M, const dim_t *N, const dim_t *K,
         const int8_t *A, const dim_t *lda, const int8_t *B, const dim_t *ldb,
-        const float *beta, int32_t *C, const dim_t *ldc, const int32_t *co); */
+        const float *beta, int32_t *C, const dim_t *ldc, const int32_t *co);
 
 } // namespace loongarch64
 } // namespace cpu
