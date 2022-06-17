@@ -74,6 +74,9 @@ dnnl_status_t gemm_s8u8s32_pack_get_size(const char *identifier,
 #if DNNL_X64
     return x64::gemm_s8u8s32_pack_get_size(
             identifier, transa, transb, M, N, K, lda, ldb, size, pack);
+#elif DNNL_LOONGARCH64
+    return loongarch64::gemm_s8u8s32_pack_get_size(
+            identifier, transa, transb, M, N, K, lda, ldb, size, pack);
 #endif
     return dnnl_unimplemented;
 }
@@ -84,6 +87,9 @@ dnnl_status_t gemm_s8s8s32_pack_get_size(const char *identifier,
         bool *pack) {
 #if DNNL_X64
     return x64::gemm_s8s8s32_pack_get_size(
+            identifier, transa, transb, M, N, K, lda, ldb, size, pack);
+#elif DNNL_LOONGARCH64
+    return loongarch64::gemm_s8s8s32_pack_get_size(
             identifier, transa, transb, M, N, K, lda, ldb, size, pack);
 #endif
     return dnnl_unimplemented;
@@ -119,6 +125,9 @@ dnnl_status_t gemm_s8u8s32_pack(const char *identifier, const char *transa,
 #if DNNL_X64
     return x64::gemm_s8u8s32_pack(
             identifier, transa, transb, M, N, K, lda, ldb, src, dst);
+#elif DNNL_LOONGARCH64
+    return loongarch64::gemm_s8u8s32_pack(
+            identifier, transa, transb, M, N, K, lda, ldb, src, dst);
 #endif
     return dnnl_unimplemented;
 }
@@ -128,6 +137,9 @@ dnnl_status_t gemm_s8s8s32_pack(const char *identifier, const char *transa,
         const dim_t *lda, const dim_t *ldb, const void *src, void *dst) {
 #if DNNL_X64
     return x64::gemm_s8s8s32_pack(
+            identifier, transa, transb, M, N, K, lda, ldb, src, dst);
+#elif DNNL_LOONGARCH64
+    return loongarch64::gemm_s8s8s32_pack(
             identifier, transa, transb, M, N, K, lda, ldb, src, dst);
 #endif
     return dnnl_unimplemented;
@@ -165,6 +177,9 @@ dnnl_status_t gemm_s8u8s32_compute(const char *transa, const char *transb,
 #if DNNL_X64
     return x64::gemm_s8u8s32_compute(
             transa, transb, offsetc, M, N, K, A, lda, B, ldb, beta, C, ldc, co);
+#elif DNNL_LOONGARCH64
+    return loongarch64::gemm_s8u8s32_compute(
+            transa, transb, offsetc, M, N, K, A, lda, B, ldb, beta, C, ldc, co);
 #endif
     return dnnl_unimplemented;
 }
@@ -175,6 +190,9 @@ dnnl_status_t gemm_s8s8s32_compute(const char *transa, const char *transb,
         const float *beta, int32_t *C, const dim_t *ldc, const int32_t *co) {
 #if DNNL_X64
     return x64::gemm_s8s8s32_compute(
+            transa, transb, offsetc, M, N, K, A, lda, B, ldb, beta, C, ldc, co);
+#elif DNNL_LOONGARCH64
+    return loongarch64::gemm_s8s8s32_compute(
             transa, transb, offsetc, M, N, K, A, lda, B, ldb, beta, C, ldc, co);
 #endif
     return dnnl_unimplemented;
